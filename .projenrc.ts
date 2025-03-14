@@ -24,5 +24,6 @@ const project = new typescript.TypeScriptProject({
     'liquidjs',
     'zip-lib',
   ],
+  sampleCode: false,
 });
 project.synth();
