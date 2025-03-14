@@ -63,7 +63,7 @@ export const baseConfig: BaseConfig = {
 
 export const loadConfigSync = (filePath?: string): Config => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require(currentExecutionPath(filePath ?? 'config')).config;
+  return require(currentExecutionPath(filePath ?? 'config.ts')).config;
 };
 
 export const awsAcceleratorConfigBucketName = (config: Config): string => {
