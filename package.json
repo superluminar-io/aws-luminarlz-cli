@@ -1,5 +1,13 @@
 {
-  "name": "aws-luminarlz-cli",
+  "name": "@superluminar-io/aws-luminarlz-cli",
+  "description": "An opinionated CLI to make deployment and development with the AWS Landing Zone Accelerator easier. It uses Liquidjs (and optionally CDK) to generate the LZA config.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/superluminar-io/aws-luminarlz-cli.git"
+  },
+  "bin": {
+    "aws-luminarlz-cli": "bin/aws-luminarlz-cli"
+  },
   "scripts": {
     "build": "npx projen build",
     "bump": "npx projen bump",
@@ -20,6 +28,11 @@
     "watch": "npx projen watch",
     "projen": "npx projen"
   },
+  "author": {
+    "name": "superluminar GmbH",
+    "url": "https://superluminar.io",
+    "organization": true
+  },
   "devDependencies": {
     "@stylistic/eslint-plugin": "^2",
     "@types/jest": "^29.5.14",
@@ -38,8 +51,16 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
   },
+  "dependencies": {
+    "@aws-sdk/client-cloudformation": "^3.758.0",
+    "@aws-sdk/client-s3": "^3.758.0",
+    "@aws-sdk/credential-providers": "^3.758.0",
+    "clipanion": "^3.2.1",
+    "liquidjs": "^10.21.0",
+    "zip-lib": "^1.0.5"
+  },
   "main": "lib/index.js",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "publishConfig": {
     "access": "public"
   },
