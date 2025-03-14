@@ -92,6 +92,10 @@
       "type": "runtime"
     },
     {
+      "name": "typescript",
+      "type": "runtime"
+    },
+    {
       "name": "zip-lib",
       "type": "runtime"
     }

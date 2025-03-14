@@ -1,7 +1,10 @@
+import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { format } from 'util';
+import { readConfigFile, transpileModule } from 'typescript';
 import { currentExecutionPath } from './util/path';
+
 
 export const AWS_ACCELERATOR_CONFIG_OUT_PATH = 'aws-accelerator-config.out';
 export const AWS_ACCELERATOR_CONFIG_TEMPLATES = 'templates';
@@ -62,8 +65,17 @@ export const baseConfig: BaseConfig = {
 };
 
 export const loadConfigSync = (filePath?: string): Config => {
+  const tsFile = currentExecutionPath(filePath ?? 'config.ts');
+  const jsFile = currentExecutionPath(filePath ?? 'config.js');
+
+  // Transpile the TypeScript config file to JavaScript so we can require it event if this is executed only with nodejs
+  const output = transpileModule(fs.readFileSync(tsFile, 'utf8'), {
+    compilerOptions: readConfigFile(path.join(__dirname, '..', 'tsconfig.json'), (s) => s).config.compilerOptions,
+  });
+  fs.writeFileSync(jsFile, output.outputText);
+
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require(currentExecutionPath(filePath ?? 'config.ts')).config;
+  return require(jsFile).config;
 };
 
 export const awsAcceleratorConfigBucketName = (config: Config): string => {

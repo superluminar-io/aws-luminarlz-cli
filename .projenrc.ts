@@ -22,6 +22,7 @@ const project = new typescript.TypeScriptProject({
     '@aws-sdk/credential-providers',
     'clipanion',
     'liquidjs',
+    'typescript',
     'zip-lib',
   ],
   sampleCode: false,

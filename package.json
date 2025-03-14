@@ -57,6 +57,7 @@
     "@aws-sdk/credential-providers": "^3.758.0",
     "clipanion": "^3.2.1",
     "liquidjs": "^10.21.0",
+    "typescript": "^5.8.2",
     "zip-lib": "^1.0.5"
   },
   "main": "lib/index.js",

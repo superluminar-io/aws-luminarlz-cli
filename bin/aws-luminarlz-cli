@@ -1,2 +1,2 @@
-#!/usr/bin/env -S npx ts-node
+#!/usr/bin/env node
 require('../lib/index.js');
