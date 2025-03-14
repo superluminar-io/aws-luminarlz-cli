@@ -13,7 +13,7 @@ const [, , ...args] = process.argv;
 
 const cli = new Cli({
   binaryLabel: 'AWS Landing Zone Accelerator Automaton',
-  binaryName: 'aws-luminarlz',
+  binaryName: 'aws-luminarlz-cli',
 });
 cli.register(Builtins.HelpCommand);
 cli.register(AcceleratorConfigPublish);
