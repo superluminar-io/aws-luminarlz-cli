@@ -1,4 +1,5 @@
 import { Command, Option } from 'clipanion';
+import { acceleratorConfigOutSynth } from '../luminarlz/accelerator-config-out-synth';
 import { customizationsDeployStack } from '../luminarlz/customizations-deploy-stack';
 import { customizationsPublishCdkAssets } from '../luminarlz/customizations-publish-cdk-assets';
 import { awsAcceleratorSynth, customizationsCdkSynth } from '../luminarlz/customizations-synth';
@@ -20,6 +21,7 @@ export class CustomizationsDeployStack extends Command {
 
   async execute() {
     await customizationsCdkSynth(this.stackName);
+    await acceleratorConfigOutSynth();
     await awsAcceleratorSynth({
       accountId: this.accountId,
       region: this.region,
