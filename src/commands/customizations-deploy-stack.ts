@@ -7,14 +7,12 @@ import { awsAcceleratorSynth, customizationsCdkSynth } from '../luminarlz/custom
 export class CustomizationsDeployStack extends Command {
   static paths = [['customizations', 'deploy-stack']];
 
-  accountId = Option.String({
-    required: true,
-  });
-
   stackName = Option.String({
     required: true,
   });
-
+  accountId = Option.String({
+    required: true,
+  });
   region = Option.String({
     required: true,
   });
