@@ -33,7 +33,7 @@ export const awsAcceleratorSynth = async ({ accountId, region }: {
       `git clone --depth=1 --branch ${LZA_REPOSITORY_BRANCH} ${lzaRepositoryGitUrl} ${LZA_REPOSITORY_CHECKOUT_PATH}`,
     );
     console.log('Cloned landing-zone-accelerator-on-aws repository.');
-    await execProm('npm install -g yarn && yarn && yarn build', {
+    await execProm('yarn && yarn build', {
       cwd: path.join(LZA_REPOSITORY_CHECKOUT_PATH, LZA_SOURCE_PATH),
     });
   }
