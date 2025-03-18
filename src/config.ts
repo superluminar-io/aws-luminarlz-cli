@@ -64,9 +64,9 @@ export const baseConfig: BaseConfig = {
   awsAcceleratorPipelineName: AWS_ACCELERATOR_PIPELINE_NAME,
 };
 
-export const loadConfigSync = (filePath?: string): Config => {
-  const tsFile = currentExecutionPath(filePath ?? 'config.ts');
-  const jsFile = currentExecutionPath(filePath ?? 'config.js');
+export const loadConfigSync = (): Config => {
+  const tsFile = currentExecutionPath('config.ts');
+  const jsFile = currentExecutionPath('config.js');
 
   // Transpile the TypeScript config file to JavaScript so we can require it event if this is executed only with nodejs
   const output = transpileModule(fs.readFileSync(tsFile, 'utf8'), {
