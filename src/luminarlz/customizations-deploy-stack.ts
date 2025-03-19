@@ -9,13 +9,15 @@ import {
   waitUntilStackUpdateComplete,
 } from '@aws-sdk/client-cloudformation';
 import { fromTemporaryCredentials } from '@aws-sdk/credential-providers';
-import { LZA_ACCELERATOR_PACKAGE_PATH, LZA_REPOSITORY_CHECKOUT_PATH } from '../config';
+import {loadConfigSync, LZA_ACCELERATOR_PACKAGE_PATH, LZA_REPOSITORY_CHECKOUT_PATH} from '../config';
 
 export const customizationsDeployStack = async ({ accountId, region, stackName }: {
   accountId: string;
   region: string;
   stackName: string;
 }) => {
+  const config = loadConfigSync();
+
   const templateBody = readTemplateBody({
     accountId: accountId,
     region: region,
@@ -23,6 +25,7 @@ export const customizationsDeployStack = async ({ accountId, region, stackName }
   });
 
   const client = cloudFormationClient({
+    managementAccountId: config.managementAccountId,
     accountId: accountId,
     region: region,
   });
@@ -118,18 +121,22 @@ const readTemplateBody = ({
 };
 
 const cloudFormationClient = ({
+  managementAccountId,
   region,
   accountId,
 }: {
+  managementAccountId: string;
   region: string;
   accountId: string;
 }) => {
   return new CloudFormationClient({
     region,
-    credentials: fromTemporaryCredentials({
-      params: {
-        RoleArn: `arn:aws:iam::${accountId}:role/AWSControlTowerExecution`,
-      },
-    }),
+    ...managementAccountId == accountId ? {} : {
+      credentials: fromTemporaryCredentials({
+        params: {
+          RoleArn: `arn:aws:iam::${accountId}:role/AWSControlTowerExecution`,
+        },
+      }),
+    },
   });
 };
