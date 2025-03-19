@@ -14,6 +14,7 @@ export const CDK_OUT_PATH = path.join(CUSTOMIZATION_PATH, 'cdk.out');
 export const GLOBAL_REGION = 'us-east-1';
 
 export const AWS_ACCELERATOR_CONFIG_BUCKET_PATTERN = 'aws-accelerator-config-%s-%s';
+export const AWS_ACCELERATOR_CONFIG_DEPLOYMENT_ARTIFACT_PATH = 'zipped/aws-accelerator-config.zip';
 export const CDK_ACCEL_ASSETS_BUCKET_NAME_PATTERN = 'cdk-accel-assets-%s-';
 export const AWS_ACCELERATOR_PIPELINE_NAME = 'AWSAccelerator-Pipeline';
 export const LZA_SOURCE_PATH = 'source';
@@ -41,6 +42,7 @@ export interface BaseConfig {
   cdkOutPath: string;
   globalRegion: string;
   awsAcceleratorConfigBucketPattern: string;
+  awsAcceleratorConfigDeploymentArtifactPath: string;
   cdkAccelAssetsBucketNamePattern: string;
   awsAcceleratorPipelineName: string;
 }
@@ -60,6 +62,7 @@ export const baseConfig: BaseConfig = {
   cdkOutPath: CDK_OUT_PATH,
   globalRegion: GLOBAL_REGION,
   awsAcceleratorConfigBucketPattern: AWS_ACCELERATOR_CONFIG_BUCKET_PATTERN,
+  awsAcceleratorConfigDeploymentArtifactPath: AWS_ACCELERATOR_CONFIG_DEPLOYMENT_ARTIFACT_PATH,
   cdkAccelAssetsBucketNamePattern: CDK_ACCEL_ASSETS_BUCKET_NAME_PATTERN,
   awsAcceleratorPipelineName: AWS_ACCELERATOR_PIPELINE_NAME,
 };

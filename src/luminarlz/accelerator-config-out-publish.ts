@@ -16,7 +16,7 @@ export const acceleratorConfigOutPublish = async () => {
   await client.send(
     new PutObjectCommand({
       Bucket: awsAcceleratorConfigBucketName(config),
-      Key: 'zipped/aws-accelerator-config.zip',
+      Key: config.awsAcceleratorConfigDeploymentArtifactPath,
       Body: fs.readFileSync(zipFile),
     }),
   );
