@@ -9,7 +9,7 @@ import {
   waitUntilStackUpdateComplete,
 } from '@aws-sdk/client-cloudformation';
 import { fromTemporaryCredentials } from '@aws-sdk/credential-providers';
-import {loadConfigSync, LZA_ACCELERATOR_PACKAGE_PATH, LZA_REPOSITORY_CHECKOUT_PATH} from '../config';
+import { loadConfigSync, LZA_ACCELERATOR_PACKAGE_PATH, LZA_REPOSITORY_CHECKOUT_PATH } from '../config';
 
 export const customizationsDeployStack = async ({ accountId, region, stackName }: {
   accountId: string;
