@@ -20,6 +20,7 @@ const project = new typescript.TypeScriptProject({
     '@aws-sdk/client-s3',
     '@aws-sdk/client-cloudformation',
     '@aws-sdk/credential-providers',
+    'cdk-assets',
     'clipanion',
     'liquidjs',
     'typescript',

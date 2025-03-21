@@ -1,10 +1,10 @@
 #!/usr/bin/env -S npx ts-node
 
 import { Builtins, Cli } from 'clipanion';
-import { LzaStageSynth } from './commands/lza-stage-synth';
 import { Deploy } from './commands/deploy';
 import { LzaCustomizationsStackDeploy } from './commands/lza-customizations-stack-deploy';
 import { LzaCustomizationsStackSynth } from './commands/lza-customizations-stack-synth';
+import { LzaStageSynth } from './commands/lza-stage-synth';
 import { Synth } from './commands/synth';
 
 const [, , ...args] = process.argv;

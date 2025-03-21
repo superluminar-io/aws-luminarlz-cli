@@ -55,6 +55,7 @@
     "@aws-sdk/client-cloudformation": "^3.758.0",
     "@aws-sdk/client-s3": "^3.758.0",
     "@aws-sdk/credential-providers": "^3.758.0",
+    "cdk-assets": "^3.1.1",
     "clipanion": "^3.2.1",
     "liquidjs": "^10.21.0",
     "typescript": "^5.8.2",

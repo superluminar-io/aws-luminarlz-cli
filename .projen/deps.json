@@ -84,6 +84,10 @@
       "type": "runtime"
     },
     {
+      "name": "cdk-assets",
+      "type": "runtime"
+    },
+    {
       "name": "clipanion",
       "type": "runtime"
     },
