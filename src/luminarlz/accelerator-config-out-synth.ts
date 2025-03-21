@@ -28,32 +28,35 @@ export const acceleratorConfigOutSynth = async () => {
     outputDelimiterLeft: '<%',
     outputDelimiterRight: '%>',
   });
-  const templateFiles = await fs.promises.readdir(templatePath, {
+  const filePathes = await fs.promises.readdir(templatePath, {
     recursive: true,
   });
-  for (const templateFile of templateFiles) {
-    if (fs.lstatSync(path.join(templatePath, templateFile)).isDirectory()) {
+  for (const filePath of filePathes) {
+    if (fs.lstatSync(path.join(templatePath, filePath)).isDirectory()) {
       // Create directory in the output path if it doesn't exist
-      if (!fs.existsSync(path.join(outPath, templateFile))) {
-        fs.mkdirSync(path.join(outPath, templateFile));
+      if (!fs.existsSync(path.join(outPath, filePath))) {
+        fs.mkdirSync(path.join(outPath, filePath));
       }
     } else {
       // if the file is a template and is defined as template, render it and write it to the output path
-      const template = config.templates.find((t) =>
-        templateFile.endsWith(t.fileName + '.liquid'),
-      );
-      if (template) {
+      if (!filePath.endsWith('.liquid')) {
+        // otherwise copy the file to the output path
+        fs.copyFileSync(
+          path.join(templatePath, filePath),
+          path.join(outPath, filePath),
+        );
+      } else {
+        const template = config.templates.find((t) =>
+          filePath.endsWith(t.fileName + '.liquid'),
+        );
+        if (!template) {
+          throw new Error('Template not found in config.');
+        }
         const output = liquid.renderFileSync(
           path.join(templatePath, `${template.fileName}.liquid`),
           template.parameters ?? {},
         );
         fs.writeFileSync(path.join(outPath, template.fileName), output);
-      } else {
-        // otherwise copy the file to the output path
-        fs.copyFileSync(
-          path.join(templatePath, templateFile),
-          path.join(outPath, templateFile),
-        );
       }
     }
   }
