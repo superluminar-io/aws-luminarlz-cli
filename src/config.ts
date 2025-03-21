@@ -67,7 +67,12 @@ export const baseConfig: BaseConfig = {
   awsAcceleratorPipelineName: AWS_ACCELERATOR_PIPELINE_NAME,
 };
 
+let loadedConfig: Config | undefined;
 export const loadConfigSync = (): Config => {
+  // Only load config once per process
+  if (loadedConfig) {
+    return loadedConfig;
+  }
   const tsFile = currentExecutionPath('config.ts');
   const jsFile = currentExecutionPath('config.js');
 
@@ -78,7 +83,8 @@ export const loadConfigSync = (): Config => {
   fs.writeFileSync(jsFile, output.outputText);
 
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require(jsFile).config;
+  loadedConfig = require(jsFile).config;
+  return loadedConfig!;
 };
 
 export const awsAcceleratorConfigBucketName = (config: Config): string => {
