@@ -1,13 +1,11 @@
 #!/usr/bin/env -S npx ts-node
 
 import { Builtins, Cli } from 'clipanion';
-import { AcceleratorConfigPublish } from './commands/accelerator-config-publish';
-import { AcceleratorConfigSynth } from './commands/accelerator-config-synth';
-import { CustomizationsDeployStack } from './commands/customizations-deploy-stack';
-import { CustomizationsPublishCdkAssets } from './commands/customizations-publish-cdk-assets';
-import { CustomizationsSynthAcceleratorStack } from './commands/customizations-synth-accelerator-stack';
-import { CustomizationsSynthAcceleratorStage } from './commands/customizations-synth-accelerator-stage';
+import { LzaStageSynth } from './commands/lza-stage-synth';
 import { Deploy } from './commands/deploy';
+import { LzaCustomizationsStackDeploy } from './commands/lza-customizations-stack-deploy';
+import { LzaCustomizationsStackSynth } from './commands/lza-customizations-stack-synth';
+import { Synth } from './commands/synth';
 
 const [, , ...args] = process.argv;
 
@@ -16,11 +14,9 @@ const cli = new Cli({
   binaryName: 'aws-luminarlz-cli',
 });
 cli.register(Builtins.HelpCommand);
-cli.register(AcceleratorConfigPublish);
-cli.register(AcceleratorConfigSynth);
-cli.register(CustomizationsDeployStack);
-cli.register(CustomizationsPublishCdkAssets);
-cli.register(CustomizationsSynthAcceleratorStack);
-cli.register(CustomizationsSynthAcceleratorStage);
+cli.register(LzaCustomizationsStackDeploy);
+cli.register(LzaCustomizationsStackSynth);
+cli.register(LzaStageSynth);
+cli.register(Synth);
 cli.register(Deploy);
 void cli.runExit(args);

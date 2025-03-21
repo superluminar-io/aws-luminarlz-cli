@@ -1,13 +1,21 @@
 import { Command, Option } from 'clipanion';
 import { awsAcceleratorSynth, customizationsCdkSynth } from '../luminarlz/customizations-synth';
 
-export class CustomizationsSynthAcceleratorStage extends Command {
-  static paths = [['customizations', 'synth-accelerator-stage']];
+export class LzaStageSynth extends Command {
+  static paths = [['lza', 'stage', 'synth']];
 
-  accountId = Option.String({
+  static usage = Command.Usage({
+    category: 'LZA Stage',
+    description: 'Synth a LZA stage for an account and optionally a region.',
+    details: `
+      This includes synthesizing the customizations as well as a LZA stage.
+    `,
+  });
+
+  accountId = Option.String('--account-id', {
     required: true,
   });
-  region = Option.String({
+  region = Option.String('--region', {
     required: true,
   });
 
