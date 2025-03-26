@@ -1,5 +1,6 @@
 import { Command } from 'clipanion';
 import { LzaCustomizationsStack } from './lza-customizations-stack';
+import { acceleratorConfigOutSynth } from '../luminarlz/accelerator-config-out-synth';
 import { awsAcceleratorSynth, customizationsCdkSynth } from '../luminarlz/customizations-synth';
 
 export class LzaCustomizationsStackSynth extends LzaCustomizationsStack {
@@ -15,6 +16,7 @@ export class LzaCustomizationsStackSynth extends LzaCustomizationsStack {
 
   async execute() {
     await customizationsCdkSynth(this.stackName);
+    await acceleratorConfigOutSynth();
     await awsAcceleratorSynth({
       accountId: this.accountId,
       region: this.regionOrHomeRegion,
