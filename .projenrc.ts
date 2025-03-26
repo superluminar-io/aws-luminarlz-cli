@@ -19,6 +19,7 @@ const project = new typescript.TypeScriptProject({
   deps: [
     '@aws-sdk/client-s3',
     '@aws-sdk/client-cloudformation',
+    '@aws-sdk/client-ssm',
     '@aws-sdk/credential-providers',
     'cdk-assets',
     'clipanion',

@@ -1,5 +1,3 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import {
   CloudFormationClient,
   CreateStackCommand,
@@ -9,7 +7,8 @@ import {
   waitUntilStackUpdateComplete,
 } from '@aws-sdk/client-cloudformation';
 import { fromTemporaryCredentials } from '@aws-sdk/credential-providers';
-import { loadConfigSync, LZA_ACCELERATOR_PACKAGE_PATH, LZA_REPOSITORY_CHECKOUT_PATH } from '../config';
+import { loadConfigSync } from '../config';
+import { readTemplateBody } from './customizations-synth';
 
 export const customizationsDeployStack = async ({ accountId, region, stackName }: {
   accountId: string;
@@ -97,27 +96,6 @@ export const customizationsDeployStack = async ({ accountId, region, stackName }
       },
     );
   }
-};
-
-const readTemplateBody = ({
-  accountId,
-  region,
-  stackName,
-}: {
-  accountId: string;
-  region: string;
-  stackName: string;
-}) => {
-  return fs.readFileSync(
-    path.join(
-      LZA_REPOSITORY_CHECKOUT_PATH,
-      LZA_ACCELERATOR_PACKAGE_PATH,
-      'cdk.out',
-      `AWSAccelerator-CustomizationsStack-${accountId}-${region}`,
-      `${stackName}-${accountId}-${region}.template.json`,
-    ),
-    'utf8',
-  );
 };
 
 const cloudFormationClient = ({

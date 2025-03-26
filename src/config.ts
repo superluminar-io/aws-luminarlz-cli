@@ -1,5 +1,4 @@
 import * as fs from 'node:fs';
-import * as os from 'node:os';
 import * as path from 'node:path';
 import { format } from 'util';
 import { readConfigFile, transpileModule } from 'typescript';
@@ -17,6 +16,8 @@ export const AWS_ACCELERATOR_CONFIG_BUCKET_PATTERN = 'aws-accelerator-config-%s-
 export const AWS_ACCELERATOR_CONFIG_DEPLOYMENT_ARTIFACT_PATH = 'zipped/aws-accelerator-config.zip';
 export const CDK_ACCEL_ASSETS_BUCKET_NAME_PATTERN = 'cdk-accel-assets-%s-';
 export const AWS_ACCELERATOR_PIPELINE_NAME = 'AWSAccelerator-Pipeline';
+export const AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME = '/accelerator/AWSAccelerator-InstallerStack/version';
+export const LZA_REPOSITORY_GIT_URL = 'https://github.com/awslabs/landing-zone-accelerator-on-aws.git';
 export const LZA_SOURCE_PATH = 'source';
 export const LZA_ACCELERATOR_PACKAGE_PATH = path.join(
   LZA_SOURCE_PATH,
@@ -24,11 +25,7 @@ export const LZA_ACCELERATOR_PACKAGE_PATH = path.join(
   '@aws-accelerator',
   'accelerator',
 );
-export const LZA_REPOSITORY_BRANCH = 'v1.11.2';
-export const LZA_REPOSITORY_CHECKOUT_PATH = path.join(
-  os.tmpdir(),
-  `landing-zone-accelerator-on-aws-${LZA_REPOSITORY_BRANCH}`,
-);
+export const AWS_ACCELERATOR_VERSION = '1.11.2';
 
 export interface Template {
   fileName: string;
@@ -45,6 +42,7 @@ export interface BaseConfig {
   awsAcceleratorConfigDeploymentArtifactPath: string;
   cdkAccelAssetsBucketNamePattern: string;
   awsAcceleratorPipelineName: string;
+  awsAcceleratorVersion: string;
 }
 
 export interface Config extends BaseConfig {
@@ -65,6 +63,7 @@ export const baseConfig: BaseConfig = {
   awsAcceleratorConfigDeploymentArtifactPath: AWS_ACCELERATOR_CONFIG_DEPLOYMENT_ARTIFACT_PATH,
   cdkAccelAssetsBucketNamePattern: CDK_ACCEL_ASSETS_BUCKET_NAME_PATTERN,
   awsAcceleratorPipelineName: AWS_ACCELERATOR_PIPELINE_NAME,
+  awsAcceleratorVersion: AWS_ACCELERATOR_VERSION,
 };
 
 let loadedConfig: Config | undefined;

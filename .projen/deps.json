@@ -80,6 +80,10 @@
       "type": "runtime"
     },
     {
+      "name": "@aws-sdk/client-ssm",
+      "type": "runtime"
+    },
+    {
       "name": "@aws-sdk/credential-providers",
       "type": "runtime"
     },
