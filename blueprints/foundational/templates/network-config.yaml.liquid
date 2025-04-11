@@ -1,0 +1,43 @@
+defaultVpc:
+  delete: true
+  excludeAccounts: []
+transitGateways: []
+endpointPolicies: []
+vpcs: []
+{% comment %} TODO: Uncomment this to set up a foundational IPAM configuration.
+centralNetworkServices:
+  delegatedAdminAccount: Network
+  ipams:
+    - name: accelerator-ipam
+      region: <% homeRegion %>
+      description: Accelerator IPAM
+      pools:
+        - name: base-pool
+          description: accelerator-base
+          provisionedCidrs:
+            - 10.0.0.0/8
+        - name: home-region-production-pool
+          description: Pool for <% homeRegion %> production environment
+          allocationResourceTags:
+            - key: environment
+              value: production
+          locale: <% homeRegion %>
+          provisionedCidrs:
+            - 10.0.0.0/12 # 1,048,576
+          shareTargets:
+            organizationalUnits:
+              - Workloads/Production
+          sourceIpamPool: base-pool
+        - name: home-region-test-pool
+          description: Pool for <% homeRegion %> test environment
+          allocationResourceTags:
+            - key: environment
+              value: test
+          locale: <% homeRegion %>
+          provisionedCidrs:
+            - 10.16.0.0/12 # 1,048,576
+          shareTargets:
+            organizationalUnits:
+              - Workloads/Test
+          sourceIpamPool: base-pool
+{% endcomment %}

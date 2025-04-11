@@ -53,8 +53,11 @@
   },
   "dependencies": {
     "@aws-sdk/client-cloudformation": "^3.758.0",
+    "@aws-sdk/client-organizations": "^3.787.0",
     "@aws-sdk/client-s3": "^3.758.0",
     "@aws-sdk/client-ssm": "^3.775.0",
+    "@aws-sdk/client-sso-admin": "^3.787.0",
+    "@aws-sdk/client-sts": "^3.787.0",
     "@aws-sdk/credential-providers": "^3.758.0",
     "cdk-assets": "^3.1.1",
     "clipanion": "^3.2.1",

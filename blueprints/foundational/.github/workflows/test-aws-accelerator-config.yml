@@ -1,0 +1,29 @@
+# Feature branch workflow for synthesizing the AWS landing zone accelerator config
+# TODO: Uncomment this to set up a Continuous Integration pipeline
+#name: Test AWS Accelerator Config
+#
+#on:
+#  push:
+#    branches-ignore:
+#      - main
+#
+#env:
+#  AWS_REGION: "eu-central-1"
+#
+#jobs:
+#  Test:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v4
+#
+#      - name: Use correct node version
+#        uses: actions/setup-node@v4
+#        with:
+#          node-version-file: .node-version
+#
+#      - name: Install dependencies
+#        run: npm ci
+#
+#      - name: Synthesize aws-accelerator-config
+#        run: npm run cli -- synth

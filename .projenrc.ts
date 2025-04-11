@@ -19,7 +19,10 @@ const project = new typescript.TypeScriptProject({
   deps: [
     '@aws-sdk/client-s3',
     '@aws-sdk/client-cloudformation',
+    '@aws-sdk/client-organizations',
     '@aws-sdk/client-ssm',
+    '@aws-sdk/client-sso-admin',
+    '@aws-sdk/client-sts',
     '@aws-sdk/credential-providers',
     'cdk-assets',
     'clipanion',
@@ -28,5 +31,6 @@ const project = new typescript.TypeScriptProject({
     'zip-lib',
   ],
   sampleCode: false,
+  gitignore: ['/blueprints/**/package-lock.json', '/blueprints/**/yarn.lock'],
 });
 project.synth();

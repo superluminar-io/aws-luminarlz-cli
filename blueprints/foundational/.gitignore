@@ -1,0 +1,5 @@
+node_modules/
+*.js
+/aws-accelerator-config.out
+/aws-accelerator-config.out.zip
+/customizations/cdk.out/

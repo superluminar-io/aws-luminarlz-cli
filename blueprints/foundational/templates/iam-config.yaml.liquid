@@ -1,0 +1,63 @@
+providers: []
+policySets: []
+roleSets: []
+groupSets:
+  # configure break glass access
+  - deploymentTargets:
+      accounts:
+        - Management
+    groups:
+      - name: BreakGlassUsers
+        policies:
+          awsManaged:
+            - AdministratorAccess
+userSets:
+  # configure break glass access
+  - deploymentTargets:
+      accounts:
+        - Management
+    users:
+      - username: BreakGlassUser1
+        group: BreakGlassUsers
+identityCenter:
+  name: IdentityCenter
+  delegatedAdminAccount: Audit
+  identityCenterPermissionSets:
+    - name: AdministratorAccess
+      policies:
+        awsManaged:
+          - arn:aws:iam::aws:policy/AdministratorAccess
+      sessionDuration: 600 # 10 hours because it's a working day with some slack
+    - name: BillingReviewer
+      policies:
+        inlinePolicy: iam-policies/permission-set-billing-reviewers-inline-policy.json
+      sessionDuration: 600 # 10 hours because it's a working day with some slack
+  identityCenterAssignments:
+    - name: BillingReviewer
+      permissionSetName: BillingReviewer
+      principals:
+        - type: GROUP
+          name: <% iamIdAwsBillingReviewerGroupName %>
+      deploymentTargets:
+        accounts:
+          - Management
+    - name: AwsAdministrator
+      permissionSetName: AdministratorAccess
+      principals:
+        - type: GROUP
+          name: <% iamIdAwsAdministratorGroupName %>
+      deploymentTargets:
+        organizationalUnits:
+          - Root
+    {% comment %} TODO: Uncomment this to set up administrators access for the account owners.
+    {% for accountAdministrator in accountAdministrators %}
+    - name: AccountAdministrator-<% accountAdministrator.accountName %>
+      permissionSetName: AdministratorAccess
+      principals:
+        - type: GROUP
+          name: <% accountAdministrator.groupName %>
+      deploymentTargets:
+        accounts:
+          - <% accountAdministrator.accountName %>
+    {% endfor %}
+    {% endcomment %}
