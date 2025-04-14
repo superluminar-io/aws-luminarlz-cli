@@ -26,6 +26,11 @@ export const LZA_ACCELERATOR_PACKAGE_PATH = path.join(
   'accelerator',
 );
 export const AWS_ACCELERATOR_VERSION = '1.11.2';
+export const AWS_ACCELERATOR_PIPELINE_FAILURE_TOPIC_NAME =
+  'aws-accelerator-pipeline-failed-status-topic';
+export const AWS_ACCELERATOR_SSM_PARAMETER_INSTALLER_KMS_KEY_ARN =
+  '/accelerator/installer/kms/key-arn';
+
 
 export interface Template {
   fileName: string;
