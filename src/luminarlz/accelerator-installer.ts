@@ -4,7 +4,14 @@ import {
   UpdateStackCommand,
   waitUntilStackUpdateComplete,
 } from '@aws-sdk/client-cloudformation';
-import { awsAcceleratorInstallerStackTemplateUrl, Config, loadConfigSync } from '../config';
+import * as ssm from '@aws-sdk/client-ssm';
+import {
+  AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+  awsAcceleratorInstallerRepositoryBranchName,
+  awsAcceleratorInstallerStackTemplateUrl,
+  Config,
+  loadConfigSync,
+} from '../config';
 
 const describeInstallerStack = async (client: CloudFormationClient, config: Config) => {
   const describeStacksResult = await client.send(new DescribeStacksCommand({
@@ -22,30 +29,35 @@ export const cloudformationClient = (config: Config) => {
   });
 };
 
-const getInstallerVersion = async (client: CloudFormationClient) => {
+export const getInstallerVersion = async () => {
   const config = loadConfigSync();
-  const describeStacksResult = await describeInstallerStack(client, config);
-  const repositoryBranchName = describeStacksResult.Parameters?.find((parameter => parameter.ParameterKey === 'RepositoryBranchName'))?.ParameterValue;
-  if (!repositoryBranchName) {
-    throw new Error(`Parameter RepositoryBranchName not found in stack ${config.awsAcceleratorInstallerStackName}`);
+  const client = new ssm.SSMClient({ region: config.homeRegion });
+  const result = await client.send(new ssm.GetParameterCommand({
+    Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+  }));
+  if (!result.Parameter?.Value) {
+    throw new Error('AWS Accelerator version not found');
   }
-  return repositoryBranchName.replace(config.awsAcceleratorInstallerRepositoryBranchNamePrefix, '');
+  return result.Parameter.Value;
 };
 
 export const checkInstallerVersion = async () => {
   const config = loadConfigSync();
-  const client = cloudformationClient(config);
-  const installerVersion = await getInstallerVersion(client);
+  const installerVersion = await getInstallerVersion();
   if (installerVersion !== config.awsAcceleratorVersion) {
-    throw new Error(`Version mismatch. Expected ${config.awsAcceleratorVersion}, found ${installerVersion}`);
+    throw new Error(`
+      AWS Accelerator version mismatch.
+      The CLI should have the same version configured as the installed AWS Accelerator.
+      Installed version: ${installerVersion}
+      Configured version: ${config.awsAcceleratorVersion}
+    `);
   }
   return installerVersion;
 };
 
 export const updateInstallerVersion = async () => {
   const config = loadConfigSync();
-  const client = cloudformationClient(config);
-  const installerVersion = await getInstallerVersion(client);
+  const installerVersion = await getInstallerVersion();
 
   if (config.awsAcceleratorVersion < installerVersion) {
     throw new Error(`Version mismatch. Expected ${config.awsAcceleratorVersion} cannot be smaller than ${installerVersion}`);
@@ -54,13 +66,14 @@ export const updateInstallerVersion = async () => {
     console.log(`Installer version: ${installerVersion} is already up to date`);
     return;
   }
+  const client = cloudformationClient(config);
   await client.send(new UpdateStackCommand({
     StackName: config.awsAcceleratorInstallerStackName,
     Parameters: (await describeInstallerStack(client, config)).Parameters?.map((parameter) => {
       if (parameter.ParameterKey === 'RepositoryBranchName') {
         return {
           ParameterKey: parameter.ParameterKey,
-          ParameterValue: config.awsAcceleratorInstallerRepositoryBranchNamePrefix + config.awsAcceleratorVersion,
+          ParameterValue: awsAcceleratorInstallerRepositoryBranchName(config),
         };
       }
       return {

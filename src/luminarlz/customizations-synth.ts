@@ -1,38 +1,13 @@
 import * as fs from 'fs';
-import os from 'node:os';
 import * as path from 'path';
-import * as ssm from '@aws-sdk/client-ssm';
 import {
-  AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
   loadConfigSync,
-  LZA_ACCELERATOR_PACKAGE_PATH, LZA_REPOSITORY_GIT_URL,
-  LZA_SOURCE_PATH,
+  LZA_ACCELERATOR_PACKAGE_PATH,
 } from '../config';
+import { checkInstallerVersion } from './accelerator-installer';
+import { ensureLzaRepositoryIsCloned, lzaRepositoryCheckoutPath } from './lza-repository-checkout';
 import { execProm } from '../util/exec';
 import { currentExecutionPath } from '../util/path';
-
-const lzaRepositoryBranch = () => {
-  const config = loadConfigSync();
-  return `release/v${config.awsAcceleratorVersion}`;
-};
-const lzaRepositoryCheckoutPath = () => {
-  return path.join(
-    os.tmpdir(),
-    `landing-zone-accelerator-on-aws-${lzaRepositoryBranch().replace('/', '-')}`,
-  );
-};
-
-const getAwsAcceleratorInstallerStackVersion = async () => {
-  const config = loadConfigSync();
-  const client = new ssm.SSMClient({ region: config.homeRegion });
-  const result = await client.send(new ssm.GetParameterCommand({
-    Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-  }));
-  if (!result.Parameter?.Value) {
-    throw new Error('AWS Accelerator version not found');
-  }
-  return result.Parameter.Value;
-};
 
 export const customizationsCdkSynth = async (stackName?: string) => {
   const { customizationPath } = loadConfigSync();
@@ -51,27 +26,10 @@ export const awsAcceleratorSynth = async ({ accountId, region }: {
   );
 
   const checkoutPath = lzaRepositoryCheckoutPath();
-  const checkoutBranch = lzaRepositoryBranch();
 
-  const installedVersion = await getAwsAcceleratorInstallerStackVersion();
-  if (installedVersion !== config.awsAcceleratorVersion) {
-    throw new Error(`
-      AWS Accelerator version mismatch.
-      The CLI should have the same version configured as the installed AWS Accelerator.
-      Installed version: ${installedVersion}
-      Configured version: ${config.awsAcceleratorVersion}
-    `);
-  }
+  await checkInstallerVersion();
 
-  if (!fs.existsSync(checkoutPath)) {
-    await execProm(
-      `git clone --depth=1 --branch ${checkoutBranch} ${LZA_REPOSITORY_GIT_URL} ${checkoutPath}`,
-    );
-    console.log('Cloned landing-zone-accelerator-on-aws repository.');
-    await execProm('yarn && yarn build', {
-      cwd: path.join(checkoutPath, LZA_SOURCE_PATH),
-    });
-  }
+  await ensureLzaRepositoryIsCloned();
 
   await execProm(
     `yarn run ts-node --transpile-only cdk.ts synth --stage customizations --config-dir "${lzaConfigPath}" --region "${region}" --account "${accountId}" --partition aws`,

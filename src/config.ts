@@ -113,3 +113,6 @@ export const awsAcceleratorInstallerStackTemplateUrl = (config: Config): string 
     config.awsAcceleratorInstallerStackTemplateUrlPattern,
     config.awsAcceleratorVersion,
   );
+
+export const awsAcceleratorInstallerRepositoryBranchName = (config: Config): string =>
+  config.awsAcceleratorInstallerRepositoryBranchNamePrefix + config.awsAcceleratorVersion;
