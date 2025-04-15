@@ -4,6 +4,8 @@ import { Builtins, Cli } from 'clipanion';
 import { Deploy } from './commands/deploy';
 import { LzaCustomizationsStackDeploy } from './commands/lza-customizations-stack-deploy';
 import { LzaCustomizationsStackSynth } from './commands/lza-customizations-stack-synth';
+import { LzaInstallerVersionCheck } from './commands/lza-installer-version-check';
+import { LzaInstallerVersionUpdate } from './commands/lza-installer-version-update';
 import { LzaStageSynth } from './commands/lza-stage-synth';
 import { Synth } from './commands/synth';
 
@@ -16,6 +18,8 @@ const cli = new Cli({
 cli.register(Builtins.HelpCommand);
 cli.register(LzaCustomizationsStackDeploy);
 cli.register(LzaCustomizationsStackSynth);
+cli.register(LzaInstallerVersionCheck);
+cli.register(LzaInstallerVersionUpdate);
 cli.register(LzaStageSynth);
 cli.register(Synth);
 cli.register(Deploy);

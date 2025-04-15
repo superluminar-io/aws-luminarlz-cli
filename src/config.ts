@@ -25,12 +25,11 @@ export const LZA_ACCELERATOR_PACKAGE_PATH = path.join(
   '@aws-accelerator',
   'accelerator',
 );
-export const AWS_ACCELERATOR_VERSION = '1.11.2';
 export const AWS_ACCELERATOR_PIPELINE_FAILURE_TOPIC_NAME =
   'aws-accelerator-pipeline-failed-status-topic';
 export const AWS_ACCELERATOR_SSM_PARAMETER_INSTALLER_KMS_KEY_ARN =
   '/accelerator/installer/kms/key-arn';
-
+export const AWS_ACCELERATOR_INSTALLER_STACK_NAME = 'AWSAccelerator-InstallerStack';
 
 export interface Template {
   fileName: string;
@@ -47,10 +46,11 @@ export interface BaseConfig {
   awsAcceleratorConfigDeploymentArtifactPath: string;
   cdkAccelAssetsBucketNamePattern: string;
   awsAcceleratorPipelineName: string;
-  awsAcceleratorVersion: string;
+  awsAcceleratorInstallerStackName: string;
 }
 
 export interface Config extends BaseConfig {
+  awsAcceleratorVersion: string;
   environments: Record<string, string>;
   templates: Template[];
   managementAccountId: string;
@@ -68,7 +68,7 @@ export const baseConfig: BaseConfig = {
   awsAcceleratorConfigDeploymentArtifactPath: AWS_ACCELERATOR_CONFIG_DEPLOYMENT_ARTIFACT_PATH,
   cdkAccelAssetsBucketNamePattern: CDK_ACCEL_ASSETS_BUCKET_NAME_PATTERN,
   awsAcceleratorPipelineName: AWS_ACCELERATOR_PIPELINE_NAME,
-  awsAcceleratorVersion: AWS_ACCELERATOR_VERSION,
+  awsAcceleratorInstallerStackName: AWS_ACCELERATOR_INSTALLER_STACK_NAME,
 };
 
 let loadedConfig: Config | undefined;
