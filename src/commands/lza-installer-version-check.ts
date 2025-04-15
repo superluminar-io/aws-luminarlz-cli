@@ -2,7 +2,7 @@ import { Command } from 'clipanion';
 import { checkInstallerVersion } from '../luminarlz/accelerator-installer';
 
 export class LzaInstallerVersionCheck extends Command {
-  static paths = [['lza', 'installer-version', 'check']]
+  static paths = [['lza', 'installer-version', 'check']];
 
   static usage = Command.Usage({
     category: 'LZA Installer Version',

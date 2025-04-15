@@ -2,7 +2,7 @@ import {
   CloudFormationClient,
   DescribeStacksCommand,
   UpdateStackCommand,
-  waitUntilStackUpdateComplete
+  waitUntilStackUpdateComplete,
 } from '@aws-sdk/client-cloudformation';
 import { Config, loadConfigSync } from '../config';
 
