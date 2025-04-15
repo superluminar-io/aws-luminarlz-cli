@@ -11,6 +11,5 @@ export class LzaInstallerVersionCheck extends Command {
 
   async execute() {
     console.log(`Installer version in sync: ${await checkInstallerVersion()}`);
-    console.log('Done. ✅');
   }
 }

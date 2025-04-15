@@ -4,9 +4,7 @@ import {
   UpdateStackCommand,
   waitUntilStackUpdateComplete,
 } from '@aws-sdk/client-cloudformation';
-import { Config, loadConfigSync } from '../config';
-
-const REPOSITORY_BRANCH_NAME_PREFIX = 'release/v';
+import { awsAcceleratorInstallerStackTemplateUrl, Config, loadConfigSync } from '../config';
 
 const describeInstallerStack = async (client: CloudFormationClient, config: Config) => {
   const describeStacksResult = await client.send(new DescribeStacksCommand({
@@ -31,7 +29,7 @@ const getInstallerVersion = async (client: CloudFormationClient) => {
   if (!repositoryBranchName) {
     throw new Error(`Parameter RepositoryBranchName not found in stack ${config.awsAcceleratorInstallerStackName}`);
   }
-  return repositoryBranchName.replace(REPOSITORY_BRANCH_NAME_PREFIX, '');
+  return repositoryBranchName.replace(config.awsAcceleratorInstallerRepositoryBranchNamePrefix, '');
 };
 
 export const checkInstallerVersion = async () => {
@@ -62,7 +60,7 @@ export const updateInstallerVersion = async () => {
       if (parameter.ParameterKey === 'RepositoryBranchName') {
         return {
           ParameterKey: parameter.ParameterKey,
-          ParameterValue: REPOSITORY_BRANCH_NAME_PREFIX + config.awsAcceleratorVersion,
+          ParameterValue: config.awsAcceleratorInstallerRepositoryBranchNamePrefix + config.awsAcceleratorVersion,
         };
       }
       return {
@@ -70,6 +68,8 @@ export const updateInstallerVersion = async () => {
         UsePreviousValue: true,
       };
     }),
+    TemplateURL: awsAcceleratorInstallerStackTemplateUrl(config),
+    Capabilities: ['CAPABILITY_IAM'],
   }));
   await waitUntilStackUpdateComplete(
     {
@@ -80,4 +80,5 @@ export const updateInstallerVersion = async () => {
       StackName: config.awsAcceleratorInstallerStackName,
     },
   );
+  console.log('You need to manually check that both accelerator pipelines succeed:\nhttps://console.aws.amazon.com/codesuite/codepipeline/pipelines?pipelines-meta=eyJmIjp7InRleHQiOiJBV1NBY2NlbGVyYXRvciJ9LCJzIjp7InByb3BlcnR5IjoidXBkYXRlZCIsImRpcmVjdGlvbiI6LTF9LCJuIjozMCwiaSI6MH0');
 };

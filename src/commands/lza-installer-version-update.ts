@@ -12,6 +12,5 @@ export class LzaInstallerVersionUpdate extends Command {
 
   async execute() {
     await updateInstallerVersion();
-    console.log('Done. ✅');
   }
 }

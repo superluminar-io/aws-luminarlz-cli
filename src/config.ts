@@ -30,6 +30,8 @@ export const AWS_ACCELERATOR_PIPELINE_FAILURE_TOPIC_NAME =
 export const AWS_ACCELERATOR_SSM_PARAMETER_INSTALLER_KMS_KEY_ARN =
   '/accelerator/installer/kms/key-arn';
 export const AWS_ACCELERATOR_INSTALLER_STACK_NAME = 'AWSAccelerator-InstallerStack';
+export const AWS_ACCELERATOR_INSTALLER_REPOSITORY_BRANCH_NAME_PREFIX = 'release/v';
+export const AWS_ACCELERATOR_INSTALLER_STACK_TEMPLATE_URL_PATTERN = 'https://s3.amazonaws.com/solutions-reference/landing-zone-accelerator-on-aws/v%s/AWSAccelerator-InstallerStack.template';
 
 export interface Template {
   fileName: string;
@@ -47,6 +49,8 @@ export interface BaseConfig {
   cdkAccelAssetsBucketNamePattern: string;
   awsAcceleratorPipelineName: string;
   awsAcceleratorInstallerStackName: string;
+  awsAcceleratorInstallerRepositoryBranchNamePrefix: string;
+  awsAcceleratorInstallerStackTemplateUrlPattern: string;
 }
 
 export interface Config extends BaseConfig {
@@ -69,6 +73,8 @@ export const baseConfig: BaseConfig = {
   cdkAccelAssetsBucketNamePattern: CDK_ACCEL_ASSETS_BUCKET_NAME_PATTERN,
   awsAcceleratorPipelineName: AWS_ACCELERATOR_PIPELINE_NAME,
   awsAcceleratorInstallerStackName: AWS_ACCELERATOR_INSTALLER_STACK_NAME,
+  awsAcceleratorInstallerRepositoryBranchNamePrefix: AWS_ACCELERATOR_INSTALLER_REPOSITORY_BRANCH_NAME_PREFIX,
+  awsAcceleratorInstallerStackTemplateUrlPattern: AWS_ACCELERATOR_INSTALLER_STACK_TEMPLATE_URL_PATTERN,
 };
 
 let loadedConfig: Config | undefined;
@@ -101,3 +107,9 @@ export const awsAcceleratorConfigBucketName = (config: Config): string => {
 
 export const cdkAccelAssetsBucketNamePrefix = (config: Config): string =>
   format(config.cdkAccelAssetsBucketNamePattern, config.managementAccountId);
+
+export const awsAcceleratorInstallerStackTemplateUrl = (config: Config): string =>
+  format(
+    config.awsAcceleratorInstallerStackTemplateUrlPattern,
+    config.awsAcceleratorVersion,
+  );
