@@ -1,21 +1,21 @@
 import { Command, Option } from 'clipanion';
 import { acceleratorConfigOutSynth } from '../luminarlz/accelerator-config-out-synth';
 import { customizationsCdkSynth } from '../luminarlz/customizations-synth';
-import { awsAcceleratorSynthStage } from '../luminarlz/lza-repository-checkout';
+import { awsAcceleratorDeployStage, awsAcceleratorSynthStage } from '../luminarlz/lza-repository-checkout';
 
-export class LzaStageSynth extends Command {
-  static paths = [['lza', 'stage', 'synth']];
+export class LzaStageDeploy extends Command {
+  static paths = [['lza', 'stage', 'deploy']];
 
   static usage = Command.Usage({
     category: 'LZA Stage',
-    description: 'Synth a LZA stage.',
+    description: 'Deploy a LZA stage.',
     details: `
-      This includes synthesizing everything as well as the LZA stage.
+      This includes synthesizing everything as well as deploying the LZA stage.
     `,
   });
   stage = Option.String('--stage', {
     description: `
-      The AWS Accelerator pipeline stage to be synthesized. Defaults to \`customizations\`.
+      The AWS Accelerator pipeline stage to be synthesized & deployed. Defaults to \`customizations\`.
       You can find an overview of the different stages in the AWS Landing Zone Accelerator pipeline documentation:
       https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/awsaccelerator-pipeline.html
     `,
@@ -28,8 +28,11 @@ export class LzaStageSynth extends Command {
     await awsAcceleratorSynthStage({
       stage,
     });
+    await awsAcceleratorDeployStage({
+      stage,
+    });
     console.log(
-      `Synthesized AWS Accelerator ${stage} stage. ✅`,
+      `Deployed AWS Accelerator ${stage} stage. ✅`,
     );
   }
 }

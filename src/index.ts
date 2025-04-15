@@ -7,6 +7,7 @@ import { LzaCustomizationsStackDeploy } from './commands/lza-customizations-stac
 import { LzaCustomizationsStackSynth } from './commands/lza-customizations-stack-synth';
 import { LzaInstallerVersionCheck } from './commands/lza-installer-version-check';
 import { LzaInstallerVersionUpdate } from './commands/lza-installer-version-update';
+import { LzaStageDeploy } from './commands/lza-stage-deploy';
 import { LzaStageSynth } from './commands/lza-stage-synth';
 import { Synth } from './commands/synth';
 
@@ -22,6 +23,7 @@ cli.register(LzaCustomizationsStackSynth);
 cli.register(LzaConfigValidate);
 cli.register(LzaInstallerVersionCheck);
 cli.register(LzaInstallerVersionUpdate);
+cli.register(LzaStageDeploy);
 cli.register(LzaStageSynth);
 cli.register(Synth);
 cli.register(Deploy);

@@ -8,7 +8,7 @@ import {
 } from '@aws-sdk/client-cloudformation';
 import { fromTemporaryCredentials } from '@aws-sdk/credential-providers';
 import { loadConfigSync } from '../config';
-import { readTemplateBody } from './customizations-synth';
+import { readTemplateBody } from './lza-repository-checkout';
 
 export const customizationsDeployStack = async ({ accountId, region, stackName }: {
   accountId: string;

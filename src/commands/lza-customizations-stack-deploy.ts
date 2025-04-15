@@ -3,7 +3,8 @@ import { LzaCustomizationsStack } from './lza-customizations-stack';
 import { acceleratorConfigOutSynth } from '../luminarlz/accelerator-config-out-synth';
 import { customizationsDeployStack } from '../luminarlz/customizations-deploy-stack';
 import { customizationsPublishCdkAssets } from '../luminarlz/customizations-publish-cdk-assets';
-import { awsAcceleratorSynth, customizationsCdkSynth } from '../luminarlz/customizations-synth';
+import { customizationsCdkSynth } from '../luminarlz/customizations-synth';
+import { awsAcceleratorSynth } from '../luminarlz/lza-repository-checkout';
 
 export class LzaCustomizationsStackDeploy extends LzaCustomizationsStack {
   static paths = [[...super.namespacePath, 'deploy']];

@@ -1,7 +1,8 @@
 import { Command } from 'clipanion';
 import { LzaCustomizationsStack } from './lza-customizations-stack';
 import { acceleratorConfigOutSynth } from '../luminarlz/accelerator-config-out-synth';
-import { awsAcceleratorSynth, customizationsCdkSynth } from '../luminarlz/customizations-synth';
+import { customizationsCdkSynth } from '../luminarlz/customizations-synth';
+import { awsAcceleratorSynth } from '../luminarlz/lza-repository-checkout';
 
 export class LzaCustomizationsStackSynth extends LzaCustomizationsStack {
   static paths = [[...super.namespacePath, 'synth']];
