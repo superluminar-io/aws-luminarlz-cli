@@ -30,19 +30,19 @@ as there are parts that require some manual steps and upfront planning like the 
 ```bash
 npx @superluminar-io/aws-luminarlz-cli init
 ```
-5. Install the new dependencies:
+6. Install the new dependencies:
 ```bash
 npm install
 ```
-6. Adapt the settings in the generated `config.ts` file to your projects needs.
-7. Deploy your new LZA config using:
+7. Adapt the settings in the generated `config.ts` file to your projects needs.
+8. Deploy your new LZA config using:
 ```bash
 # You'll need the `Management` account credentials with administrator rights to be configured in your terminal.
 npm run cli -- deploy
 ```
-8. Have a look at the generated [README](blueprints/foundational/README.md) file
+9. Have a look at the generated [README](blueprints/foundational/README.md) file
    as it contains further documentation on how to use the AWS luminarlz CLI.
-9. Search for open `TODO` comments in the generated files and adapt them to your needs.
+10. Search for open `TODO` comments in the generated files and adapt them to your needs.
 
 ## Development
 
