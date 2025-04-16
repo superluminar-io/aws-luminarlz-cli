@@ -6,10 +6,6 @@ Contains the configuration for the [AWS Landing Zone Accelerator (LZA)](https://
 It uses the [aws-luminarlz-cli](https://github.com/superluminar-io/aws-luminarlz-cli)
 to manage and deploy the LZA config.
 
-## AWS access
-
-Use the [SSO sign-in page](https://<<AWS_IDENTITY_STORE_ID>>.awsapps.com/start) to get access to the AWS accounts.
-
 ### Directory structure
 
 * [templates](templates) contains the liquid templates and other files that are used to generate the LZA config.
@@ -28,9 +24,11 @@ These are configured in the [customizations-config](templates/customizations-con
 LZA supports deploying Cloudformation templates
 which in this project are generated via the [customizations](customizations/bin/customizations.ts) CDK app.
 
-## Development
+## AWS access
 
-### Prerequisites
+Use the [SSO sign-in page](https://<<AWS_IDENTITY_STORE_ID>>.awsapps.com/start) to get access to the AWS accounts.
+
+## Prerequisites
 
 * Credentials with administrator privileges for the `Management` AWS account.
 * Install the node version defined in [.node-version](.node-version).
@@ -38,6 +36,8 @@ which in this project are generated via the [customizations](customizations/bin/
 ```bash
 npm i
 ```
+
+## Development
 
 ### Manual synth of the LZA config
 

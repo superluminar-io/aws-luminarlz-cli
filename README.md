@@ -25,7 +25,8 @@ as there are parts that require some manual steps and upfront planning like the 
    - **Environment Configuration**: Leave all the defaults, `Control Tower Environment` needs to be set to `Yes`.
    - **Config Repository Configuration**: Leave all the defaults and set `Configuration Repository Location` to `s3`.
 3. Wait until the initial LZA is [successfully deployed](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/step-2.-await-initial-environment-deployment.html).
-4. Init the project using:
+4. Configure your terminal with AWS administrator credentials for the `Management` AWS account.
+5. Init the project using:
 ```bash
 npx @superluminar-io/aws-luminarlz-cli init
 ```
