@@ -76,11 +76,23 @@
       "type": "runtime"
     },
     {
+      "name": "@aws-sdk/client-organizations",
+      "type": "runtime"
+    },
+    {
       "name": "@aws-sdk/client-s3",
       "type": "runtime"
     },
     {
       "name": "@aws-sdk/client-ssm",
+      "type": "runtime"
+    },
+    {
+      "name": "@aws-sdk/client-sso-admin",
+      "type": "runtime"
+    },
+    {
+      "name": "@aws-sdk/client-sts",
       "type": "runtime"
     },
     {

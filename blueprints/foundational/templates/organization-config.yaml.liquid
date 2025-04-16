@@ -1,0 +1,45 @@
+enable: true
+organizationalUnits:
+  {% for organizationalUnit in organizationalUnits %}
+  - name: <% organizationalUnit.name %>
+    {% if organizationalUnit.ignore %}ignore: true{% endif %}
+  {% endfor %}
+serviceControlPolicies:
+  # Foundational hardening: organization hardening SCPs
+  # Source: https://aws.amazon.com/solutions/guidance/establishing-an-initial-foundation-using-control-tower-on-aws
+  - name: PreventLeavingOrganization
+    description: Prevent member accounts from leaving the organization.
+    policy: ./service-control-policies/prevent-leaving-organization.json
+    type: customerManaged
+    deploymentTargets:
+      organizationalUnits:
+        - Root
+  - name: PreventExternalSharing
+    description: Prevents users from creating resource shares that allow sharing with IAM users and roles that aren't part of the organization.
+    policy: ./service-control-policies/prevent-external-sharing.json
+    type: customerManaged
+    deploymentTargets:
+      organizationalUnits:
+        # This should be set to Root, however:
+        # Currently, IPAM resource share sets AllowExternalPrincipals to true,
+        # and there is no way to deactivate it.
+        # See: https://github.com/awslabs/landing-zone-accelerator-on-aws/issues/230
+        - Sandbox
+        - Security
+        - Workloads
+  # https://docs.aws.amazon.com/controltower/latest/controlreference/strongly-recommended-controls.html#disallow-root-access-keys
+  - name: GrRestrictRootUserAccessKeys
+    description: Secures your AWS accounts by disallowing creation of access keys for the root user.
+    policy: ./service-control-policies/restrict-root-user-access-keys.json
+    type: customerManaged
+    deploymentTargets:
+      organizationalUnits:
+        - Root
+taggingPolicies:
+  - name: EnforceDefaultTags
+    description: Enforce default tags organization wide.
+    policy: tagging-policies/default-tag-policy.json
+    deploymentTargets:
+      organizationalUnits:
+        - Root
+backupPolicies: []

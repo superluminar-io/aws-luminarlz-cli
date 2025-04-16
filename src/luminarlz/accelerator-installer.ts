@@ -5,6 +5,7 @@ import {
   waitUntilStackUpdateComplete,
 } from '@aws-sdk/client-cloudformation';
 import * as ssm from '@aws-sdk/client-ssm';
+import { ParameterNotFound } from '@aws-sdk/client-ssm';
 import {
   AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
   awsAcceleratorInstallerRepositoryBranchName,
@@ -29,21 +30,27 @@ export const cloudformationClient = (config: Config) => {
   });
 };
 
-export const getInstallerVersion = async () => {
-  const config = loadConfigSync();
-  const client = new ssm.SSMClient({ region: config.homeRegion });
-  const result = await client.send(new ssm.GetParameterCommand({
-    Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-  }));
-  if (!result.Parameter?.Value) {
-    throw new Error('AWS Accelerator version not found');
+export const getInstallerVersion = async (region: string) => {
+  const client = new ssm.SSMClient({ region: region });
+  try {
+    const result = await client.send(new ssm.GetParameterCommand({
+      Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+    }));
+    if (result.Parameter?.Value) {
+      return result.Parameter.Value;
+    }
+  } catch (error) {
+    if (error instanceof ParameterNotFound) {
+      throw new Error(`AWS Accelerator version not found. Please check if the SSM parameter exists in the region: ${region}.`);
+    }
+    throw error;
   }
-  return result.Parameter.Value;
+  throw new Error('AWS Accelerator version not found');
 };
 
 export const checkInstallerVersion = async () => {
   const config = loadConfigSync();
-  const installerVersion = await getInstallerVersion();
+  const installerVersion = await getInstallerVersion(config.homeRegion);
   if (installerVersion !== config.awsAcceleratorVersion) {
     throw new Error(`
       AWS Accelerator version mismatch.
@@ -57,7 +64,7 @@ export const checkInstallerVersion = async () => {
 
 export const updateInstallerVersion = async () => {
   const config = loadConfigSync();
-  const installerVersion = await getInstallerVersion();
+  const installerVersion = await getInstallerVersion(config.homeRegion);
 
   if (config.awsAcceleratorVersion < installerVersion) {
     throw new Error(`Version mismatch. Expected ${config.awsAcceleratorVersion} cannot be smaller than ${installerVersion}`);

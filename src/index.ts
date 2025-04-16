@@ -2,6 +2,7 @@
 
 import { Builtins, Cli } from 'clipanion';
 import { Deploy } from './commands/deploy';
+import { Init } from './commands/init';
 import { LzaConfigValidate } from './commands/lza-config-validate';
 import { LzaCustomizationsStackDeploy } from './commands/lza-customizations-stack-deploy';
 import { LzaCustomizationsStackSynth } from './commands/lza-customizations-stack-synth';
@@ -27,4 +28,5 @@ cli.register(LzaStageDeploy);
 cli.register(LzaStageSynth);
 cli.register(Synth);
 cli.register(Deploy);
+cli.register(Init);
 void cli.runExit(args);

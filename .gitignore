@@ -30,6 +30,8 @@ jspm_packages/
 *.tgz
 .yarn-integrity
 .cache
+/blueprints/**/package-lock.json
+/blueprints/**/yarn.lock
 /test-reports/
 junit.xml
 /coverage/

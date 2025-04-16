@@ -1,0 +1,119 @@
+# Define home region set in Control Tower
+homeRegion: <% homeRegion %>
+# Define regions enabled in Control Tower
+enabledRegions:
+  {% for enabledRegion in enabledRegions %}
+  - <% enabledRegion %>
+  {% endfor %}
+# tell LZA to use the Control Tower role to access the member accounts
+managementAccountAccessRole: AWSControlTowerExecution
+# using the same retention as the Control Tower defaults here
+cloudwatchLogRetentionInDays: 365
+# LZA configures a centralized bucket for CDK bootstrapping and uses the managementAccountAccessRole to access member accounts
+cdkOptions:
+  centralizeBuckets: true
+  useManagementAccessRole: true
+# enable termination protection for the Cloudformation stacks
+terminationProtection: true
+# disable opt-in regions
+enableOptInRegions: false
+# use Control Tower as a basis
+controlTower:
+  enable: true
+  landingZone:
+    version: '3.3'
+    logging:
+      loggingBucketRetentionDays: 365
+      accessLoggingBucketRetentionDays: 3650
+      organizationTrail: true
+    security:
+      enableIdentityCenterAccess: true
+  controls: []
+logging:
+  account: LogArchive
+  # disable Cloudtrail here since it's already deployed and managed by Control Tower
+  cloudtrail:
+    enable: false
+    organizationTrail: false
+    organizationTrailSettings:
+      multiRegionTrail: true
+      globalServiceEvents: true
+      managementEvents: true
+      s3DataEvents: false
+      lambdaDataEvents: false
+      sendToCloudWatchLogs: true
+      apiErrorRateInsight: false
+      apiCallRateInsight: false
+  # expire logs after one year
+  # using the same retention as the Control Tower defaults here
+  centralLogBucket:
+    lifecycleRules:
+      - enabled: true
+        id: RetentionRule
+        expiration: 365
+        noncurrentVersionExpiration: 365
+        abortIncompleteMultipartUpload: 1
+  # expire s3 access logs after 10 years
+  # using the same retention as the Control Tower defaults here
+  accessLogBucket:
+    lifecycleRules:
+      - enabled: true
+        id: RetentionRule
+        expiration: 3650
+        noncurrentVersionExpiration: 3650
+        abortIncompleteMultipartUpload: 1
+  # The ELB logs are replicated into the central log bucket, so we align the retention here
+  # Be aware that if the ELB logs contain user-related data the overall log retention might need to be adjusted accordingly to e.g. the DSGVO
+  # Although these buckets might not be in use - since it's always created by the LZA - we set the retention here anyway
+  elbLogBucket:
+    lifecycleRules:
+      - enabled: true
+        id: RetentionRule
+        expiration: 365
+        noncurrentVersionExpiration: 365
+        abortIncompleteMultipartUpload: 1
+  # Disable Session Manager activity logging by default
+  # See: https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-logging.html
+  sessionManager:
+    sendToCloudWatchLogs: false
+    sendToS3: false
+  # Disable Cloudwatch Logs forwarding because keeping them is currently not required
+  cloudwatchLogs:
+    enable: false
+# automated quota increase requests
+limits: []
+  {% comment %}
+  # Increase the default maximum number of accounts in the organization
+  - serviceCode: organizations
+    quotaCode: L-E619E033
+    desiredValue: 100
+    regions:
+      - <% globalRegion %>
+    deploymentTargets:
+      accounts:
+        - Management
+  # An example for a AWS Lambda concurrent executions quota increase request
+  # Important: New AWS accounts have reduced concurrency and memory quotas. AWS raises these quotas automatically based on your usage.
+  # See: https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html
+  - serviceCode: lambda
+    quotaCode: L-B99A9384 # Concurrent executions
+    regions:
+      - <% homeRegion %>
+    desiredValue: 400
+    deploymentTargets:
+      accounts:
+        - Audit
+  {% endcomment %}
+# topic for sending security alarms
+snsTopics:
+  deploymentTargets:
+    accounts:
+      - Management
+  topics:
+    - name: security
+      emailAddresses:
+        - <% managementNotificationsEmail %>
+# custom tags for all LZA resources can be added here
+tags:
+  - key: Owner
+    value: <% owner %>
