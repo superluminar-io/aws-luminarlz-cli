@@ -2,7 +2,7 @@
 
 ## Overview
 
-Contains the configuration for the [AWS Landing Zone Accelerator (LZA)](https://awslabs.github.io/landing-zone-accelerator-on-aws/latest/).
+Contains the configuration for the [Landing Zone Accelerator on AWS (LZA)](https://awslabs.github.io/landing-zone-accelerator-on-aws/latest/).
 It uses the [aws-luminarlz-cli](https://github.com/superluminar-io/aws-luminarlz-cli)
 to manage and deploy the LZA config.
 
@@ -17,7 +17,7 @@ to manage and deploy the LZA config.
 
 ### Customizations
 
-Part of the landing zone are [customizations](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/customizing-the-solution.html)
+Parts of the landing zone are [customizations](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/customizing-the-solution.html)
 that are deployed via the LZA.
 
 These are configured in the [customizations-config](templates/customizations-config.yaml.liquid) file.
@@ -83,9 +83,14 @@ npm run cli -- lza stage deploy # by default the customizations stage is deploye
 
 ## Deployment
 
-Deployment of the LZA config happens automatically via a GitHub Actions CD pipeline on the main branch.
-A deployment of the LZA config to s3 then triggers the [LZA Core pipeline](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/awsaccelerator-pipeline.html).
-If you want to deploy manually from local, you can use the following command:
+A deployment consists of synthesizing the LZA config and uploading it to s3.
+
+Uploading the LZA config to s3 then triggers the [LZA Core pipeline](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/awsaccelerator-pipeline.html).
+
+[//]: # (TODO: Add this if you are using a GitHub Action CD pipeline.)
+[//]: # (Deployment of the LZA config happens automatically via a GitHub Actions CD pipeline on the main branch.)
+
+If you want to deploy manually from your local machine, you can use the following command:
 
 ```bash
 npm run cli -- deploy

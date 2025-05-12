@@ -1,4 +1,4 @@
-# Feature branch workflow for synthesizing the AWS landing zone accelerator config
+# Feature branch workflow for synthesizing the Landing Zone Accelerator on AWS config
 # TODO: Uncomment this to set up a Continuous Integration pipeline
 #name: Test AWS Accelerator Config
 #
