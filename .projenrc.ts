@@ -4,7 +4,7 @@ import { NpmAccess } from 'projen/lib/javascript';
 const project = new typescript.TypeScriptProject({
   defaultReleaseBranch: 'main',
   name: '@superluminar-io/aws-luminarlz-cli',
-  description: 'An opinionated CLI to make deployment and development with the AWS Landing Zone Accelerator easier. It uses Liquidjs (and optionally CDK) to generate the LZA config.',
+  description: 'A lean, opinionated CLI to make deployment and development with the Landing Zone Accelerator on AWS easier.',
   projenrcTs: true,
   autoDetectBin: true,
   license: 'MIT',

@@ -1,4 +1,4 @@
-# Update the AWS Landing Zone Accelerator
+# Update the Landing Zone Accelerator on AWS
 
 ## Requirements
 

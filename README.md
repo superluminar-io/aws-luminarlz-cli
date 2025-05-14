@@ -1,13 +1,29 @@
 # AWS luminarlz CLI
+
+![NPM Version](https://img.shields.io/npm/v/%40superluminar-io%2Faws-luminarlz-cli)
+
 A lean, opinionated CLI
-to make deployment and development with the [AWS Landing Zone Accelerator (LZA)](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws) easier.
+to make deployment and development with the [Landing Zone Accelerator on AWS (LZA)](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws) easier.
 
-Helps you to easily set up and manage a [well-architected AWS landing zone](https://docs.aws.amazon.com/prescriptive-guidance/latest/migration-aws-environment/welcome.html). 
+## What it does and doesn't and what you need to know
 
-It uses Liquidjs and CDK to generate the LZA config.
+ - It provides a blueprint to easily set up a [well-architected AWS landing zone](https://docs.aws.amazon.com/prescriptive-guidance/latest/migration-aws-environment/welcome.html).
+ - It helps you with the deployment and maintenance of the [LZA](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws).
+ - It does not add any new features to the LZA.
+ - In case you want, it lets you [opt out](#remove-the-aws-luminarlz-cli) and remove the dependency to the AWS luminarlz CLI completely.
+ - It uses [LiquidJS](https://liquidjs.com/) to generate the LZA config files.
+ - It uses [AWS CDK](https://github.com/aws/aws-cdk) to generate the [AWS Cloudformation](https://docs.aws.amazon.com/cloudformation/) templates used for the [LZA customizations](https://awslabs.github.io/landing-zone-accelerator-on-aws/latest/faq/customizations/).
+ - It doesn't replace but consumes the [LZA Core CLI](https://awslabs.github.io/landing-zone-accelerator-on-aws/latest/developer-guide/scripts/#core-cli) by automatically cloning [a local LZA checkout](https://github.com/awslabs/landing-zone-accelerator-on-aws) with the correct LZA version.
+ - It allows you to easily use [LZA Core CLI](https://awslabs.github.io/landing-zone-accelerator-on-aws/latest/developer-guide/scripts/#core-cli) features like [LZA config validation](https://awslabs.github.io/landing-zone-accelerator-on-aws/latest/developer-guide/scripts/#configuration-validator), [LZA Core Pipeline stage synthesis or LZA Core Pipeline stage deployment](https://awslabs.github.io/landing-zone-accelerator-on-aws/latest/developer-guide/scripts/#core-cli).
+ - It's not a free lunch and still requires you to know how various AWS libraries and services work together. Here are some readings to dive into:
+   - [The LZA architecture overview](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/architecture-overview.html).
+   - [LZA is recommended to be used together with AWS Control Tower](https://awslabs.github.io/landing-zone-accelerator-on-aws/latest/faq/ct-cfct/).
+   - [LZA supports deploying custom Cloudformation Stacks, StackSets and more](https://awslabs.github.io/landing-zone-accelerator-on-aws/latest/faq/customizations/).
+   - An LZA installation comes with the [Installer Pipeline](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/awsaccelerator-installer.html) & the [Core Pipeline](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/awsaccelerator-pipeline.html).
 
-In case you want,
-it lets you [opt out](#remove-the-aws-luminarlz-cli) and remove the dependency to the AWS luminarlz CLI completely.
+### Architecture diagram
+
+![AWS luminarlz CLI Architecture diagram](docs/architecture-diagram.png)
 
 ## Usage
 
@@ -15,7 +31,7 @@ it lets you [opt out](#remove-the-aws-luminarlz-cli) and remove the dependency t
 
 This is a step-by-step guide to initialize a new AWS landing zone using the luminarlz CLI.
 
-We'll use the `foundational` blueprint that is heavily aligned with the [Guidance for Establishing an Initial Foundation using Control Tower on AWS](https://aws.amazon.com/solutions/guidance/establishing-an-initial-foundation-using-control-tower-on-aws).
+We'll use the [foundational blueprint](blueprints/foundational/) that is heavily aligned with the [Guidance for Establishing an Initial Foundation using Control Tower on AWS](https://aws.amazon.com/solutions/guidance/establishing-an-initial-foundation-using-control-tower-on-aws).
 
 We recommend reading through the [Guidance](https://aws.amazon.com/solutions/guidance/establishing-an-initial-foundation-using-control-tower-on-aws) first
 as there are parts that require some manual steps and upfront planning like the root email strategy.
@@ -34,15 +50,20 @@ npx @superluminar-io/aws-luminarlz-cli init
 ```bash
 npm install
 ```
-7. Adapt the settings in the generated `config.ts` file to your projects needs.
-8. Deploy your new LZA config using:
+7. Adapt the settings and fill in the open `TODOS` in the generated `config.ts` file.
+8. Have a look at the generated [README](blueprints/foundational/README.md) file
+   as it contains further documentation on how to use the AWS luminarlz CLI.
+9. Deploy your new LZA config using:
 ```bash
 # You'll need the `Management` account credentials with administrator rights to be configured in your terminal.
 npm run cli -- deploy
 ```
-9. Have a look at the generated [README](blueprints/foundational/README.md) file
-   as it contains further documentation on how to use the AWS luminarlz CLI.
 10. Search for open `TODO` comments in the generated files and adapt them to your needs.
+
+### Other CLI commands
+
+Documentation for the other CLI commands can be found in the README generated when intializing a new AWS landing zone.
+Have a look at the [foundational blueprint README](blueprints/foundational/README.md).
 
 ## Development
 

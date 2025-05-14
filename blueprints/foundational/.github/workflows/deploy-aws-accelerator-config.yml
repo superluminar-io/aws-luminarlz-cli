@@ -1,4 +1,4 @@
-# Main branch only workflow for deploying the AWS landing zone accelerator config
+# Main branch only workflow for deploying the Landing Zone Accelerator on AWS config
 # TODO: Uncomment this to set up a Continuous Deployment pipeline
 #name: Deploy AWS Accelerator Config
 #

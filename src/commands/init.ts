@@ -25,7 +25,7 @@ export class Init extends Command {
     description: 'The email address used for the AWS accounts root emails.',
   });
   region = Option.String('--region', {
-    description: 'The region the AWS Landing Zone Accelerator has been installed in (the home region).',
+    description: 'The region the Landing Zone Accelerator on AWS has been installed in (the home region).',
   });
 
   async execute() {
@@ -45,7 +45,7 @@ export class Init extends Command {
         }
       }
       if (!this.region) {
-        this.region = await rl.question('Please provide the region the AWS Landing Zone Accelerator has been installed in (the home region): ');
+        this.region = await rl.question('Please provide the region the Landing Zone Accelerator on AWS has been installed in (the home region): ');
         if (this.region === '') {
           throw new Error(`Invalid region: ${this.region}`);
         }
@@ -59,7 +59,7 @@ export class Init extends Command {
       console.log(`AWS Organizations organization ID: ${organizationId}`);
       console.log(`AWS Organizations root Organizational Unit (OU) ID: ${rootOuId}`);
       console.log(`AWS accounts root email address: ${accountsRootEmail}`);
-      console.log(`AWS Landing Zone Accelerator version: ${installerVersion}`);
+      console.log(`Landing Zone Accelerator on AWS version: ${installerVersion}`);
       console.log(`AWS home region: ${region}`);
     } finally {
       rl.close();

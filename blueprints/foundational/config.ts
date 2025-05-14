@@ -6,7 +6,7 @@ import {
 } from '@superluminar-io/aws-luminarlz-cli/lib/config';
 
 /**
- * The deployed version of the AWS Landing zone accelerator.
+ * The deployed version of the Landing Zone Accelerator on AWS.
  */
 export const AWS_ACCELERATOR_VERSION = '<<AWS_ACCELERATOR_VERSION>>';
 
