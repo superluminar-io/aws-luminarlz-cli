@@ -1,4 +1,4 @@
-import { typescript } from 'projen';
+import { typescript, github } from 'projen';
 import { NpmAccess } from 'projen/lib/javascript';
 
 const project = new typescript.TypeScriptProject({
@@ -32,5 +32,8 @@ const project = new typescript.TypeScriptProject({
   ],
   sampleCode: false,
   gitignore: ['/blueprints/**/package-lock.json', '/blueprints/**/yarn.lock'],
+  githubOptions: {
+    projenCredentials: github.GithubCredentials.fromApp(),
+  },
 });
 project.synth();
