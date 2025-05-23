@@ -109,10 +109,8 @@ function withSubAddress(email: string, subAddress: string): string {
 
 /**
  * The accounts are deployed and managed via the LZA.
- * The LZA has the concept of Mandatory and Workload accounts. Not to be confused with accounts in the Workloads OU.
- * Mandatory accounts are required for the LZA to work and shouldn't be removed.
- * Workload accounts are optional and can be added as needed.
- * To remove a Workload account, you need to manually move it to the Suspended OU (or any other ignored OU) before removing it here.
+ * The LZA has the concept of Mandatory and Workload accounts.
+ * Not to be confused with accounts in the Workloads OU.
  */
 export interface Account {
   /**
@@ -143,6 +141,10 @@ export interface Account {
 interface MandatoryAccount extends Account {
   name: 'Management' | 'LogArchive' | 'Audit';
 }
+
+/**
+ * Mandatory accounts are required for the LZA to work and shouldn't be removed.
+ */
 const mandatoryAccounts: MandatoryAccount[] = [
   {
     name: 'Management',
@@ -166,6 +168,11 @@ const mandatoryAccounts: MandatoryAccount[] = [
     owner: Groups.awsAdministrator,
   },
 ];
+/**
+ * Workload accounts are optional and can be added as needed.
+ * To remove a Workload account, you need to manually move it to the Suspended OU (or any other ignored OU) before removing it here.
+ * TODO: Adapt the workload accounts to your needs.
+ */
 const workloadAccounts: Account[] = [
   // AWS Account where production workloads are deployed.
   {
