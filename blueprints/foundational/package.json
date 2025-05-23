@@ -6,7 +6,7 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.148",
-    "@types/node": "22.7.9",
+    "@types/node": "22.15.21",
     "@types/object-hash": "^3.0.6",
     "aws-cdk": "2.1002.0",
     "ts-node": "^10.9.2",
