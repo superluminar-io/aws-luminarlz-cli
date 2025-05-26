@@ -30,7 +30,7 @@ export class Init extends Command {
 
   async execute() {
     const blueprint = this.blueprint || 'foundational';
-    if (blueprintExists(blueprint)) {
+    if (!blueprintExists(blueprint)) {
       throw new Error(`Blueprint ${blueprint} does not exist. Please check the available blueprints at ${AWS_LUMINARLZ_BLUEPRINTS_GITHUB_URL}`);
     }
     const rl = readline.createInterface({
