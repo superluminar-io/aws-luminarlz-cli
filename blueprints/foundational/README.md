@@ -79,6 +79,9 @@ npm run cli -- lza stage synth
 
 # synth & deploy
 npm run cli -- lza stage deploy # by default the customizations stage is deployed
+
+# to deploy another stage have a look at the help
+npm run cli -- lza stage deploy --help
 ```
 
 ## Deployment
@@ -107,8 +110,10 @@ or use this CLI as follows:
 npm run cli -- lza installer-version check
 ```
 2. Update the `awsAcceleratorVersion` of the config object in the [config.ts](config.ts) file with a newer version.
-3. Trigger the version update:
+3. Make sure to check that [the personal GitHub access token used by the LZA is still valid](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/problem-github-personal-access-token-expired.html).
+   Otherwise, update [the Secret in the Secret Manager](https://<<AWS_HOME_REGION>>.console.aws.amazon.com/secretsmanager/secret?name=accelerator%2Fgithub-token).
+4. Trigger the version update:
 ```bash
 npm run cli -- lza installer-version update
 ```
-4. Wait and manually check that [both accelerator pipelines](https://console.aws.amazon.com/codesuite/codepipeline/pipelines?pipelines-meta=eyJmIjp7InRleHQiOiJBV1NBY2NlbGVyYXRvciJ9LCJzIjp7InByb3BlcnR5IjoidXBkYXRlZCIsImRpcmVjdGlvbiI6LTF9LCJuIjozMCwiaSI6MH0) succeeded with the new version.
+5. Wait and manually check that [both accelerator pipelines](https://console.aws.amazon.com/codesuite/codepipeline/pipelines?pipelines-meta=eyJmIjp7InRleHQiOiJBV1NBY2NlbGVyYXRvciJ9LCJzIjp7InByb3BlcnR5IjoidXBkYXRlZCIsImRpcmVjdGlvbiI6LTF9LCJuIjozMCwiaSI6MH0) succeeded with the new version.
