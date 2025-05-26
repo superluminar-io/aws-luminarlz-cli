@@ -12,7 +12,7 @@ const buildBlueprintPath = (blueprintName: string) => {
 };
 
 export const blueprintExists = (blueprintName: string) => {
-  return !fs.existsSync(buildBlueprintPath(blueprintName));
+  return fs.existsSync(buildBlueprintPath(blueprintName));
 };
 
 const getAwsAccountId = async (region: string) => {
