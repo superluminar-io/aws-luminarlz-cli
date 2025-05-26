@@ -1,8 +1,8 @@
 import { Command } from 'clipanion';
 import { LzaCustomizationsStack } from './lza-customizations-stack';
-import { acceleratorConfigOutSynth } from '../luminarlz/accelerator-config-out-synth';
-import { customizationsCdkSynth } from '../luminarlz/customizations-synth';
-import { awsAcceleratorSynth } from '../luminarlz/lza-repository-checkout';
+import { synthConfigOut } from '../core/accelerator/config/synth';
+import { synthStage } from '../core/accelerator/repository/core_cli';
+import { customizationsCdkSynth } from '../core/customizations/synth';
 
 export class LzaCustomizationsStackSynth extends LzaCustomizationsStack {
   static paths = [[...super.namespacePath, 'synth']];
@@ -17,8 +17,9 @@ export class LzaCustomizationsStackSynth extends LzaCustomizationsStack {
 
   async execute() {
     await customizationsCdkSynth(this.stackName);
-    await acceleratorConfigOutSynth();
-    await awsAcceleratorSynth({
+    await synthConfigOut();
+    await synthStage({
+      stage: 'customizations',
       accountId: this.accountId,
       region: this.regionOrHomeRegion,
     });

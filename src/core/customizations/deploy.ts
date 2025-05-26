@@ -7,8 +7,8 @@ import {
   waitUntilStackUpdateComplete,
 } from '@aws-sdk/client-cloudformation';
 import { fromTemporaryCredentials } from '@aws-sdk/credential-providers';
-import { loadConfigSync } from '../config';
-import { readTemplateBody } from './lza-repository-checkout';
+import { loadConfigSync } from '../../config';
+import { readCustomizationsStackTemplateBody } from '../accelerator/repository/checkout';
 
 export const customizationsDeployStack = async ({ accountId, region, stackName }: {
   accountId: string;
@@ -17,7 +17,7 @@ export const customizationsDeployStack = async ({ accountId, region, stackName }
 }) => {
   const config = loadConfigSync();
 
-  const templateBody = readTemplateBody({
+  const templateBody = readCustomizationsStackTemplateBody({
     accountId: accountId,
     region: region,
     stackName: stackName,

@@ -4,11 +4,11 @@ import * as organizations from '@aws-sdk/client-organizations';
 import * as ssoAdmin from '@aws-sdk/client-sso-admin';
 import * as sts from '@aws-sdk/client-sts';
 import { Liquid } from 'liquidjs';
-import { getInstallerVersion } from './accelerator-installer';
-import { currentExecutionPath } from '../util/path';
+import { getVersion } from '../accelerator/installer/installer';
+import { resolveProjectPath } from '../util/path';
 
 const buildBlueprintPath = (blueprintName: string) => {
-  return path.join(__dirname, '..', '..', 'blueprints', blueprintName);
+  return path.join(__dirname, '..', '..', '..', 'blueprints', blueprintName);
 };
 
 export const blueprintExists = (blueprintName: string) => {
@@ -63,12 +63,12 @@ export const renderBlueprint = async (blueprintName: string, { forceOverwrite, a
   region: string;
 }) => {
   const managementAccountId = await getAwsAccountId(region);
-  const installerVersion = await getInstallerVersion(region);
+  const installerVersion = await getVersion(region);
   const organizationId = await getOrganizationId(region);
   const rootOuId = await getRootOuId(region);
   const identityStoreId = await getIdentityStoreId(region);
 
-  const projectRoot = currentExecutionPath();
+  const projectRoot = resolveProjectPath();
   const blueprintRoot = buildBlueprintPath(blueprintName);
   const liquid = new Liquid({
     root: blueprintRoot,
@@ -94,7 +94,7 @@ export const renderBlueprint = async (blueprintName: string, { forceOverwrite, a
     const target = path.join(projectRoot, filePath);
     // If is a directory, ensure to create it in the project root
     if (fs.lstatSync(source).isDirectory()) {
-      // Create directory in the output path if it doesn't exist
+      // Create the directory in the output path if it doesn't exist
       if (!fs.existsSync(target)) {
         fs.mkdirSync(target);
       }

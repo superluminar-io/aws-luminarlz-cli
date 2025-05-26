@@ -1,7 +1,7 @@
 import { Command, Option } from 'clipanion';
-import { acceleratorConfigOutSynth } from '../luminarlz/accelerator-config-out-synth';
-import { customizationsCdkSynth } from '../luminarlz/customizations-synth';
-import { awsAcceleratorDeployStage, awsAcceleratorSynthStage } from '../luminarlz/lza-repository-checkout';
+import { synthConfigOut } from '../core/accelerator/config/synth';
+import { deployStage, synthStage } from '../core/accelerator/repository/core_cli';
+import { customizationsCdkSynth } from '../core/customizations/synth';
 
 export class LzaStageDeploy extends Command {
   static paths = [['lza', 'stage', 'deploy']];
@@ -24,11 +24,11 @@ export class LzaStageDeploy extends Command {
   async execute() {
     const stage = this.stage ?? 'customizations';
     await customizationsCdkSynth();
-    await acceleratorConfigOutSynth();
-    await awsAcceleratorSynthStage({
+    await synthConfigOut();
+    await synthStage({
       stage,
     });
-    await awsAcceleratorDeployStage({
+    await deployStage({
       stage,
     });
     console.log(

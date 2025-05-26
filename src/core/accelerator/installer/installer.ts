@@ -12,7 +12,7 @@ import {
   awsAcceleratorInstallerStackTemplateUrl,
   Config,
   loadConfigSync,
-} from '../config';
+} from '../../../config';
 
 const describeInstallerStack = async (client: CloudFormationClient, config: Config) => {
   const describeStacksResult = await client.send(new DescribeStacksCommand({
@@ -24,13 +24,13 @@ const describeInstallerStack = async (client: CloudFormationClient, config: Conf
   return describeStacksResult.Stacks[0];
 };
 
-export const cloudformationClient = (config: Config) => {
+const cloudformationClient = (config: Config) => {
   return new CloudFormationClient({
     region: config.homeRegion,
   });
 };
 
-export const getInstallerVersion = async (region: string) => {
+export const getVersion = async (region: string) => {
   const client = new ssm.SSMClient({ region: region });
   try {
     const result = await client.send(new ssm.GetParameterCommand({
@@ -48,9 +48,9 @@ export const getInstallerVersion = async (region: string) => {
   throw new Error('AWS Accelerator version not found');
 };
 
-export const checkInstallerVersion = async () => {
+export const checkVersion = async () => {
   const config = loadConfigSync();
-  const installerVersion = await getInstallerVersion(config.homeRegion);
+  const installerVersion = await getVersion(config.homeRegion);
   if (installerVersion !== config.awsAcceleratorVersion) {
     throw new Error(`
       AWS Accelerator version mismatch.
@@ -62,9 +62,9 @@ export const checkInstallerVersion = async () => {
   return installerVersion;
 };
 
-export const updateInstallerVersion = async () => {
+export const updateVersion = async () => {
   const config = loadConfigSync();
-  const installerVersion = await getInstallerVersion(config.homeRegion);
+  const installerVersion = await getVersion(config.homeRegion);
 
   if (config.awsAcceleratorVersion < installerVersion) {
     throw new Error(`Version mismatch. Expected ${config.awsAcceleratorVersion} cannot be smaller than ${installerVersion}`);

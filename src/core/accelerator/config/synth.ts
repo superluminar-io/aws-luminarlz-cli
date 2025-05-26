@@ -1,17 +1,17 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Liquid } from 'liquidjs';
-import { loadConfigSync } from '../config';
-import { currentExecutionPath } from '../util/path';
+import { loadConfigSync } from '../../../config';
+import { resolveProjectPath } from '../../util/path';
 
-export const acceleratorConfigOutSynth = async () => {
+export const synthConfigOut = async () => {
   const config = loadConfigSync();
-  const templatePath = currentExecutionPath(
+  const templatePath = resolveProjectPath(
     config.awsAcceleratorConfigTemplates,
   );
 
   // create aws accelerator config out path
-  const outPath = currentExecutionPath(config.awsAcceleratorConfigOutPath);
+  const outPath = resolveProjectPath(config.awsAcceleratorConfigOutPath);
   if (!fs.existsSync(outPath)) {
     fs.mkdirSync(outPath);
   }
@@ -63,14 +63,14 @@ export const acceleratorConfigOutSynth = async () => {
 
   // copy all cdk out templates to the aws accelerator config out path
   const cdkOutTemplatesFiles = fs
-    .readdirSync(currentExecutionPath(config.cdkOutPath), {
+    .readdirSync(resolveProjectPath(config.cdkOutPath), {
       recursive: true,
     })
     .map((fileName) => {
       if (!fileName || typeof fileName !== 'string') {
         throw new Error('Invalid file name');
       }
-      return currentExecutionPath(config.cdkOutPath, fileName);
+      return resolveProjectPath(config.cdkOutPath, fileName);
     })
     .filter((fileName) => {
       return (

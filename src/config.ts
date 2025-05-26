@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { format } from 'util';
 import { readConfigFile, transpileModule } from 'typescript';
-import { currentExecutionPath } from './util/path';
+import { resolveProjectPath } from './core/util/path';
 
 
 export const AWS_ACCELERATOR_CONFIG_OUT_PATH = 'aws-accelerator-config.out';
@@ -83,8 +83,8 @@ export const loadConfigSync = (): Config => {
   if (loadedConfig) {
     return loadedConfig;
   }
-  const tsFile = currentExecutionPath('config.ts');
-  const jsFile = currentExecutionPath('config.js');
+  const tsFile = resolveProjectPath('config.ts');
+  const jsFile = resolveProjectPath('config.js');
 
   // Transpile the TypeScript config file to JavaScript so we can require it event if this is executed only with nodejs
   const output = transpileModule(fs.readFileSync(tsFile, 'utf8'), {

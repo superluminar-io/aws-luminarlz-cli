@@ -1,6 +1,6 @@
 import * as readline from 'node:readline/promises';
 import { Command, Option } from 'clipanion';
-import { blueprintExists, renderBlueprint } from '../luminarlz/blueprint';
+import { blueprintExists, renderBlueprint } from '../core/blueprint/blueprint';
 
 const AWS_LUMINARLZ_BLUEPRINTS_GITHUB_URL = 'https://github.com/superluminar-io/aws-luminarlz-cli/tree/main/blueprints';
 

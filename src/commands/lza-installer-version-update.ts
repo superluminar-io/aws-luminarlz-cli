@@ -1,5 +1,5 @@
 import { Command } from 'clipanion';
-import { updateInstallerVersion } from '../luminarlz/accelerator-installer';
+import { updateVersion } from '../core/accelerator/installer/installer';
 
 export class LzaInstallerVersionUpdate extends Command {
   static paths = [['lza', 'installer-version', 'update']];
@@ -11,6 +11,6 @@ export class LzaInstallerVersionUpdate extends Command {
   });
 
   async execute() {
-    await updateInstallerVersion();
+    await updateVersion();
   }
 }
