@@ -1,6 +1,6 @@
 import { Command } from 'clipanion';
-import { acceleratorConfigOutSynth } from '../luminarlz/accelerator-config-out-synth';
-import { customizationsCdkSynth } from '../luminarlz/customizations-synth';
+import { synthConfigOut } from '../core/accelerator/config/synth';
+import { customizationsCdkSynth } from '../core/customizations/synth';
 
 export class Synth extends Command {
   static paths = [['synth']];
@@ -11,7 +11,7 @@ export class Synth extends Command {
 
   async execute() {
     await customizationsCdkSynth();
-    await acceleratorConfigOutSynth();
+    await synthConfigOut();
     console.log('Done. ✅');
   }
 }

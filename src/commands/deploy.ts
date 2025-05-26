@@ -1,8 +1,8 @@
 import { Command } from 'clipanion';
-import { acceleratorConfigOutPublish } from '../luminarlz/accelerator-config-out-publish';
-import { acceleratorConfigOutSynth } from '../luminarlz/accelerator-config-out-synth';
-import { customizationsPublishCdkAssets } from '../luminarlz/customizations-publish-cdk-assets';
-import { customizationsCdkSynth } from '../luminarlz/customizations-synth';
+import { publishConfigOut } from '../core/accelerator/config/publish';
+import { synthConfigOut } from '../core/accelerator/config/synth';
+import { customizationsPublishCdkAssets } from '../core/customizations/assets';
+import { customizationsCdkSynth } from '../core/customizations/synth';
 
 export class Deploy extends Command {
   static paths = [['deploy']];
@@ -13,9 +13,9 @@ export class Deploy extends Command {
 
   async execute() {
     await customizationsCdkSynth();
-    await acceleratorConfigOutSynth();
+    await synthConfigOut();
     await customizationsPublishCdkAssets();
-    await acceleratorConfigOutPublish();
+    await publishConfigOut();
     console.log('Done. ✅');
   }
 }

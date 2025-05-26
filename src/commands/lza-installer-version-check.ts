@@ -1,5 +1,5 @@
 import { Command } from 'clipanion';
-import { checkInstallerVersion } from '../luminarlz/accelerator-installer';
+import { checkVersion } from '../core/accelerator/installer/installer';
 
 export class LzaInstallerVersionCheck extends Command {
   static paths = [['lza', 'installer-version', 'check']];
@@ -10,6 +10,6 @@ export class LzaInstallerVersionCheck extends Command {
   });
 
   async execute() {
-    console.log(`Installer version in sync: ${await checkInstallerVersion()}`);
+    console.log(`Installer version in sync: ${await checkVersion()}`);
   }
 }

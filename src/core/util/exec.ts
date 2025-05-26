@@ -1,7 +1,7 @@
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
 
-export const execProm = (
+export const executeCommand = (
   command: Parameters<typeof exec>[0],
   opts?: Parameters<typeof exec>[1],
 ) => {

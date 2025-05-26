@@ -1,13 +1,13 @@
 import * as fs from 'fs';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import * as ziplib from 'zip-lib';
-import { awsAcceleratorConfigBucketName, loadConfigSync } from '../config';
-import { currentExecutionPath } from '../util/path';
+import { awsAcceleratorConfigBucketName, loadConfigSync } from '../../../config';
+import { resolveProjectPath } from '../../util/path';
 
-export const acceleratorConfigOutPublish = async () => {
+export const publishConfigOut = async () => {
   const config = loadConfigSync();
-  const outPath = currentExecutionPath(config.awsAcceleratorConfigOutPath);
-  const zipFile = currentExecutionPath(
+  const outPath = resolveProjectPath(config.awsAcceleratorConfigOutPath);
+  const zipFile = resolveProjectPath(
     `${config.awsAcceleratorConfigOutPath}.zip`,
   );
 

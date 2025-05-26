@@ -1,7 +1,7 @@
 import { Command } from 'clipanion';
-import { validateConfig } from '../luminarlz/accelerator-config';
-import { acceleratorConfigOutSynth } from '../luminarlz/accelerator-config-out-synth';
-import { customizationsCdkSynth } from '../luminarlz/customizations-synth';
+import { synthConfigOut } from '../core/accelerator/config/synth';
+import { validate } from '../core/accelerator/repository/core_cli';
+import { customizationsCdkSynth } from '../core/customizations/synth';
 
 export class LzaConfigValidate extends Command {
   static paths = [['lza', 'config', 'validate']];
@@ -13,8 +13,8 @@ export class LzaConfigValidate extends Command {
 
   async execute() {
     await customizationsCdkSynth();
-    await acceleratorConfigOutSynth();
-    await validateConfig();
+    await synthConfigOut();
+    await validate();
     console.log(
       'Validated AWS Accelerator config. ✅',
     );
