@@ -10,7 +10,7 @@ import {
 import { loadConfigSync } from '../../config';
 import { resolveProjectPath } from '../util/path';
 
-export const customizationsPublishCdkAssets = async () => {
+export const customizationsPublishCdkAssets = async (): Promise<void> => {
   const config = loadConfigSync();
   const assetFileNames = fs
     .readdirSync(resolveProjectPath(config.cdkOutPath), {

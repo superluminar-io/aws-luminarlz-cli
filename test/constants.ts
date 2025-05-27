@@ -1,0 +1,10 @@
+export const TEST_EMAIL = 'test@example.com';
+export const TEST_MASTER_EMAIL = 'master@example.com';
+export const TEST_ACCOUNT_ID = '123456789012';
+export const TEST_USER_ID = 'AROAEXAMPLE123';
+export const TEST_REGION = 'us-east-1';
+export const TEST_ORGANIZATION_ID = 'o-abcdef1234';
+export const TEST_ROOT_ID = 'r-abcd1234';
+export const TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_1 = '1.12.1';
+export const TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2 = '1.12.2';
+export const TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_3 = '1.12.3';
