@@ -30,6 +30,9 @@ const project = new typescript.TypeScriptProject({
     'typescript',
     'zip-lib',
   ],
+  devDeps: [
+    'aws-sdk-client-mock',
+  ],
   sampleCode: false,
   gitignore: ['/blueprints/**/package-lock.json', '/blueprints/**/yarn.lock'],
   githubOptions: {
