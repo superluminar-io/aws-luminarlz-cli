@@ -99,6 +99,11 @@ export const renderBlueprint = async (blueprintName: string, { forceOverwrite, a
         fs.mkdirSync(target);
       }
     } else {
+      // if a target file already exists, skip it until force overwrite is enabled
+      if (!forceOverwrite && fs.existsSync(target)) {
+        console.log(`Skipping ${target} because it already exists.`);
+        continue;
+      }
       // render the file
       const output = liquid.renderFileSync(
         filePath,
@@ -112,11 +117,6 @@ export const renderBlueprint = async (blueprintName: string, { forceOverwrite, a
           AWS_IDENTITY_STORE_ID: identityStoreId,
         },
       );
-      // if a target file already exists, skip it until force overwrite is enabled
-      if (!forceOverwrite && fs.existsSync(target)) {
-        console.log(`Skipping ${target} because it already exists.`);
-        continue;
-      }
       fs.writeFileSync(target, output);
     }
   }
