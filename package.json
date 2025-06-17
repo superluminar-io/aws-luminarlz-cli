@@ -59,6 +59,7 @@
     "@aws-sdk/client-sso-admin": "^3.816.0",
     "@aws-sdk/client-sts": "^3.816.0",
     "@aws-sdk/credential-providers": "^3.816.0",
+    "aws-sdk-client-mock": "^4.1.0",
     "cdk-assets": "^3.2.3",
     "clipanion": "^3.2.1",
     "liquidjs": "^10.21.1",

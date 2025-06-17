@@ -24,6 +24,7 @@ const project = new typescript.TypeScriptProject({
     '@aws-sdk/client-sso-admin',
     '@aws-sdk/client-sts',
     '@aws-sdk/credential-providers',
+    'aws-sdk-client-mock',
     'cdk-assets',
     'clipanion',
     'liquidjs',
