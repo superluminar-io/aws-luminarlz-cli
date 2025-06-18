@@ -6,10 +6,10 @@ import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { ListInstancesCommand, SSOAdminClient } from '@aws-sdk/client-sso-admin';
 import { GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
 import { mockClient } from 'aws-sdk-client-mock';
-import { Init } from '../src/commands/init';
+import { Init } from '../../src/commands/init';
 
 // Mock executeCommand
-jest.mock('../src/core/util/exec', () => ({
+jest.mock('../../src/core/util/exec', () => ({
   executeCommand: jest.fn().mockResolvedValue({ stdout: '', stderr: '' }),
 }));
 
