@@ -28,8 +28,8 @@ export const validate = async () => {
   );
 };
 
-export const synthStage = async ({ stage, accountId, region }: {
-  stage: string;
+export const synthStages = async ({ stage, accountId, region }: {
+  stage?: string;
   accountId?: string;
   region?: string;
 }) => {
@@ -45,7 +45,7 @@ export const synthStage = async ({ stage, accountId, region }: {
   await ensureCheckoutExists();
 
   await executeCommand(
-    `yarn run ts-node --transpile-only cdk.ts synth --stage ${stage} --config-dir "${lzaConfigPath}" --partition aws${region ? ` --region "${region}"` : ''}${accountId ? ` --account "${accountId}"` : ''}`,
+    `yarn run ts-node --transpile-only cdk.ts synth${stage ? ' --stage ' + stage : ''} --config-dir "${lzaConfigPath}" --partition aws${region ? ` --region "${region}"` : ''}${accountId ? ` --account "${accountId}"` : ''}`,
     {
       cwd: path.join(
         checkoutPath,
@@ -71,6 +71,29 @@ export const deployStage = async ({ stage }: {
 
   await executeCommand(
     `yarn run ts-node --transpile-only cdk.ts deploy --require-approval never --stage ${stage} --config-dir "${lzaConfigPath}" --partition aws`,
+    {
+      cwd: path.join(
+        checkoutPath,
+        LZA_ACCELERATOR_PACKAGE_PATH,
+      ),
+    },
+  );
+};
+
+export const bootstrapStage = async () => {
+  const config = loadConfigSync();
+  const lzaConfigPath = resolveProjectPath(
+    config.awsAcceleratorConfigOutPath,
+  );
+
+  const checkoutPath = getCheckoutPath();
+
+  await checkVersion();
+
+  await ensureCheckoutExists();
+
+  await executeCommand(
+    `yarn run ts-node --transpile-only cdk.ts bootstrap --require-approval never --config-dir "${lzaConfigPath}" --partition aws`,
     {
       cwd: path.join(
         checkoutPath,

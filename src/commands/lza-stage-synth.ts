@@ -1,7 +1,7 @@
 import { Command } from 'clipanion';
 import { LzaStage } from './lza-stage';
 import { synthConfigOut } from '../core/accelerator/config/synth';
-import { synthStage } from '../core/accelerator/repository/core_cli';
+import { synthStages } from '../core/accelerator/repository/core_cli';
 import { customizationsCdkSynth } from '../core/customizations/synth';
 
 export class LzaStageSynth extends LzaStage {
@@ -9,7 +9,7 @@ export class LzaStageSynth extends LzaStage {
 
   static usage = Command.Usage({
     category: super.category,
-    description: 'Synth a LZA stage.',
+    description: 'Synthesize a LZA stage.',
     details: `
       This includes synthesizing everything as well as the LZA stage.
     `,
@@ -19,11 +19,11 @@ export class LzaStageSynth extends LzaStage {
     const stage = this.stageOrDefault;
     await customizationsCdkSynth();
     await synthConfigOut();
-    await synthStage({
+    await synthStages({
       stage,
     });
     console.log(
-      `Synthesized AWS Accelerator ${stage} stage. ✅`,
+      `Synthesized LZA ${stage} stage. ✅`,
     );
   }
 }
