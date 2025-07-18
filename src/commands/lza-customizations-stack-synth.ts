@@ -9,7 +9,7 @@ export class LzaCustomizationsStackSynth extends LzaCustomizationsStack {
 
   static usage = Command.Usage({
     category: super.category,
-    description: 'Synth a single customizations stack for an account and optionally a region.',
+    description: 'Synthesize a single customizations stack for an account and optionally a region.',
     details: `
       This includes synthesizing the customizations CDK stack and the LZA stack.
     `,
@@ -24,7 +24,7 @@ export class LzaCustomizationsStackSynth extends LzaCustomizationsStack {
       region: this.regionOrHomeRegion,
     });
     console.log(
-      `Synthesized AWS Accelerator customizations stack: ${this.stackName} for account: ${this.accountId} and region: ${(this.regionOrHomeRegion)}. ✅`,
+      `Synthesized LZA customizations stack: ${this.stackName} for account: ${this.accountId} and region: ${this.regionOrHomeRegion}. ✅`,
     );
   }
 }

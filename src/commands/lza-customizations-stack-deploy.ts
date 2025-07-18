@@ -11,7 +11,7 @@ export class LzaCustomizationsStackDeploy extends LzaCustomizationsStack {
 
   static usage = Command.Usage({
     category: super.category,
-    description: 'Synth and deploy a single customizations stack for an account and optionally a region.',
+    description: 'Synthesize and deploy a single customizations stack for an account and optionally a region.',
     details: `
       This includes synthesizing the customizations CDK stack as well as synthesizing and deploying the LZA stack.
     `,
@@ -32,7 +32,7 @@ export class LzaCustomizationsStackDeploy extends LzaCustomizationsStack {
       stackName: this.stackName,
     });
     console.log(
-      `Deployed AWS Accelerator customizations stack: ${this.stackName} for account: ${this.accountId} and region: ${(this.regionOrHomeRegion)}. ✅`,
+      `Deployed LZA customizations stack: ${this.stackName} for account: ${this.accountId} and region: ${this.regionOrHomeRegion}. ✅`,
     );
   }
 }

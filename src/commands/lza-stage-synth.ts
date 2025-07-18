@@ -9,7 +9,7 @@ export class LzaStageSynth extends LzaStage {
 
   static usage = Command.Usage({
     category: super.category,
-    description: 'Synth a LZA stage.',
+    description: 'Synthesize a LZA stage.',
     details: `
       This includes synthesizing everything as well as the LZA stage.
     `,
@@ -23,7 +23,7 @@ export class LzaStageSynth extends LzaStage {
       stage,
     });
     console.log(
-      `Synthesized AWS Accelerator ${stage} stage. ✅`,
+      `Synthesized LZA ${stage} stage. ✅`,
     );
   }
 }

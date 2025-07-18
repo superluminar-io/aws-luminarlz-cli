@@ -26,7 +26,7 @@ export class LzaStageDeploy extends LzaStage {
       stage,
     });
     console.log(
-      `Deployed AWS Accelerator ${stage} stage. ✅`,
+      `Deployed LZA ${stage} stage. ✅`,
     );
   }
 }
