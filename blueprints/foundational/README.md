@@ -17,12 +17,12 @@ to manage and deploy the LZA config.
 
 ### Customizations
 
-Parts of the landing zone are [customizations](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/customizing-the-solution.html)
+Parts of the landing zone are [Customizations](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/customizing-the-solution.html)
 that are deployed via the LZA.
 
 These are configured in the [customizations-config](templates/customizations-config.yaml.liquid) file.
 LZA supports deploying Cloudformation templates
-which in this project are generated via the [customizations](customizations/bin/customizations.ts) CDK app.
+which in this project are generated via the [Customizations](customizations/bin/customizations.ts) CDK app.
 
 ## AWS access
 
@@ -54,9 +54,9 @@ Underneath it uses the [LZA Core CLI](https://awslabs.github.io/landing-zone-acc
 npm run cli -- lza config validate
 ```
 
-### Deploy a LZA customizations stack
+### Deploy a LZA Customizations stack
 
-This allows you to deploy a LZA customizations stack manually during development.
+This allows you to deploy a LZA Customizations stack manually during development.
 Underneath it uses the [LZA Core CLI](https://awslabs.github.io/landing-zone-accelerator-on-aws/latest/developer-guide/scripts/#core-cli).
 
 ```bash
@@ -83,6 +83,23 @@ npm run cli -- lza stage deploy # by default the customizations stage is deploye
 # to deploy another stage have a look at the help
 npm run cli -- lza stage deploy --help
 ```
+
+### Deploying a new region
+
+If you just add a new region and call `npm run cli -- deploy` it will fail
+when trying to upload the CDK assets for the Customizations to the new region.
+This is because it's expecting the new region already to be bootstrapped
+which includes the s3 bucket for the CDK assets.
+
+To deploy a new region:
+
+1. Add the new region to the `ENABLED_REGIONS` in the [config.ts](config.ts) file.
+2. Bootstrap the new region using the LZA:
+
+```bash
+npm run cli -- lza core bootstrap
+```
+Afterward you can commit your changes and trigger a deployment with `npm run cli -- deploy`.
 
 ## Deployment
 
