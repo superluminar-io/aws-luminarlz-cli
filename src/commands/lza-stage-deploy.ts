@@ -1,7 +1,7 @@
 import { Command } from 'clipanion';
 import { LzaStage } from './lza-stage';
 import { synthConfigOut } from '../core/accelerator/config/synth';
-import { deployStage, synthStage } from '../core/accelerator/repository/core_cli';
+import { deployStage, synthStages } from '../core/accelerator/repository/core_cli';
 import { customizationsCdkSynth } from '../core/customizations/synth';
 
 export class LzaStageDeploy extends LzaStage {
@@ -19,7 +19,7 @@ export class LzaStageDeploy extends LzaStage {
     const stage = this.stageOrDefault;
     await customizationsCdkSynth();
     await synthConfigOut();
-    await synthStage({
+    await synthStages({
       stage,
     });
     await deployStage({

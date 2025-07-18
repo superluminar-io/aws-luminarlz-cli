@@ -1,7 +1,7 @@
 import { Command } from 'clipanion';
 import { LzaCustomizationsStack } from './lza-customizations-stack';
 import { synthConfigOut } from '../core/accelerator/config/synth';
-import { synthStage } from '../core/accelerator/repository/core_cli';
+import { synthStages } from '../core/accelerator/repository/core_cli';
 import { customizationsPublishCdkAssets } from '../core/customizations/assets';
 import { customizationsDeployStack } from '../core/customizations/deploy';
 import { customizationsCdkSynth } from '../core/customizations/synth';
@@ -20,7 +20,7 @@ export class LzaCustomizationsStackDeploy extends LzaCustomizationsStack {
   async execute() {
     await customizationsCdkSynth(this.stackName);
     await synthConfigOut();
-    await synthStage({
+    await synthStages({
       stage: 'customizations',
       accountId: this.accountId,
       region: this.regionOrHomeRegion,
