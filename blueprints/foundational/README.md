@@ -9,7 +9,7 @@ to manage and deploy the LZA config.
 ### Directory structure
 
 * [templates](templates) contains the liquid templates and other files that are used to generate the LZA config.
-* [customizations](customizations) contains a CDK app used to generate the Cloudformation templates that are defined in the [customizations-config](templates/customizations-config.yaml.liquid).
+* [customizations](customizations) contains a CDK app used to generate the CloudFormation templates that are defined in the [customizations-config](templates/customizations-config.yaml.liquid).
 * [config.ts](config.ts) defines how the templates are generated and all project relevant configurations.
 * [docs](docs) contains:
   * [Architecture Decision Records (ADRs)](docs/adrs) that document project-specific decisions.
@@ -21,7 +21,7 @@ Parts of the landing zone are [Customizations](https://docs.aws.amazon.com/solut
 that are deployed via the LZA.
 
 These are configured in the [customizations-config](templates/customizations-config.yaml.liquid) file.
-LZA supports deploying Cloudformation templates
+LZA supports deploying CloudFormation templates
 which in this project are generated via the [Customizations](customizations/bin/customizations.ts) CDK app.
 
 ## AWS access
@@ -103,9 +103,9 @@ Afterward you can commit your changes and trigger a deployment with `npm run cli
 
 ## Deployment
 
-A deployment consists of synthesizing the LZA config and uploading it to s3.
+A deployment consists of synthesizing the LZA config and uploading it to S3.
 
-Uploading the LZA config to s3 then triggers the [LZA Core pipeline](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/awsaccelerator-pipeline.html).
+Uploading the LZA config to S3 then triggers the [LZA Core pipeline](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/awsaccelerator-pipeline.html).
 
 [//]: # (TODO: Add this if you are using a GitHub Action CD pipeline.)
 [//]: # (Deployment of the LZA config happens automatically via a GitHub Actions CD pipeline on the main branch.)
@@ -119,7 +119,7 @@ npm run cli -- deploy
 ## Update the Landing Zone Accelerator version
 
 To update the LZA version,
-you can follow [LZA the update guide](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/update-the-solution.html)
+you can follow [the LZA update guide](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/update-the-solution.html)
 or use this CLI as follows:
 
 1. Check that the locally configured version is in sync with the deployed version:

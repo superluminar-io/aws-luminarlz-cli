@@ -16,7 +16,7 @@ import { Synth } from './commands/synth';
 const [, , ...args] = process.argv;
 
 const cli = new Cli({
-  binaryLabel: 'AWS luminarlz CLI',
+  binaryLabel: 'AWS Luminarlz CLI',
   binaryName: 'aws-luminarlz-cli',
 });
 cli.register(Builtins.HelpCommand);
