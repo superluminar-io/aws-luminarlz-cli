@@ -55,7 +55,7 @@
     "@aws-sdk/client-cloudformation": "^3.848.0",
     "@aws-sdk/client-organizations": "^3.848.0",
     "@aws-sdk/client-s3": "^3.848.0",
-    "@aws-sdk/client-ssm": "^3.848.0",
+    "@aws-sdk/client-ssm": "^3.849.0",
     "@aws-sdk/client-sso-admin": "^3.848.0",
     "@aws-sdk/client-sts": "^3.848.0",
     "@aws-sdk/credential-providers": "^3.848.0",
