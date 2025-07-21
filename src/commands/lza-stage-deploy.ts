@@ -1,8 +1,9 @@
 import { Command } from 'clipanion';
 import { LzaStage } from './lza-stage';
 import { synthConfigOut } from '../core/accelerator/config/synth';
-import { deployStage, synthStages } from '../core/accelerator/repository/core_cli';
+import { deployStage, LZA_CUSTOMIZATIONS_STAGE, synthStages } from '../core/accelerator/repository/core_cli';
 import { customizationsCdkSynth } from '../core/customizations/synth';
+import { customizationsPublishCdkAssets } from '../core/customizations/assets';
 
 export class LzaStageDeploy extends LzaStage {
   static paths = [[...super.namespacePath, 'deploy']];
@@ -22,6 +23,9 @@ export class LzaStageDeploy extends LzaStage {
     await synthStages({
       stage,
     });
+    if (stage === LZA_CUSTOMIZATIONS_STAGE) {
+      await customizationsPublishCdkAssets();
+    }
     await deployStage({
       stage,
     });
