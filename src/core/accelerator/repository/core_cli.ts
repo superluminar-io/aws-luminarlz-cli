@@ -5,6 +5,8 @@ import { executeCommand } from '../../util/exec';
 import { resolveProjectPath } from '../../util/path';
 import { checkVersion } from '../installer/installer';
 
+export const LZA_CUSTOMIZATIONS_STAGE = 'customizations';
+
 export const validate = async () => {
   const config = loadConfigSync();
   const lzaConfigPath = resolveProjectPath(

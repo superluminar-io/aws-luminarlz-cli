@@ -1,4 +1,5 @@
 import { Command, Option } from 'clipanion';
+import { LZA_CUSTOMIZATIONS_STAGE } from '../core/accelerator/repository/core_cli';
 
 export abstract class LzaStage extends Command {
   static namespacePath = ['lza', 'stage'];
@@ -15,7 +16,7 @@ export abstract class LzaStage extends Command {
   });
 
   protected get stageOrDefault() {
-    return this.stage ?? 'customizations';
+    return this.stage ?? LZA_CUSTOMIZATIONS_STAGE;
   }
 
   abstract execute(): Promise<void>;
