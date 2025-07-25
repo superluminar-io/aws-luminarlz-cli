@@ -65,6 +65,16 @@ npm run cli -- deploy
 Documentation for the other CLI commands can be found in the README generated when intializing a new AWS landing zone.
 Have a look at the [foundational blueprint README](blueprints/foundational/README.md).
 
+#### LZA Core CLI
+
+Some of the CLI commands are using the [LZA Core CLI](https://awslabs.github.io/landing-zone-accelerator-on-aws/latest/developer-guide/scripts/#core-cli) underneath.
+
+Running the LZA core CLI currently requires a local checkout of the LZA repository and building the project which will take a moment.
+
+This will be done automatically for you once and every time you update the LZA version.
+
+You should add `/.landing-zone-accelerator-on-aws-*` to your `.gitignore` file so that these local LZA checkouts are not committed to your repository.
+
 ## Development
 
 ### Prerequisites
