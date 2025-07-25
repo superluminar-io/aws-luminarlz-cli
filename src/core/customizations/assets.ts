@@ -5,7 +5,7 @@ import { resolveProjectPath } from '../util/path';
 
 export const customizationsPublishCdkAssets = async () => {
   const config = loadConfigSync();
-  const assetsFiles = fs
+  const cdkOutFiles = fs
     .readdirSync(resolveProjectPath(config.cdkOutPath), {
       recursive: true,
     })
@@ -20,18 +20,32 @@ export const customizationsPublishCdkAssets = async () => {
         fs.lstatSync(fileName).isFile() && fileName.endsWith('.assets.json')
       );
     });
-  const execs = [];
-  for (const assetsFile of assetsFiles) {
-    for (const region of config.enabledRegions) {
-      execs.push(
-        executeCommand(
-          `export AWS_REGION="${region}" && npx cdk-assets publish -p "${assetsFile}"`,
-          {
-            cwd: resolveProjectPath(config.customizationPath),
-          },
-        ),
-      );
+
+  function* chunks<T>(arr: T[], n: number) {
+    for (let i = 0; i < arr.length; i += n) {
+      yield arr.slice(i, i + n);
     }
   }
-  await Promise.all(execs);
+
+  // publish only 30 assets files at a time to avoid throttling
+  const maxConcurrentUploads = 30;
+  const filesToPublish: { file: string; region: string }[] = cdkOutFiles
+    .flatMap((file) => {
+      return config.enabledRegions.map((region) => ({
+        file: file,
+        region,
+      }));
+    });
+
+  for (const chunk of chunks(filesToPublish, maxConcurrentUploads)) {
+    const execs = chunk.map(({ file, region }) =>
+      executeCommand(
+        `export AWS_REGION="${region}" && npx cdk-assets publish -p "${file}"`,
+        {
+          cwd: resolveProjectPath(config.customizationPath),
+        },
+      ),
+    );
+    await Promise.all(execs);
+  }
 };

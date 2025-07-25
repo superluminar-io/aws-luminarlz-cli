@@ -1,5 +1,4 @@
 import fs from 'fs';
-import os from 'node:os';
 import path from 'path';
 import {
   awsAcceleratorInstallerRepositoryBranchName,
@@ -9,12 +8,13 @@ import {
   LZA_SOURCE_PATH,
 } from '../../../config';
 import { executeCommand } from '../../util/exec';
+import { resolveProjectPath } from '../../util/path';
 
 export const getCheckoutPath = () => {
   const config = loadConfigSync();
   return path.join(
-    os.tmpdir(),
-    `landing-zone-accelerator-on-aws-${awsAcceleratorInstallerRepositoryBranchName(config).replace('/', '-')}`,
+    resolveProjectPath(),
+    `.landing-zone-accelerator-on-aws-${awsAcceleratorInstallerRepositoryBranchName(config).replace('/', '-')}`,
   );
 };
 
