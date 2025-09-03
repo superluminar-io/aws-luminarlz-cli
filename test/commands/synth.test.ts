@@ -2,38 +2,24 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { DescribeOrganizationCommand, ListRootsCommand, OrganizationsClient } from '@aws-sdk/client-organizations';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { ListInstancesCommand, SSOAdminClient } from '@aws-sdk/client-sso-admin';
 import { GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
 import { mockClient } from 'aws-sdk-client-mock';
 import { Cli } from 'clipanion';
-import { Deploy } from '../../src/commands/deploy';
 import { Init } from '../../src/commands/init';
-import {
-  AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-  awsAcceleratorConfigBucketName, loadConfigSync,
-} from '../../src/config';
-import * as assets from '../../src/core/customizations/assets';
+import { Synth } from '../../src/commands/synth';
+import { AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME, loadConfigSync } from '../../src/config';
 import { executeCommand } from '../../src/core/util/exec';
 
-// Mock the assets module
-jest.mock('../../src/core/customizations/assets', () => ({
-  customizationsPublishCdkAssets: jest.fn(),
-}));
-
-describe('Deploy command', () => {
-  // Create mocks for AWS services
+describe('Synth command', () => {
+  // Create mocks for AWS services (used during init rendering)
   const ssmMock = mockClient(SSMClient);
   const stsMock = mockClient(STSClient);
   const organizationsMock = mockClient(OrganizationsClient);
   const ssoAdminMock = mockClient(SSOAdminClient);
-  const s3Mock = mockClient(S3Client);
 
   let testProjectDirectory = '';
-
-  // Create spies for the functions
-  let assetsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     // Create a temporary directory for the test project
@@ -44,18 +30,12 @@ describe('Deploy command', () => {
   });
 
   beforeEach(() => {
-    // Clear mocks before each test
+    // Clear and reset mocks before each test
     ssmMock.reset();
     stsMock.reset();
     organizationsMock.reset();
     ssoAdminMock.reset();
-    s3Mock.reset();
-
-    // Reset all mocks
     jest.clearAllMocks();
-
-    // Set up spies for the functions
-    assetsSpy = jest.spyOn(assets, 'customizationsPublishCdkAssets').mockResolvedValue();
 
     // Mock SSM parameter for AWS Accelerator version
     ssmMock.on(GetParameterCommand).resolves({
@@ -104,7 +84,7 @@ describe('Deploy command', () => {
     });
   });
 
-  it('should deploy after initializing a project with the specified blueprint', async () => {
+  it('should synthesize after initializing a project with the specified blueprint', async () => {
     // Run the init command to set up the project
     const initCli = new Cli();
     initCli.register(Init);
@@ -122,15 +102,15 @@ describe('Deploy command', () => {
     // Verify init was successful
     expect(initExitCode).toBe(0);
 
-    // Now create CLI instance with Deploy command
-    const deployCli = new Cli();
-    deployCli.register(Deploy);
+    // Now create CLI instance with Synth command
+    const synthCli = new Cli();
+    synthCli.register(Synth);
 
-    // Run the deploy command
-    const deployExitCode = await deployCli.run(['deploy']);
+    // Run the synth command
+    const synthExitCode = await synthCli.run(['synth']);
 
-    // Verify deploy was successful
-    expect(deployExitCode).toBe(0);
+    // Verify synth was successful
+    expect(synthExitCode).toBe(0);
 
     // Verify that the accelerator config output directory was created and contains files
     const config = loadConfigSync();
@@ -146,16 +126,5 @@ describe('Deploy command', () => {
       .readdirSync(cdkOutPath, { recursive: true })
       .filter((f) => f.toString().endsWith('.template.json'));
     expect(cdkFiles.length).toBeGreaterThan(0);
-
-    // Verify that accelerator config was uploaded to S3
-    const s3Calls = s3Mock.commandCalls(PutObjectCommand);
-    const callInput = s3Calls[0].args[0].input;
-    expect(callInput.Bucket).toBe(awsAcceleratorConfigBucketName(config));
-    expect(callInput.Key).toBe(config.awsAcceleratorConfigDeploymentArtifactPath);
-    expect(Buffer.isBuffer(callInput.Body)).toBe(true);
-
-
-    // Verify that the customizationsPublishCdkAssets function was called
-    expect(assetsSpy).toHaveBeenCalled();
   }, 120 * 1000);
 });
