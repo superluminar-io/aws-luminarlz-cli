@@ -17,6 +17,7 @@ const project = new typescript.TypeScriptProject({
   npmAccess: NpmAccess.PUBLIC,
   repository: 'https://github.com/superluminar-io/aws-luminarlz-cli.git',
   deps: [
+    '@aws-cdk/cdk-assets-lib',
     '@aws-sdk/client-s3',
     '@aws-sdk/client-cloudformation',
     '@aws-sdk/client-organizations',
@@ -24,7 +25,6 @@ const project = new typescript.TypeScriptProject({
     '@aws-sdk/client-sso-admin',
     '@aws-sdk/client-sts',
     '@aws-sdk/credential-providers',
-    'cdk-assets',
     'clipanion',
     'liquidjs',
     'typescript',
