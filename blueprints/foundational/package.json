@@ -6,7 +6,7 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.148",
-    "@types/node": "24.3.2",
+    "@types/node": "24.5.0",
     "@types/object-hash": "^3.0.6",
     "aws-cdk": "2.1029.1",
     "ts-node": "^10.9.2",
@@ -18,7 +18,7 @@
     "@aws-sdk/client-securityhub": "^3.775.0",
     "@aws-sdk/util-retry": "^3.370.0",
     "@superluminar-io/aws-luminarlz-cli": "^0.0",
-    "aws-cdk-lib": "2.214.0",
+    "aws-cdk-lib": "2.215.0",
     "aws-lambda": "^1.0.7",
     "constructs": "^10.0.0",
     "esbuild": "^0.25.1",
