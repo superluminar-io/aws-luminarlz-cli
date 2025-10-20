@@ -8,6 +8,11 @@ import { Construct } from 'constructs';
 import { HOME_REGION, ENABLED_REGIONS, ROOT_OU_ID } from '../../config';
 import { UpdateOrganizationConfiguration } from './constructs/aws-security-hub/update-organization-configuration';
 
+export interface SecurityHubCentralConfigurationStackProps extends StackProps {
+  readonly disableSecurityHubForTargets?: { id: string, type: 'ACCOUNT' | 'ORGANIZATIONAL_UNIT' }[];
+}
+
+
 /**
  * Configures AWS Security Hub in the delegated admin account by:
  *
