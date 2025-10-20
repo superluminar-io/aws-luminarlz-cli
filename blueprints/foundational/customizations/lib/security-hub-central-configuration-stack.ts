@@ -8,10 +8,15 @@ import { Construct } from 'constructs';
 import { HOME_REGION, ENABLED_REGIONS, ROOT_OU_ID } from '../../config';
 import { UpdateOrganizationConfiguration } from './constructs/aws-security-hub/update-organization-configuration';
 
+/**
+  * Properties for SecurityHubCentralConfigurationStack
+  */
 export interface SecurityHubCentralConfigurationStackProps extends StackProps {
+  /**
+   * List of accounts or OUs to disable Security Hub for.
+   */
   readonly disableSecurityHubForTargets?: { id: string, type: 'ACCOUNT' | 'ORGANIZATIONAL_UNIT' }[];
 }
-
 
 /**
  * Configures AWS Security Hub in the delegated admin account by:
@@ -24,7 +29,7 @@ export interface SecurityHubCentralConfigurationStackProps extends StackProps {
  * Security Hub has been configured in the management account.
  */
 export class SecurityHubCentralConfigurationStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  constructor(scope: Construct, id: string, props?: SecurityHubCentralConfigurationStackProps) {
     super(scope, id, props);
 
     // Set up finding aggregation from other regions excluding the central region
@@ -84,10 +89,19 @@ export class SecurityHubCentralConfigurationStack extends Stack {
     configurationPolicy.node.addDependency(configuration);
 
     // Associate policy with root OU
-    new CfnPolicyAssociation(this, 'PolicyAssociation', {
+    const rootAssociation = new CfnPolicyAssociation(this, 'PolicyAssociation', {
       configurationPolicyId: configurationPolicy.attrId,
       targetId: ROOT_OU_ID,
       targetType: 'ROOT',
+    });
+
+    props?.disableSecurityHubForTargets?.forEach((target, index) => {
+      const association = new CfnPolicyAssociation(this, `DisableSecurityHubAssociation${index}`, {
+        configurationPolicyId: 'SELF_MANAGED_SECURITY_HUB',
+        targetId: target.id,
+        targetType: target.type,
+      });
+      rootAssociation.node.addDependency(association);
     });
   }
 }
