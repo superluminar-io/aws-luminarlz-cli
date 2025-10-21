@@ -1,4 +1,4 @@
-import { Stack, StackProps } from 'aws-cdk-lib';
+import { Arn, ArnFormat, Stack, StackProps } from 'aws-cdk-lib';
 import {
   CfnConfigurationPolicy,
   CfnPolicyAssociation,
@@ -57,7 +57,15 @@ export class SecurityHubCentralConfigurationStack extends Stack {
         configurationPolicy: {
           securityHub: {
             enabledStandardIdentifiers: [
-              'arn:aws:securityhub:eu-central-1::standards/aws-foundational-security-best-practices/v/1.0.0',
+              Arn.format({
+                partition: this.partition,
+                service: 'securityhub',
+                region: this.region,
+                account: '',
+                resource: 'standards',
+                resourceName: 'aws-security-best-practices/v/1.0.0',
+                arnFormat: ArnFormat.SLASH_RESOURCE_NAME,
+              }),
             ],
             securityControlsConfiguration: {
               disabledSecurityControlIdentifiers: [
