@@ -4,6 +4,9 @@ import path from 'path';
 
 export class TestProjectDirectory {
   directory = '';
+  get resolvedDirectory() {
+    return fs.realpathSync(this.directory);
+  }
   originalCwd = process.cwd();
 
   initAndChangeToTempDirectory() {

@@ -143,7 +143,7 @@ describe('LZA Config Validate command', () => {
     expect(cdkFiles.length).toBeGreaterThan(0);
 
     // Ensure executeCommand was called to run validate-config with correct parameters
-    const expectedConfigDir = path.join(testProjectDirectory.directory, config.awsAcceleratorConfigOutPath);
+    const expectedConfigDir = path.join(testProjectDirectory.resolvedDirectory, config.awsAcceleratorConfigOutPath);
     const expectedCwd = path.join(getCheckoutPath(), LZA_SOURCE_PATH);
     const validateCalls = execSpy.mock.calls.filter(([cmd]) => typeof cmd === 'string' && cmd.startsWith('yarn validate-config'));
     expect(validateCalls.length).toBe(1);
