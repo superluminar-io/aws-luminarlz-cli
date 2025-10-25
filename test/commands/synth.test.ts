@@ -8,7 +8,7 @@ import { Synth } from '../../src/commands/synth';
 import { AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME, loadConfigSync } from '../../src/config';
 import { executeCommand } from '../../src/core/util/exec';
 import { createCliFor, runCli } from '../../src/test-helper/cli';
-import { useTempDir } from '../../src/test-helper/useTempDir';
+import { useTempDir } from '../../src/test-helper/use-temp-dir';
 
 let temp: ReturnType<typeof useTempDir>;
 describe('Synth command', () => {

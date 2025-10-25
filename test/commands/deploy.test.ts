@@ -17,7 +17,7 @@ import {
 import * as assets from '../../src/core/customizations/assets';
 import { executeCommand } from '../../src/core/util/exec';
 import { createCliFor, runCli } from '../../src/test-helper/cli';
-import { useTempDir } from '../../src/test-helper/useTempDir';
+import { useTempDir } from '../../src/test-helper/use-temp-dir';
 
 let temp: ReturnType<typeof useTempDir>;
 describe('Deploy command', () => {

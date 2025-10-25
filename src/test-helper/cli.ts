@@ -1,5 +1,5 @@
 import { BaseContext, Cli, CommandClass } from 'clipanion';
-import { useTempDir } from './useTempDir';
+import { useTempDir } from './use-temp-dir';
 
 
 function createCliFor<C extends BaseContext>(...commands: CommandClass<C>[]): Cli<C> {
