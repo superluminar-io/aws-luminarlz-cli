@@ -100,7 +100,7 @@ describe('Deploy command', () => {
     await runCli(cli, ['deploy'], temp);
 
     const config = loadConfigSync();
-    expectCdkOutTemplatesToBeCreated(config);
+    expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.dir });
     expect(s3Mock).toHaveReceivedCommandWith(PutObjectCommand, {
       Bucket: awsAcceleratorConfigBucketName(config),
       Key: config.awsAcceleratorConfigDeploymentArtifactPath,
@@ -109,14 +109,6 @@ describe('Deploy command', () => {
     expect(customizationsPublishCdkAssetsSpy).toHaveBeenCalled();
   });
 });
-
-function expectCdkOutTemplatesToBeCreated(config: Config) {
-  const cdkOutPath = path.join(temp.dir, config.awsAcceleratorConfigOutPath, config.cdkOutPath);
-  const templates = fs.readdirSync(cdkOutPath, { recursive: true, encoding: 'utf8' })
-    .filter(f => f.endsWith('.template.json'));
-
-  expect(templates).not.toHaveLength(0);
-}
 
 function getAcceleratorConfigZip(config: Config) {
   const zipPath = path.join(
