@@ -8,7 +8,6 @@ import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { ListInstancesCommand, SSOAdminClient } from '@aws-sdk/client-sso-admin';
 import { GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
 import { mockClient } from 'aws-sdk-client-mock';
-import { Cli } from 'clipanion';
 import { Init } from '../../src/commands/init';
 import { LzaInstallerVersionUpdate } from '../../src/commands/lza-installer-version-update';
 import {
@@ -16,15 +15,16 @@ import {
   AWS_ACCELERATOR_INSTALLER_STACK_NAME,
 } from '../../src/config';
 import * as execModule from '../../src/core/util/exec';
-import { TestProjectDirectory } from '../../src/test-helper/test-project-directory';
+import { CliError, createCliFor, runCli } from '../../src/test-helper/cli';
+import { useTempDir } from '../../src/test-helper/use-temp-dir';
+
+let temp: ReturnType<typeof useTempDir>;
 
 /**
  * Integration-style tests for `lza installer-version update`.
  * We only mock AWS SDK client calls and keep filesystem real.
  */
 describe('LZA Installer Version - update command', () => {
-  const testProjectDirectory = new TestProjectDirectory();
-
   const ssmMock = mockClient(SSMClient);
   const cfnMock = mockClient(CloudFormationClient);
   const stsMock = mockClient(STSClient);
@@ -32,7 +32,7 @@ describe('LZA Installer Version - update command', () => {
   const ssoAdminMock = mockClient(SSOAdminClient);
 
   beforeEach(() => {
-    testProjectDirectory.initAndChangeToTempDirectory();
+    temp = useTempDir();
 
     ssmMock.reset();
     cfnMock.reset();
@@ -41,14 +41,11 @@ describe('LZA Installer Version - update command', () => {
     ssoAdminMock.reset();
     jest.clearAllMocks();
 
-    // Common mocks needed by init
-    // STS GetCallerIdentity
     stsMock.on(GetCallerIdentityCommand).resolves({
       Account: '123456789012',
       Arn: 'arn:aws:iam::123456789012:role/Admin',
       UserId: 'AROAEXAMPLE123',
     });
-    // Organizations
     organizationsMock.on(DescribeOrganizationCommand).resolves({
       Organization: {
         Id: 'o-exampleorg',
@@ -61,7 +58,6 @@ describe('LZA Installer Version - update command', () => {
         { Id: 'r-exampleroot', Arn: 'arn:aws:organizations::123456789012:root/o-exampleorg/r-exampleroot', Name: 'Root' },
       ],
     });
-    // SSO Admin
     ssoAdminMock.on(ListInstancesCommand).resolves({
       Instances: [
         { InstanceArn: 'arn:aws:sso:::instance/ssoins-example', IdentityStoreId: 'd-example123' },
@@ -70,7 +66,7 @@ describe('LZA Installer Version - update command', () => {
   });
 
   afterEach(() => {
-    testProjectDirectory.changeToOriginalAndCleanUpTempDirectory();
+    temp.cleanup();
   });
 
   it('should be a no-op when installed version is already up to date', async () => {
@@ -82,31 +78,20 @@ describe('LZA Installer Version - update command', () => {
         Type: 'String',
       },
     });
+    const cli = createCliFor(Init, LzaInstallerVersionUpdate);
 
-    // Run init to generate config.ts
-    const initCli = new Cli();
-    initCli.register(Init);
-    const initExitCode = await initCli.run([
+    await runCli(cli, [
       'init',
       '--blueprint', 'foundational',
       '--accounts-root-email', 'test@example.com',
       '--region', 'us-east-1',
       '--force',
-    ]);
-    expect(initExitCode).toBe(0);
+    ], temp);
+    await execModule.executeCommand('npm install', { cwd: temp.dir });
+    await runCli(cli, ['lza', 'installer-version', 'update'], temp);
 
-    // Install dependencies after initialization
-    await execModule.executeCommand('npm install', { cwd: testProjectDirectory.directory });
-
-    const cli = new Cli();
-    cli.register(LzaInstallerVersionUpdate);
-
-    const exitCode = await cli.run(['lza', 'installer-version', 'update']);
-
-    // No CFN update should be attempted
-    expect(exitCode).toBe(0);
-    expect(cfnMock.commandCalls(UpdateStackCommand).length).toBe(0);
-  }, 120 * 1000);
+    expect(cfnMock).toHaveReceivedCommandTimes(UpdateStackCommand, 0);
+  });
 
   it('should trigger a CloudFormation update when configured version is newer than installed', async () => {
     // Init sees 1.12.2, then update sees 1.12.1 (older)
@@ -125,10 +110,8 @@ describe('LZA Installer Version - update command', () => {
           Type: 'String',
         },
       });
-
     // Mock UpdateStack to succeed
     cfnMock.on(UpdateStackCommand).resolves({ StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/AWSAccelerator-InstallerStack/1' } as any);
-
     // First DescribeStacks call (reading existing parameters)
     cfnMock.on(DescribeStacksCommand).resolvesOnce({
       Stacks: [
@@ -141,48 +124,29 @@ describe('LZA Installer Version - update command', () => {
         } as any,
       ],
     });
-
     // Default waiter polling responses: always UPDATE_COMPLETE so waiter returns quickly
     cfnMock.on(DescribeStacksCommand).resolves({
       Stacks: [{ StackName: AWS_ACCELERATOR_INSTALLER_STACK_NAME, StackStatus: 'UPDATE_COMPLETE' } as any],
     });
 
-    // Run init to generate config.ts
-    const initCli = new Cli();
-    initCli.register(Init);
-    const initExitCode = await initCli.run([
+    const cli = createCliFor(Init, LzaInstallerVersionUpdate);
+    await runCli(cli, [
       'init',
       '--blueprint', 'foundational',
       '--accounts-root-email', 'test@example.com',
       '--region', 'us-east-1',
       '--force',
-    ]);
-    expect(initExitCode).toBe(0);
+    ], temp);
+    await execModule.executeCommand('npm install', { cwd: temp.dir });
+    await runCli(cli, ['lza', 'installer-version', 'update'], temp);
 
-    // Install dependencies after initialization
-    await execModule.executeCommand('npm install', { cwd: testProjectDirectory.directory });
-
-    const cli = new Cli();
-    cli.register(LzaInstallerVersionUpdate);
-
-    const exitCode = await cli.run(['lza', 'installer-version', 'update']);
-
-    expect(exitCode).toBe(0);
-
-    // Verify UpdateStack was called with expected parameters
-    const updateCalls = cfnMock.commandCalls(UpdateStackCommand);
-    expect(updateCalls.length).toBe(1);
-    const input = updateCalls[0].args[0].input;
-    expect(input.StackName).toBe(AWS_ACCELERATOR_INSTALLER_STACK_NAME);
-
-    // Template URL should match configured version
-    expect(input.TemplateURL).toBe(
-      'https://s3.amazonaws.com/solutions-reference/landing-zone-accelerator-on-aws/v1.12.2/AWSAccelerator-InstallerStack.template',
-    );
-
-    expect(input.Capabilities).toContain('CAPABILITY_IAM');
-
-  }, 120 * 1000);
+    expect(cfnMock).toHaveReceivedCommandTimes(UpdateStackCommand, 1);
+    expect(cfnMock).toHaveReceivedCommandWith(UpdateStackCommand, {
+      StackName: AWS_ACCELERATOR_INSTALLER_STACK_NAME,
+      TemplateURL: 'https://s3.amazonaws.com/solutions-reference/landing-zone-accelerator-on-aws/v1.12.2/AWSAccelerator-InstallerStack.template',
+      Capabilities: expect.arrayContaining(['CAPABILITY_IAM']),
+    });
+  });
 
   it('should fail when configured version is smaller than installed version', async () => {
     // Init sees 1.12.2, then update sees newer 1.12.3
@@ -202,28 +166,17 @@ describe('LZA Installer Version - update command', () => {
         },
       });
 
-    // Run init to generate config.ts
-    const initCli = new Cli();
-    initCli.register(Init);
-    const initExitCode = await initCli.run([
+    const cli = createCliFor(Init, LzaInstallerVersionUpdate);
+    await runCli(cli, [
       'init',
       '--blueprint', 'foundational',
       '--accounts-root-email', 'test@example.com',
       '--region', 'us-east-1',
       '--force',
-    ]);
-    expect(initExitCode).toBe(0);
+    ], temp);
+    await execModule.executeCommand('npm install', { cwd: temp.dir });
 
-    // Install dependencies after initialization
-    await execModule.executeCommand('npm install', { cwd: testProjectDirectory.directory });
-
-    const cli = new Cli();
-    cli.register(LzaInstallerVersionUpdate);
-
-    const exitCode = await cli.run(['lza', 'installer-version', 'update']);
-
-    // Should exit with failure and must not call UpdateStack
-    expect(exitCode).toBe(1);
-    expect(cfnMock.commandCalls(UpdateStackCommand).length).toBe(0);
-  }, 120 * 1000);
+    await expect(runCli(cli, ['lza', 'installer-version', 'update'], temp)).rejects.toThrow(CliError);
+    expect(cfnMock).toHaveReceivedCommandTimes(UpdateStackCommand, 0);
+  });
 });
