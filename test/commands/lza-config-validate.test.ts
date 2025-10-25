@@ -1,22 +1,22 @@
-import fs from 'fs';
 import path from 'path';
 import { DescribeOrganizationCommand, ListRootsCommand, OrganizationsClient } from '@aws-sdk/client-organizations';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { ListInstancesCommand, SSOAdminClient } from '@aws-sdk/client-sso-admin';
 import { GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
 import { mockClient } from 'aws-sdk-client-mock';
-import { Cli } from 'clipanion';
 import { Init } from '../../src/commands/init';
 import { LzaConfigValidate } from '../../src/commands/lza-config-validate';
-import { AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME, LZA_SOURCE_PATH, loadConfigSync } from '../../src/config';
+import {
+  AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME, LZA_SOURCE_PATH, loadConfigSync,
+  LZA_REPOSITORY_GIT_URL, awsAcceleratorInstallerRepositoryBranchName,
+} from '../../src/config';
 import { getCheckoutPath } from '../../src/core/accelerator/repository/checkout';
 import * as execModule from '../../src/core/util/exec';
-import { TestProjectDirectory } from '../../src/test-helper/test-project-directory';
+import { createCliFor, runCli } from '../../src/test-helper/cli';
+import { useTempDir } from '../../src/test-helper/use-temp-dir';
 
+let temp: ReturnType<typeof useTempDir>;
 describe('LZA Config Validate command', () => {
-  const testProjectDirectory = new TestProjectDirectory();
-
-  // Create mocks for AWS services (used during init rendering)
   const ssmMock = mockClient(SSMClient);
   const stsMock = mockClient(STSClient);
   const organizationsMock = mockClient(OrganizationsClient);
@@ -26,16 +26,14 @@ describe('LZA Config Validate command', () => {
   const realExecute = execModule.executeCommand;
 
   beforeEach(() => {
-    testProjectDirectory.initAndChangeToTempDirectory();
+    temp = useTempDir();
 
-    // Clear and reset mocks before each test
     ssmMock.reset();
     stsMock.reset();
     organizationsMock.reset();
     ssoAdminMock.reset();
     jest.clearAllMocks();
 
-    // Set up executeCommand spy with passthrough. Intercept only cloning and building of the LZA repo
     execSpy = jest.spyOn(execModule, 'executeCommand').mockImplementation(((command: any, opts: any) => {
       if (typeof command === 'string') {
         if (command.startsWith('git clone ')) {
@@ -48,7 +46,6 @@ describe('LZA Config Validate command', () => {
       return (realExecute as any)(command, opts);
     }) as any);
 
-    // Mock SSM parameter for AWS Accelerator version
     ssmMock.on(GetParameterCommand).resolves({
       Parameter: {
         Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
@@ -57,14 +54,12 @@ describe('LZA Config Validate command', () => {
       },
     });
 
-    // Mock STS GetCallerIdentity
     stsMock.on(GetCallerIdentityCommand).resolves({
       Account: '123456789012',
       Arn: 'arn:aws:iam::123456789012:role/Admin',
       UserId: 'AROAEXAMPLE123',
     });
 
-    // Mock Organizations DescribeOrganization
     organizationsMock.on(DescribeOrganizationCommand).resolves({
       Organization: {
         Id: 'o-exampleorg',
@@ -73,7 +68,6 @@ describe('LZA Config Validate command', () => {
       },
     });
 
-    // Mock Organizations ListRoots
     organizationsMock.on(ListRootsCommand).resolves({
       Roots: [
         {
@@ -84,7 +78,6 @@ describe('LZA Config Validate command', () => {
       ],
     });
 
-    // Mock SSO Admin ListInstances
     ssoAdminMock.on(ListInstancesCommand).resolves({
       Instances: [
         {
@@ -96,71 +89,32 @@ describe('LZA Config Validate command', () => {
   });
 
   afterAll(() => {
-    testProjectDirectory.changeToOriginalAndCleanUpTempDirectory();
+    temp.cleanup();
   });
 
   it('should synthesize and validate after initializing a project with the specified blueprint', async () => {
-    // Run the init command to set up the project
-    const initCli = new Cli();
-    initCli.register(Init);
-    const initExitCode = await initCli.run([
+    const cli = createCliFor(Init, LzaConfigValidate);
+
+    await runCli(cli, [
       'init',
       '--blueprint', 'foundational',
       '--accounts-root-email', 'test@example.com',
       '--region', 'us-east-1',
       '--force',
-    ]);
+    ], temp);
+    await execModule.executeCommand('npm install', { cwd: temp.dir });
+    await runCli(cli, ['lza', 'config', 'validate'], temp);
 
-    // Install dependencies after initialization
-    await execModule.executeCommand('npm install', { cwd: testProjectDirectory.directory });
-
-    // Verify init was successful
-    expect(initExitCode).toBe(0);
-
-    // Now create CLI instance with LzaConfigValidate command
-    const validateCli = new Cli();
-    validateCli.register(LzaConfigValidate);
-
-    // Run the lza config validate command
-    const validateExitCode = await validateCli.run(['lza', 'config', 'validate']);
-
-    // Verify command was successful
-    expect(validateExitCode).toBe(0);
-
-    // Verify that the accelerator config output directory was created and contains files
+    const checkoutPath = getCheckoutPath();
     const config = loadConfigSync();
-    const outPath = path.join(testProjectDirectory.directory, config.awsAcceleratorConfigOutPath);
-    expect(fs.existsSync(outPath)).toBe(true);
-    const outFiles = fs.readdirSync(outPath, { recursive: false });
-    expect(outFiles.length).toBeGreaterThan(0);
-
-    // Verify that cdk.out templates were copied into the output directory
-    const cdkOutPath = path.join(outPath, config.cdkOutPath);
-    expect(fs.existsSync(cdkOutPath)).toBe(true);
-    const cdkFiles = fs
-      .readdirSync(cdkOutPath, { recursive: true })
-      .filter((f) => f.toString().endsWith('.template.json'));
-    expect(cdkFiles.length).toBeGreaterThan(0);
-
-    // Ensure executeCommand was called to run validate-config with correct parameters
-    const expectedConfigDir = path.join(testProjectDirectory.resolvedDirectory, config.awsAcceleratorConfigOutPath);
-    const expectedCwd = path.join(getCheckoutPath(), LZA_SOURCE_PATH);
-    const validateCalls = execSpy.mock.calls.filter(([cmd]) => typeof cmd === 'string' && cmd.startsWith('yarn validate-config'));
-    expect(validateCalls.length).toBe(1);
-    expect(validateCalls[0][0]).toBe(`yarn validate-config ${expectedConfigDir}`);
-    expect(validateCalls[0][1]?.cwd).toBe(expectedCwd);
-
-    // Ensure executeCommand was called to clone the repository and then build it
-    const cloneCalls = execSpy.mock.calls.filter(([cmd]) => typeof cmd === 'string' && cmd.startsWith('git clone '));
-    expect(cloneCalls.length).toBe(1);
-
-    const buildCalls = execSpy.mock.calls.filter(([cmd, opts]) => typeof cmd === 'string' && cmd.includes('yarn') && cmd.includes('build') && opts?.cwd === expectedCwd);
-    expect(buildCalls.length).toBe(1);
-
-    // Verify that yarn && yarn build was called after git clone
-    const cloneIndex = execSpy.mock.calls.findIndex(([cmd]) => typeof cmd === 'string' && cmd.startsWith('git clone '));
-    const buildIndex = execSpy.mock.calls.findIndex(([cmd, opts]) => typeof cmd === 'string' && cmd.includes('yarn') && cmd.includes('build') && opts?.cwd === expectedCwd);
-    expect(cloneIndex).toBeGreaterThanOrEqual(0);
-    expect(buildIndex).toBeGreaterThan(cloneIndex);
-  }, 120 * 1000);
+    const checkoutBranch = awsAcceleratorInstallerRepositoryBranchName(config);
+    expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.dir });
+    expect(execSpy).toHaveBeenCalledWith(
+      expect.stringMatching(`git clone --depth=1 --branch ${checkoutBranch} ${LZA_REPOSITORY_GIT_URL} ${checkoutPath}`),
+    );
+    expect(execSpy).toHaveBeenCalledWith(
+      'yarn && yarn build',
+      { cwd: path.join(checkoutPath, LZA_SOURCE_PATH) },
+    );
+  });
 });
