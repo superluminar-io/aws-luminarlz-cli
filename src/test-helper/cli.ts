@@ -2,6 +2,12 @@ import { BaseContext, Cli, CommandClass } from 'clipanion';
 import { useTempDir } from './use-temp-dir';
 
 
+class CliError extends Error {
+  constructor() {
+    super('CLI exited with code 1');
+  }
+}
+
 function createCliFor<C extends BaseContext>(...commands: CommandClass<C>[]): Cli<C> {
   const cli = new Cli<C>();
   commands.forEach(command => cli.register(command));
@@ -22,10 +28,10 @@ async function runCli(cli: Cli<any>, argv: string[], temp: ReturnType<typeof use
   logSpy.mockRestore();
 
   if (code !== 0) {
-    throw new Error(`CLI exited with code ${code}`);
+    throw new CliError();
   }
   process.chdir(prevCwd);
   return code;
 }
 
-export { createCliFor, runCli };
+export { createCliFor, runCli, CliError };

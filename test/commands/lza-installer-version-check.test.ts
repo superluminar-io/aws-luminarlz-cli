@@ -3,19 +3,19 @@ import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { ListInstancesCommand, SSOAdminClient } from '@aws-sdk/client-sso-admin';
 import { GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
 import { mockClient } from 'aws-sdk-client-mock';
-import { Cli } from 'clipanion';
 import { Init } from '../../src/commands/init';
 import { LzaInstallerVersionCheck } from '../../src/commands/lza-installer-version-check';
 import { AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME } from '../../src/config';
 import * as execModule from '../../src/core/util/exec';
-import { TestProjectDirectory } from '../../src/test-helper/test-project-directory';
+import { CliError, createCliFor, runCli } from '../../src/test-helper/cli';
+import { useTempDir } from '../../src/test-helper/use-temp-dir';
 
+let temp: ReturnType<typeof useTempDir>;
 /**
  * Integration-style tests for `lza installer-version check`.
  * We only mock AWS SDK client calls and keep filesystem real.
  */
 describe('LZA Installer Version - check command', () => {
-  const testProjectDirectory = new TestProjectDirectory();
 
   const ssmMock = mockClient(SSMClient);
   const stsMock = mockClient(STSClient);
@@ -23,7 +23,7 @@ describe('LZA Installer Version - check command', () => {
   const ssoAdminMock = mockClient(SSOAdminClient);
 
   beforeEach(() => {
-    testProjectDirectory.initAndChangeToTempDirectory();
+    temp = useTempDir();
 
     ssmMock.reset();
     stsMock.reset();
@@ -31,14 +31,11 @@ describe('LZA Installer Version - check command', () => {
     ssoAdminMock.reset();
     jest.clearAllMocks();
 
-    // Common mocks needed by init
-    // STS GetCallerIdentity
     stsMock.on(GetCallerIdentityCommand).resolves({
       Account: '123456789012',
       Arn: 'arn:aws:iam::123456789012:role/Admin',
       UserId: 'AROAEXAMPLE123',
     });
-    // Organizations
     organizationsMock.on(DescribeOrganizationCommand).resolves({
       Organization: {
         Id: 'o-exampleorg',
@@ -51,7 +48,6 @@ describe('LZA Installer Version - check command', () => {
         { Id: 'r-exampleroot', Arn: 'arn:aws:organizations::123456789012:root/o-exampleorg/r-exampleroot', Name: 'Root' },
       ],
     });
-    // SSO Admin
     ssoAdminMock.on(ListInstancesCommand).resolves({
       Instances: [
         { InstanceArn: 'arn:aws:sso:::instance/ssoins-example', IdentityStoreId: 'd-example123' },
@@ -60,7 +56,7 @@ describe('LZA Installer Version - check command', () => {
   });
 
   afterEach(() => {
-    testProjectDirectory.changeToOriginalAndCleanUpTempDirectory();
+    temp.cleanup();
   });
 
   it('should succeed after init when installed version matches configured version', async () => {
@@ -73,36 +69,22 @@ describe('LZA Installer Version - check command', () => {
       },
     });
 
-    // Run init to generate config.ts
-    const initCli = new Cli();
-    initCli.register(Init);
-    const initExitCode = await initCli.run([
+    const cli = createCliFor(Init, LzaInstallerVersionCheck);
+    await runCli(cli, [
       'init',
       '--blueprint', 'foundational',
       '--accounts-root-email', 'test@example.com',
       '--region', 'us-east-1',
       '--force',
-    ]);
-    expect(initExitCode).toBe(0);
+    ], temp);
+    await execModule.executeCommand('npm install', { cwd: temp.dir });
+    await runCli(cli, ['lza', 'installer-version', 'check'], temp);
 
-    // Install dependencies after initialization
-    await execModule.executeCommand('npm install', { cwd: testProjectDirectory.directory });
-
-    const cli = new Cli();
-    cli.register(LzaInstallerVersionCheck);
-
-    // Act
-    const exitCode = await cli.run(['lza', 'installer-version', 'check']);
-
-    // Assert
-    expect(exitCode).toBe(0);
-
-    const calls = ssmMock.commandCalls(GetParameterCommand);
-    expect(calls.length).toBeGreaterThanOrEqual(2);
-    expect(calls[calls.length - 1].args[0].input.Name).toBe(
-      AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-    );
-  }, 120 * 1000);
+    expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 2);
+    expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
+      Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+    });
+  });
 
   it('should fail after init when installed version does not match configured version', async () => {
     // First SSM call (during init) returns 1.12.2, then check returns 1.12.3
@@ -121,35 +103,22 @@ describe('LZA Installer Version - check command', () => {
           Type: 'String',
         },
       });
-
     // Run init to generate config.ts with 1.12.2
-    const initCli = new Cli();
-    initCli.register(Init);
-    const initExitCode = await initCli.run([
+    const cli = createCliFor(Init, LzaInstallerVersionCheck);
+
+    await runCli(cli, [
       'init',
       '--blueprint', 'foundational',
       '--accounts-root-email', 'test@example.com',
       '--region', 'us-east-1',
       '--force',
-    ]);
-    expect(initExitCode).toBe(0);
+    ], temp);
+    await execModule.executeCommand('npm install', { cwd: temp.dir });
+    await expect(runCli(cli, ['lza', 'installer-version', 'check'], temp)).rejects.toThrow(CliError);
 
-    // Install dependencies after initialization
-    await execModule.executeCommand('npm install', { cwd: testProjectDirectory.directory });
-
-    const cli = new Cli();
-    cli.register(LzaInstallerVersionCheck);
-
-    // Act
-    const exitCode = await cli.run(['lza', 'installer-version', 'check']);
-
-    // Assert: non-zero exit code on version mismatch
-    expect(exitCode).toBe(1);
-
-    const calls = ssmMock.commandCalls(GetParameterCommand);
-    expect(calls.length).toBeGreaterThanOrEqual(2);
-    expect(calls[calls.length - 1].args[0].input.Name).toBe(
-      AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-    );
-  }, 120 * 1000);
+    expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 2);
+    expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
+      Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+    });
+  });
 });
