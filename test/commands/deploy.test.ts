@@ -85,7 +85,7 @@ describe('Deploy command', () => {
   });
 
   afterEach(() => {
-    temp.cleanup();
+    temp.restore();
   });
 
   it('should deploy after initializing a project with the specified blueprint', async () => {

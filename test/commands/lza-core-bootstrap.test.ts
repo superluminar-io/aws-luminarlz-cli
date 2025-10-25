@@ -98,7 +98,7 @@ describe('LZA Core Bootstrap command', () => {
   });
 
   afterAll(() => {
-    temp.cleanup();
+    temp.restore();
   });
 
   it('should synthesize, run accelerator synth, and bootstrap after initializing a project', async () => {

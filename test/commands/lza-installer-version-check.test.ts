@@ -56,7 +56,7 @@ describe('LZA Installer Version - check command', () => {
   });
 
   afterEach(() => {
-    temp.cleanup();
+    temp.restore();
   });
 
   it('should succeed after init when installed version matches configured version', async () => {

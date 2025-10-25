@@ -69,7 +69,7 @@ describe('Synth command', () => {
   });
 
   afterEach(() => {
-    temp.cleanup();
+    temp.restore();
   });
 
   it('should synthesize after initializing a project with the specified blueprint', async () => {

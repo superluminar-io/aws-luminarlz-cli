@@ -75,7 +75,7 @@ describe('Init Command', () => {
   });
 
   afterEach(() => {
-    temp.cleanup();
+    temp.restore();
   });
 
 

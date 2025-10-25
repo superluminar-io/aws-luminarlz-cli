@@ -66,7 +66,7 @@ describe('LZA Installer Version - update command', () => {
   });
 
   afterEach(() => {
-    temp.cleanup();
+    temp.restore();
   });
 
   it('should be a no-op when installed version is already up to date', async () => {

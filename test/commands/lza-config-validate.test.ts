@@ -89,7 +89,7 @@ describe('LZA Config Validate command', () => {
   });
 
   afterAll(() => {
-    temp.cleanup();
+    temp.restore();
   });
 
   it('should synthesize and validate after initializing a project with the specified blueprint', async () => {
