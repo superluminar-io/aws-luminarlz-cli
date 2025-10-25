@@ -21,7 +21,7 @@ async function runCli(cli: Cli<any>, argv: string[], temp: ReturnType<typeof use
   });
   logSpy.mockRestore();
 
-  if (typeof code === 'number' && code !== 0) {
+  if (code !== 0) {
     throw new Error(`CLI exited with code ${code}`);
   }
   process.chdir(prevCwd);
