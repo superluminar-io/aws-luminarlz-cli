@@ -111,7 +111,7 @@ describe('LZA Core Bootstrap command', () => {
       '--region', 'us-east-1',
       '--force',
     ], temp);
-    await execModule.executeCommand('npm install', { cwd: temp.dir });
+    await execModule.executeCommand('npm install', { cwd: temp.directory });
     await runCli(cli, ['lza', 'core', 'bootstrap'], temp);
 
     const config = loadConfigSync();
@@ -120,7 +120,7 @@ describe('LZA Core Bootstrap command', () => {
     const lzaConfigPath = resolveProjectPath(
       config.awsAcceleratorConfigOutPath,
     );
-    expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.dir });
+    expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.directory });
     expect(execSpy).toHaveBeenNthCalledWith(
       3,
       `git clone --depth=1 --branch ${checkoutBranch} ${LZA_REPOSITORY_GIT_URL} ${checkoutPath}`,

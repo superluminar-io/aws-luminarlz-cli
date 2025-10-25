@@ -77,7 +77,7 @@ describe('LZA Installer Version - check command', () => {
       '--region', 'us-east-1',
       '--force',
     ], temp);
-    await execModule.executeCommand('npm install', { cwd: temp.dir });
+    await execModule.executeCommand('npm install', { cwd: temp.directory });
     await runCli(cli, ['lza', 'installer-version', 'check'], temp);
 
     expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 2);
@@ -113,7 +113,7 @@ describe('LZA Installer Version - check command', () => {
       '--region', 'us-east-1',
       '--force',
     ], temp);
-    await execModule.executeCommand('npm install', { cwd: temp.dir });
+    await execModule.executeCommand('npm install', { cwd: temp.directory });
     await expect(runCli(cli, ['lza', 'installer-version', 'check'], temp)).rejects.toThrow(CliError);
 
     expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 2);

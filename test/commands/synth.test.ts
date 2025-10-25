@@ -82,10 +82,10 @@ describe('Synth command', () => {
       '--region', 'us-east-1',
       '--force',
     ], temp);
-    await executeCommand('npm install', { cwd: temp.dir });
+    await executeCommand('npm install', { cwd: temp.directory });
     await runCli(cli, ['synth'], temp);
 
     const config = loadConfigSync();
-    expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.dir });
+    expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.directory });
   });
 });

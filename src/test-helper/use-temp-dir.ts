@@ -3,10 +3,10 @@ import os from 'node:os';
 import path from 'node:path';
 
 export function useTempDir(prefix = 'aws-luminarlz-cli-') {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
-  process.chdir(dir);
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  process.chdir(directory);
   return {
-    dir,
-    restore() { fs.rmSync(dir, { recursive: true, force: true }); },
+    directory,
+    restore() { fs.rmSync(directory, { recursive: true, force: true }); },
   };
 }

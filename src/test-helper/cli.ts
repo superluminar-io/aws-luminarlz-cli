@@ -17,7 +17,7 @@ function createCliFor<C extends BaseContext>(...commands: CommandClass<C>[]): Cl
 async function runCli(cli: Cli<any>, argv: string[], temp: ReturnType<typeof useTempDir>) {
   const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
   const prevCwd = process.cwd();
-  process.chdir(temp.dir);
+  process.chdir(temp.directory);
   const code = await cli.run(argv, {
     stdin: process.stdin,
     stdout: process.stdout,

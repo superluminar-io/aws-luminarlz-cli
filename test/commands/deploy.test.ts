@@ -96,11 +96,11 @@ describe('Deploy command', () => {
       '--accounts-root-email', 'test@example.com',
       '--region', 'us-east-1',
     ], temp);
-    await executeCommand('npm install', { cwd: temp.dir });
+    await executeCommand('npm install', { cwd: temp.directory });
     await runCli(cli, ['deploy'], temp);
 
     const config = loadConfigSync();
-    expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.dir });
+    expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.directory });
     expect(s3Mock).toHaveReceivedCommandWith(PutObjectCommand, {
       Bucket: awsAcceleratorConfigBucketName(config),
       Key: config.awsAcceleratorConfigDeploymentArtifactPath,
@@ -112,7 +112,7 @@ describe('Deploy command', () => {
 
 function getAcceleratorConfigZip(config: Config) {
   const zipPath = path.join(
-    temp.dir,
+    temp.directory,
     `${config.awsAcceleratorConfigOutPath}.zip`,
   );
   return fs.readFileSync(zipPath);

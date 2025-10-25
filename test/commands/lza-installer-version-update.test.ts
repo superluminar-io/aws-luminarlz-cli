@@ -87,7 +87,7 @@ describe('LZA Installer Version - update command', () => {
       '--region', 'us-east-1',
       '--force',
     ], temp);
-    await execModule.executeCommand('npm install', { cwd: temp.dir });
+    await execModule.executeCommand('npm install', { cwd: temp.directory });
     await runCli(cli, ['lza', 'installer-version', 'update'], temp);
 
     expect(cfnMock).toHaveReceivedCommandTimes(UpdateStackCommand, 0);
@@ -137,7 +137,7 @@ describe('LZA Installer Version - update command', () => {
       '--region', 'us-east-1',
       '--force',
     ], temp);
-    await execModule.executeCommand('npm install', { cwd: temp.dir });
+    await execModule.executeCommand('npm install', { cwd: temp.directory });
     await runCli(cli, ['lza', 'installer-version', 'update'], temp);
 
     expect(cfnMock).toHaveReceivedCommandTimes(UpdateStackCommand, 1);
@@ -174,7 +174,7 @@ describe('LZA Installer Version - update command', () => {
       '--region', 'us-east-1',
       '--force',
     ], temp);
-    await execModule.executeCommand('npm install', { cwd: temp.dir });
+    await execModule.executeCommand('npm install', { cwd: temp.directory });
 
     await expect(runCli(cli, ['lza', 'installer-version', 'update'], temp)).rejects.toThrow(CliError);
     expect(cfnMock).toHaveReceivedCommandTimes(UpdateStackCommand, 0);

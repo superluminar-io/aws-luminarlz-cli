@@ -102,13 +102,13 @@ describe('LZA Config Validate command', () => {
       '--region', 'us-east-1',
       '--force',
     ], temp);
-    await execModule.executeCommand('npm install', { cwd: temp.dir });
+    await execModule.executeCommand('npm install', { cwd: temp.directory });
     await runCli(cli, ['lza', 'config', 'validate'], temp);
 
     const checkoutPath = getCheckoutPath();
     const config = loadConfigSync();
     const checkoutBranch = awsAcceleratorInstallerRepositoryBranchName(config);
-    expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.dir });
+    expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.directory });
     expect(execSpy).toHaveBeenCalledWith(
       expect.stringMatching(`git clone --depth=1 --branch ${checkoutBranch} ${LZA_REPOSITORY_GIT_URL} ${checkoutPath}`),
     );

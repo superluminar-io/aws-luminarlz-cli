@@ -90,7 +90,7 @@ describe('Init Command', () => {
       '--accounts-root-email', email,
     ], temp);
 
-    const configPath = path.join(temp.dir, 'config.ts');
+    const configPath = path.join(temp.directory, 'config.ts');
     const configContent = fs.readFileSync(configPath, 'utf8');
     expect(configContent).toMatchSnapshot();
   });
