@@ -6,52 +6,42 @@ import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { ListInstancesCommand, SSOAdminClient } from '@aws-sdk/client-sso-admin';
 import { GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
 import { mockClient } from 'aws-sdk-client-mock';
-import { Cli } from 'clipanion';
 import { Deploy } from '../../src/commands/deploy';
 import { Init } from '../../src/commands/init';
 import {
   AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-  awsAcceleratorConfigBucketName, loadConfigSync,
+  awsAcceleratorConfigBucketName,
+  Config,
+  loadConfigSync,
 } from '../../src/config';
 import * as assets from '../../src/core/customizations/assets';
 import { executeCommand } from '../../src/core/util/exec';
-import { TestProjectDirectory } from '../../src/test-helper/test-project-directory';
+import { createCliFor, runCli } from '../../src/test-helper/cli';
+import { useTempDir } from '../../src/test-helper/useTempDir';
 
-// Mock the assets module
-jest.mock('../../src/core/customizations/assets', () => ({
-  customizationsPublishCdkAssets: jest.fn(),
-}));
-
+let temp: ReturnType<typeof useTempDir>;
 describe('Deploy command', () => {
-  const testProjectDirectory = new TestProjectDirectory();
-
-  // Create mocks for AWS services
   const ssmMock = mockClient(SSMClient);
   const stsMock = mockClient(STSClient);
   const organizationsMock = mockClient(OrganizationsClient);
   const ssoAdminMock = mockClient(SSOAdminClient);
   const s3Mock = mockClient(S3Client);
 
-  // Create spies for the functions
-  let assetsSpy: jest.SpyInstance;
+  let customizationsPublishCdkAssetsSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    testProjectDirectory.initAndChangeToTempDirectory();
+    temp = useTempDir();
 
-    // Clear mocks before each test
     ssmMock.reset();
     stsMock.reset();
     organizationsMock.reset();
     ssoAdminMock.reset();
     s3Mock.reset();
 
-    // Reset all mocks
     jest.clearAllMocks();
 
-    // Set up spies for the functions
-    assetsSpy = jest.spyOn(assets, 'customizationsPublishCdkAssets').mockResolvedValue();
+    customizationsPublishCdkAssetsSpy = jest.spyOn(assets, 'customizationsPublishCdkAssets').mockResolvedValue();
 
-    // Mock SSM parameter for AWS Accelerator version
     ssmMock.on(GetParameterCommand).resolves({
       Parameter: {
         Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
@@ -60,14 +50,12 @@ describe('Deploy command', () => {
       },
     });
 
-    // Mock STS GetCallerIdentity
     stsMock.on(GetCallerIdentityCommand).resolves({
       Account: '123456789012',
       Arn: 'arn:aws:iam::123456789012:role/Admin',
       UserId: 'AROAEXAMPLE123',
     });
 
-    // Mock Organizations DescribeOrganization
     organizationsMock.on(DescribeOrganizationCommand).resolves({
       Organization: {
         Id: 'o-exampleorg',
@@ -76,7 +64,6 @@ describe('Deploy command', () => {
       },
     });
 
-    // Mock Organizations ListRoots
     organizationsMock.on(ListRootsCommand).resolves({
       Roots: [
         {
@@ -87,7 +74,6 @@ describe('Deploy command', () => {
       ],
     });
 
-    // Mock SSO Admin ListInstances
     ssoAdminMock.on(ListInstancesCommand).resolves({
       Instances: [
         {
@@ -99,59 +85,43 @@ describe('Deploy command', () => {
   });
 
   afterEach(() => {
-    testProjectDirectory.changeToOriginalAndCleanUpTempDirectory();
+    temp.cleanup();
   });
 
   it('should deploy after initializing a project with the specified blueprint', async () => {
-    // Run the init command to set up the project
-    const initCli = new Cli();
-    initCli.register(Init);
-    const initExitCode = await initCli.run([
+    const cli = createCliFor(Init, Deploy);
+
+    await runCli(cli, [
       'init',
       '--accounts-root-email', 'test@example.com',
       '--region', 'us-east-1',
-    ]);
+    ], temp);
+    await executeCommand('npm install', { cwd: temp.dir });
+    await runCli(cli, ['deploy'], temp);
 
-    // Install dependencies after initialization
-    await executeCommand('npm install', { cwd: testProjectDirectory.directory });
-
-    // Verify init was successful
-    expect(initExitCode).toBe(0);
-
-    // Now create CLI instance with Deploy command
-    const deployCli = new Cli();
-    deployCli.register(Deploy);
-
-    // Run the deploy command
-    const deployExitCode = await deployCli.run(['deploy']);
-
-    // Verify deploy was successful
-    expect(deployExitCode).toBe(0);
-
-    // Verify that the accelerator config output directory was created and contains files
     const config = loadConfigSync();
-    const outPath = path.join(testProjectDirectory.directory, config.awsAcceleratorConfigOutPath);
-    expect(fs.existsSync(outPath)).toBe(true);
-    const outFiles = fs.readdirSync(outPath, { recursive: false });
-    expect(outFiles.length).toBeGreaterThan(0);
-
-    // Verify that cdk.out templates were copied into the output directory
-    const cdkOutPath = path.join(outPath, config.cdkOutPath);
-    expect(fs.existsSync(cdkOutPath)).toBe(true);
-    const cdkFiles = fs
-      .readdirSync(cdkOutPath, { recursive: true })
-      .filter((f) => f.toString().endsWith('.template.json'));
-    expect(cdkFiles.length).toBeGreaterThan(0);
-
-    // Verify that accelerator config was uploaded to S3
-    const s3Calls = s3Mock.commandCalls(PutObjectCommand);
-    const callInput = s3Calls[0].args[0].input;
-    expect(callInput.Bucket).toBe(awsAcceleratorConfigBucketName(config));
-    expect(callInput.Key).toBe(config.awsAcceleratorConfigDeploymentArtifactPath);
-    expect(Buffer.isBuffer(callInput.Body)).toBe(true);
-
-
-    // Verify that the customizationsPublishCdkAssets function was called
-    expect(assetsSpy).toHaveBeenCalled();
-  }, 120 * 1000);
+    expectCdkOutTemplatesToBeCreated(config);
+    expect(s3Mock).toHaveReceivedCommandWith(PutObjectCommand, {
+      Bucket: awsAcceleratorConfigBucketName(config),
+      Key: config.awsAcceleratorConfigDeploymentArtifactPath,
+      Body: getAcceleratorConfigZip(config),
+    });
+    expect(customizationsPublishCdkAssetsSpy).toHaveBeenCalled();
+  });
 });
+
+function expectCdkOutTemplatesToBeCreated(config: Config) {
+  const cdkOutPath = path.join(temp.dir, config.awsAcceleratorConfigOutPath, config.cdkOutPath);
+  const templates = fs.readdirSync(cdkOutPath, { recursive: true, encoding: 'utf8' })
+    .filter(f => f.endsWith('.template.json'));
+
+  expect(templates).not.toHaveLength(0);
+}
+
+function getAcceleratorConfigZip(config: Config) {
+  const zipPath = path.join(
+    temp.dir,
+    `${config.awsAcceleratorConfigOutPath}.zip`,
+  );
+  return fs.readFileSync(zipPath);
+}

@@ -40,6 +40,7 @@
     "@typescript-eslint/eslint-plugin": "^8",
     "@typescript-eslint/parser": "^8",
     "aws-sdk-client-mock": "^4.1.0",
+    "aws-sdk-client-mock-jest": "4.1.0",
     "commit-and-tag-version": "^12",
     "constructs": "^10.0.0",
     "eslint": "^9",
@@ -74,12 +75,14 @@
   "version": "0.0.0",
   "jest": {
     "coverageProvider": "v8",
+    "setupFilesAfterEnv": ["<rootDir>/test/jest-setup.ts"],
     "testMatch": [
       "<rootDir>/@(src|test)/**/*(*.)@(spec|test).ts?(x)",
       "<rootDir>/@(src|test)/**/__tests__/**/*.ts?(x)",
       "<rootDir>/@(projenrc)/**/*(*.)@(spec|test).ts?(x)",
       "<rootDir>/@(projenrc)/**/__tests__/**/*.ts?(x)"
     ],
+    "testTimeout": 120000,
     "clearMocks": true,
     "collectCoverage": true,
     "coverageReporters": [

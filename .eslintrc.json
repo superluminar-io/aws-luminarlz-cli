@@ -220,6 +220,12 @@
         "@typescript-eslint/no-require-imports": "off",
         "import/no-extraneous-dependencies": "off"
       }
+    },
+    {
+      "files": ["**/*.test.ts", "**/*.spec.ts", "**/__tests__/**"],
+      "rules": {
+        "import/no-extraneous-dependencies": ["error", { "devDependencies": true }]
+      }
     }
   ]
 }
