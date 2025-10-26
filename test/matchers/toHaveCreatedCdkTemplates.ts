@@ -1,64 +1,68 @@
 import fs from 'fs';
 import path from 'path';
 
-type CdkConfig = {
+interface CdkConfig {
   awsAcceleratorConfigOutPath: string;
   cdkOutPath: string;
-};
+}
 
 export function toHaveCreatedCdkTemplates(
-  received: CdkConfig,
+  receivedConfig: CdkConfig,
   options: { baseDir: string },
 ) {
-  const { baseDir } = options ?? ({} as any);
+  const { baseDir } = options ?? {};
 
   if (!baseDir) {
     return {
       pass: false,
       message: () =>
-        'toHaveCreatedCdkTemplates: missing option { baseDir }',
+        'Matcher "toHaveCreatedCdkTemplates" requires the option { baseDir }.',
     };
   }
 
-  const cdkOutPath = path.join(
+  const outputDirectoryPath = path.join(
     baseDir,
-    received.awsAcceleratorConfigOutPath,
-    received.cdkOutPath,
+    receivedConfig.awsAcceleratorConfigOutPath,
+    receivedConfig.cdkOutPath,
   );
 
-  let entries: string[] = [];
+  let directoryEntries: string[] = [];
   try {
-    entries = fs.readdirSync(cdkOutPath, {
+    directoryEntries = fs.readdirSync(outputDirectoryPath, {
       recursive: true,
       encoding: 'utf8',
     }) as unknown as string[];
-  } catch (e: any) {
+  } catch (readError: unknown) {
+    const errorMessage =
+            readError instanceof Error ? readError.message : String(readError);
     return {
       pass: false,
       message: () =>
-        `Expected CDK output directory to exist: ${cdkOutPath}\nError: ${e?.message ?? e}`,
+        `Expected CDK output directory to exist at: ${outputDirectoryPath}\n` +
+                `Error: ${errorMessage}`,
     };
   }
 
-  const hasTemplates = entries.some((f) =>
-    f.endsWith('.template.json'),
+  const hasTemplateFiles = directoryEntries.some((fileName) =>
+    fileName.endsWith('.template.json'),
   );
 
-  if (hasTemplates) {
+  if (hasTemplateFiles) {
     return {
       pass: true,
       message: () =>
-        `Expected NO templates, but found at least one in ${cdkOutPath}`,
+        `Expected no template files, but found at least one in ${outputDirectoryPath}.`,
     };
   }
 
-  const preview =
-        entries.slice(0, 10).map((x) => `  - ${x}`).join('\n') ||
+  const directoryPreview =
+        directoryEntries.slice(0, 10).map((entry) => `  - ${entry}`).join('\n') ||
         '  (directory empty)';
 
   return {
     pass: false,
     message: () =>
-      `No *.template.json files found under ${cdkOutPath}\nDirectory preview:\n${preview}`,
+      `No *.template.json files found under ${outputDirectoryPath}\n` +
+            `Directory preview:\n${directoryPreview}`,
   };
-};
+}
