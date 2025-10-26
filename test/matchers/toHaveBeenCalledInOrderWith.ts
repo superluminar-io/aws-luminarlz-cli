@@ -1,52 +1,75 @@
-import Mock = jest.Mock;
+import type { Mock } from 'jest-mock';
+
+function normalizeExpectedCalls(expectedCalls: unknown[]): unknown[][] {
+  return expectedCalls.map((expectedCall) =>
+    Array.isArray(expectedCall) ? [...expectedCall] : [expectedCall],
+  );
+}
+
+function findMatchingCallIndex(
+  allActualCalls: unknown[][],
+  expectedArguments: unknown[],
+  areValuesEqual: (actualValue: unknown, expectedValue: unknown) => boolean,
+): number {
+  return allActualCalls.findIndex(
+    (actualArguments) =>
+      actualArguments.length === expectedArguments.length &&
+            actualArguments.every((actualValue, argumentIndex) =>
+              areValuesEqual(actualValue, expectedArguments[argumentIndex]),
+            ),
+  );
+}
 
 export function toHaveBeenCalledInOrderWith(
   this: jest.MatcherContext,
-  received: Mock<any, any>,
-  ...expectedCalls: (any[] | any)[]
+  mockFunction: Mock<any>,
+  ...expectedCalls: (unknown[] | unknown)[]
 ) {
-  const flattenedExpected =
-        expectedCalls.length === 1 && Array.isArray(expectedCalls[0])
-          ? (expectedCalls[0] as any[])
-          : expectedCalls;
+  const normalizedExpectedCalls = normalizeExpectedCalls(
+    expectedCalls.length === 1 && Array.isArray(expectedCalls[0])
+      ? (expectedCalls[0] as unknown[])
+      : expectedCalls,
+  );
 
-  const calls: unknown[][] = received.mock.calls;
-  const foundIndices: number[] = [];
+  const allActualCalls: unknown[][] = mockFunction.mock.calls;
+  const matchedCallIndices: number[] = [];
 
-  for (const expected of flattenedExpected) {
-    const expectedArgs = Array.isArray(expected) ? expected : [expected];
-    const foundIndex = calls.findIndex(
-      (call: unknown[]) =>
-        call.length === expectedArgs.length &&
-                call.every((arg, j) => this.equals(arg, expectedArgs[j])),
+  for (const expectedArguments of normalizedExpectedCalls) {
+    const matchingCallIndex = findMatchingCallIndex(
+      allActualCalls,
+      expectedArguments,
+      this.equals,
     );
 
-    if (foundIndex === -1) {
+    if (matchingCallIndex === -1) {
       return {
         pass: false,
         message: () =>
-          `Expected call with arguments ${this.utils.printExpected(expectedArgs)} not found.`,
+          `Expected call with arguments ${this.utils.printExpected(expectedArguments)} not found.\n` +
+                    `Actual calls:\n${this.utils.printReceived(allActualCalls)}`,
       };
     }
 
-    foundIndices.push(foundIndex);
+    matchedCallIndices.push(matchingCallIndex);
   }
 
-  const isOrdered = foundIndices.every((v, i) => i === 0 || v > foundIndices[i - 1]);
-  if (!isOrdered) {
-    const wrongIdx = foundIndices.findIndex((v, i) => i > 0 && v < foundIndices[i - 1]);
-    const previous = wrongIdx - 1;
+  for (let currentIndex = 1; currentIndex < matchedCallIndices.length; currentIndex++) {
+    const currentCallIndex = matchedCallIndices[currentIndex];
+    const previousCallIndex = matchedCallIndices[currentIndex - 1];
 
-    return {
-      pass: false,
-      message: () =>
-        'The order of your expected calls did not match the actual call order.\n' +
-                `Expected-call #${wrongIdx + 1} was invoked before expected-call #${previous + 1}.`,
-    };
+    if (currentCallIndex <= previousCallIndex) {
+      return {
+        pass: false,
+        message: () =>
+          'The expected call order was incorrect.\n' +
+                    `Expected call #${currentIndex + 1} occurred before expected call #${currentIndex}.`,
+      };
+    }
   }
 
   return {
     pass: true,
-    message: () => `All expected calls were found in the correct order (${foundIndices.length} calls).`,
+    message: () =>
+      `All ${matchedCallIndices.length} expected calls were found in the correct order.`,
   };
 }
