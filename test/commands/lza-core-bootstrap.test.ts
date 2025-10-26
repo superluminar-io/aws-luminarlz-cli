@@ -120,25 +120,22 @@ describe('LZA Core Bootstrap command', () => {
     const lzaConfigPath = resolveProjectPath(
       config.awsAcceleratorConfigOutPath,
     );
+
     expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.directory });
-    expect(execSpy).toHaveBeenNthCalledWith(
-      3,
+    expect(execSpy).toHaveBeenCalledInOrderWith(
       `git clone --depth=1 --branch ${checkoutBranch} ${LZA_REPOSITORY_GIT_URL} ${checkoutPath}`,
-    );
-    expect(execSpy).toHaveBeenNthCalledWith(
-      4,
-      'yarn && yarn build',
-      { cwd: path.join(checkoutPath, LZA_SOURCE_PATH) },
-    );
-    expect(execSpy).toHaveBeenNthCalledWith(
-      5,
-      `yarn run ts-node --transpile-only cdk.ts synth --config-dir "${lzaConfigPath}" --partition aws`,
-      { cwd: path.join(checkoutPath, LZA_ACCELERATOR_PACKAGE_PATH) },
-    );
-    expect(execSpy).toHaveBeenNthCalledWith(
-      8,
-      `yarn run ts-node --transpile-only cdk.ts bootstrap --require-approval never --config-dir "${lzaConfigPath}" --partition aws`,
-      { cwd: path.join(checkoutPath, LZA_ACCELERATOR_PACKAGE_PATH) },
+      [
+        'yarn && yarn build',
+        { cwd: path.join(checkoutPath, LZA_SOURCE_PATH) },
+      ],
+      [
+        `yarn run ts-node --transpile-only cdk.ts synth --config-dir "${lzaConfigPath}" --partition aws`,
+        { cwd: path.join(checkoutPath, LZA_ACCELERATOR_PACKAGE_PATH) },
+      ],
+      [
+        `yarn run ts-node --transpile-only cdk.ts bootstrap --require-approval never --config-dir "${lzaConfigPath}" --partition aws`,
+        { cwd: path.join(checkoutPath, LZA_ACCELERATOR_PACKAGE_PATH) },
+      ],
     );
   });
 });
