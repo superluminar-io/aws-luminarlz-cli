@@ -49,10 +49,6 @@ project.tsconfigDev?.file?.addOverride('compilerOptions.types', [
   'aws-sdk-client-mock-jest',
 ]);
 project.tsconfigDev?.file?.addOverride('files', ['test/jest.custom-matchers.d.ts']);
-project.tsconfigDev?.file?.addOverride('compilerOptions.composite', true);
 project.tsconfigDev?.file?.addOverride('compilerOptions.allowJs', true);
 
-project.tsconfig?.file?.addOverride('references', [
-  { path: './tsconfig.dev.json' },
-]);
 project.synth();

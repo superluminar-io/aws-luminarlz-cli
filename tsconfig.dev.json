@@ -29,7 +29,6 @@
       "jest",
       "aws-sdk-client-mock-jest"
     ],
-    "composite": true,
     "allowJs": true
   },
   "include": [
