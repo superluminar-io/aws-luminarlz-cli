@@ -109,12 +109,12 @@ describe('LZA Config Validate command', () => {
     const config = loadConfigSync();
     const checkoutBranch = awsAcceleratorInstallerRepositoryBranchName(config);
     expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.directory });
-    expect(execSpy).toHaveBeenCalledWith(
-      expect.stringMatching(`git clone --depth=1 --branch ${checkoutBranch} ${LZA_REPOSITORY_GIT_URL} ${checkoutPath}`),
-    );
-    expect(execSpy).toHaveBeenCalledWith(
-      'yarn && yarn build',
-      { cwd: path.join(checkoutPath, LZA_SOURCE_PATH) },
+    expect(execSpy).toHaveBeenCalledInOrderWith(
+      `git clone --depth=1 --branch ${checkoutBranch} ${LZA_REPOSITORY_GIT_URL} ${checkoutPath}`,
+      [
+        'yarn && yarn build',
+        { cwd: path.join(checkoutPath, LZA_SOURCE_PATH) },
+      ],
     );
   });
 });
