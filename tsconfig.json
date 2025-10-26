@@ -30,7 +30,10 @@
   "include": [
     "src/**/*.ts"
   ],
+  "exclude": [],
   "references": [
-    { "path": "./tsconfig.dev.json" }
+    {
+      "path": "./tsconfig.dev.json"
+    }
   ]
 }
