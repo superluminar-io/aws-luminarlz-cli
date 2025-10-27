@@ -1,3 +1,4 @@
+import { Writable } from 'node:stream';
 import { BaseContext, Cli, CommandClass } from 'clipanion';
 import { useTempDir } from './use-temp-dir';
 
@@ -18,10 +19,14 @@ async function runCli(cli: Cli<any>, argv: string[], temp: ReturnType<typeof use
   const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
   const prevCwd = process.cwd();
   process.chdir(temp.directory);
-  const code = await cli.run(argv, {
+  const silentStream = new Writable({
+    write(_chunk, _encoding, callback):void {
+      callback();
+    },
+  }); const code = await cli.run(argv, {
     stdin: process.stdin,
-    stdout: process.stdout,
-    stderr: process.stderr,
+    stdout: silentStream,
+    stderr: silentStream,
     cwd: () => process.cwd(),
     env: process.env,
   });
