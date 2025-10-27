@@ -15,8 +15,8 @@ import {
   AWS_ACCELERATOR_INSTALLER_STACK_NAME,
 } from '../../src/config';
 import * as execModule from '../../src/core/util/exec';
-import { CliError, createCliFor, runCli } from '../../src/test-helper/cli';
-import { useTempDir } from '../../src/test-helper/use-temp-dir';
+import { CliError, createCliFor, runCli } from '../test-helper/cli';
+import { useTempDir } from '../test-helper/use-temp-dir';
 
 let temp: ReturnType<typeof useTempDir>;
 

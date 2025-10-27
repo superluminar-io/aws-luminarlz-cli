@@ -15,8 +15,8 @@ import {
 import { getCheckoutPath } from '../../src/core/accelerator/repository/checkout';
 import * as execModule from '../../src/core/util/exec';
 import { resolveProjectPath } from '../../src/core/util/path';
-import { createCliFor, runCli } from '../../src/test-helper/cli';
-import { useTempDir } from '../../src/test-helper/use-temp-dir';
+import { createCliFor, runCli } from '../test-helper/cli';
+import { useTempDir } from '../test-helper/use-temp-dir';
 
 let temp: ReturnType<typeof useTempDir>;
 describe('LZA Core Bootstrap command', () => {

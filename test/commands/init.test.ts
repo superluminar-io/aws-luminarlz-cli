@@ -9,8 +9,8 @@ import { Init } from '../../src/commands/init';
 import {
   AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
 } from '../../src/config';
-import { runCli, createCliFor } from '../../src/test-helper/cli';
-import { useTempDir } from '../../src/test-helper/use-temp-dir';
+import { runCli, createCliFor } from '../test-helper/cli';
+import { useTempDir } from '../test-helper/use-temp-dir';
 
 let temp: ReturnType<typeof useTempDir>;
 describe('Init Command', () => {
