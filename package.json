@@ -92,6 +92,7 @@
     ],
     "coverageDirectory": "coverage",
     "coveragePathIgnorePatterns": [
+      "/test/",
       "/node_modules/"
     ],
     "testPathIgnorePatterns": [

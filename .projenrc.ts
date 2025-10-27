@@ -41,7 +41,8 @@ const project = new typescript.TypeScriptProject({
   },
 });
 project.jest!.config.setupFilesAfterEnv = ['<rootDir>/test/jest-setup.ts'];
-project.jest!.config.testTimeout = 120000;
+project.jest!.config.testTimeout = 120_000;
+project.jest!.config.coveragePathIgnorePatterns = ['/test/', '/node_modules/'];
 
 project.tsconfigDev?.file?.addOverride('compilerOptions.types', [
   'node',
