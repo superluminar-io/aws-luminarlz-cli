@@ -9,6 +9,13 @@ import { Init } from '../../src/commands/init';
 import {
   AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
 } from '../../src/config';
+import {
+  TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
+  TEST_ACCOUNT_ID,
+  TEST_EMAIL,
+  TEST_REGION,
+  TEST_USER_ID, TEST_ORGANIZATION_ID, TEST_ROOT_ID, TEST_MASTER_EMAIL,
+} from '../constants';
 import { runCli, createCliFor } from '../test-helper/cli';
 import { useTempDir } from '../test-helper/use-temp-dir';
 
@@ -29,27 +36,27 @@ describe('Init Command', () => {
     ssmMock.reset();
 
     stsMock.on(GetCallerIdentityCommand).resolves({
-      Account: '123456789012',
-      Arn: 'arn:aws:iam::123456789012:user/test-user',
-      UserId: 'AIDATEST123456',
+      Account: TEST_ACCOUNT_ID,
+      Arn: `arn:aws:iam::${TEST_ACCOUNT_ID}:user/test-user`,
+      UserId: TEST_USER_ID,
     });
 
     orgMock.on(DescribeOrganizationCommand).resolves({
       Organization: {
-        Id: 'o-abcdef1234',
-        Arn: 'arn:aws:organizations::123456789012:organization/o-abcdef1234',
+        Id: TEST_ORGANIZATION_ID,
+        Arn: `arn:aws:organizations::${TEST_ACCOUNT_ID}:organization/${TEST_ORGANIZATION_ID}`,
         FeatureSet: 'ALL',
-        MasterAccountArn: 'arn:aws:organizations::123456789012:account/o-abcdef1234/123456789012',
-        MasterAccountEmail: 'master@example.com',
-        MasterAccountId: '123456789012',
+        MasterAccountArn: `arn:aws:organizations::${TEST_ACCOUNT_ID}:account/${TEST_ORGANIZATION_ID}/${TEST_ACCOUNT_ID}`,
+        MasterAccountEmail: TEST_MASTER_EMAIL,
+        MasterAccountId: TEST_ACCOUNT_ID,
       },
     });
 
     orgMock.on(ListRootsCommand).resolves({
       Roots: [
         {
-          Id: 'r-abcd1234',
-          Arn: 'arn:aws:organizations::123456789012:root/o-abcdef1234/r-abcd1234',
+          Id: TEST_ROOT_ID,
+          Arn: `arn:aws:organizations::${TEST_ACCOUNT_ID}:root/${TEST_ORGANIZATION_ID}/${TEST_ROOT_ID}`,
           Name: 'Root',
           PolicyTypes: [],
         },
@@ -68,7 +75,7 @@ describe('Init Command', () => {
     ssmMock.on(GetParameterCommand).resolves({
       Parameter: {
         Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-        Value: '1.12.2',
+        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
         Type: 'String',
       },
     });
@@ -81,8 +88,8 @@ describe('Init Command', () => {
 
   it('should initialize a project with the specified blueprint and create a config.ts with expected content', async () => {
     const cli = createCliFor(Init);
-    const region = 'us-east-1';
-    const email = 'test@example.com';
+    const region = TEST_REGION;
+    const email = TEST_EMAIL;
 
     await runCli(cli, [
       'init',

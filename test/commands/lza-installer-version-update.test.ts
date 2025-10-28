@@ -15,6 +15,13 @@ import {
   AWS_ACCELERATOR_INSTALLER_STACK_NAME,
 } from '../../src/config';
 import * as execModule from '../../src/core/util/exec';
+import {
+  TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_1,
+  TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
+  TEST_ACCOUNT_ID,
+  TEST_EMAIL,
+  TEST_REGION, TEST_USER_ID, TEST_ORGANIZATION_ID, TEST_ROOT_ID,
+} from '../constants';
 import { CliError, createCliFor, runCli } from '../test-helper/cli';
 import { useTempDir } from '../test-helper/use-temp-dir';
 
@@ -42,20 +49,20 @@ describe('LZA Installer Version - update command', () => {
     jest.clearAllMocks();
 
     stsMock.on(GetCallerIdentityCommand).resolves({
-      Account: '123456789012',
-      Arn: 'arn:aws:iam::123456789012:role/Admin',
-      UserId: 'AROAEXAMPLE123',
+      Account: TEST_ACCOUNT_ID,
+      Arn: `arn:aws:iam::${TEST_ACCOUNT_ID}:role/Admin`,
+      UserId: TEST_USER_ID,
     });
     organizationsMock.on(DescribeOrganizationCommand).resolves({
       Organization: {
-        Id: 'o-exampleorg',
-        Arn: 'arn:aws:organizations::123456789012:organization/o-exampleorg',
-        MasterAccountId: '123456789012',
+        Id: TEST_ORGANIZATION_ID,
+        Arn: `arn:aws:organizations::${TEST_ACCOUNT_ID}:organization/${TEST_ORGANIZATION_ID}`,
+        MasterAccountId: TEST_ACCOUNT_ID,
       },
     });
     organizationsMock.on(ListRootsCommand).resolves({
       Roots: [
-        { Id: 'r-exampleroot', Arn: 'arn:aws:organizations::123456789012:root/o-exampleorg/r-exampleroot', Name: 'Root' },
+        { Id: TEST_ROOT_ID, Arn: `arn:aws:organizations::${TEST_ACCOUNT_ID}:root/${TEST_ORGANIZATION_ID}/${TEST_ROOT_ID}`, Name: 'Root' },
       ],
     });
     ssoAdminMock.on(ListInstancesCommand).resolves({
@@ -83,8 +90,8 @@ describe('LZA Installer Version - update command', () => {
     await runCli(cli, [
       'init',
       '--blueprint', 'foundational',
-      '--accounts-root-email', 'test@example.com',
-      '--region', 'us-east-1',
+      '--accounts-root-email', TEST_EMAIL,
+      '--region', TEST_REGION,
       '--force',
     ], temp);
     await execModule.executeCommand('npm install', { cwd: temp.directory });
@@ -99,19 +106,19 @@ describe('LZA Installer Version - update command', () => {
       .resolvesOnce({
         Parameter: {
           Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-          Value: '1.12.2',
+          Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
           Type: 'String',
         },
       })
       .resolves({
         Parameter: {
           Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-          Value: '1.12.1',
+          Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_1,
           Type: 'String',
         },
       });
     // Mock UpdateStack to succeed
-    cfnMock.on(UpdateStackCommand).resolves({ StackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/AWSAccelerator-InstallerStack/1' } as any);
+    cfnMock.on(UpdateStackCommand).resolves({ StackId: `arn:aws:cloudformation:us-east-1:${TEST_ACCOUNT_ID}:stack/AWSAccelerator-InstallerStack/1` } as any);
     // First DescribeStacks call (reading existing parameters)
     cfnMock.on(DescribeStacksCommand).resolvesOnce({
       Stacks: [
@@ -133,8 +140,8 @@ describe('LZA Installer Version - update command', () => {
     await runCli(cli, [
       'init',
       '--blueprint', 'foundational',
-      '--accounts-root-email', 'test@example.com',
-      '--region', 'us-east-1',
+      '--accounts-root-email', TEST_EMAIL,
+      '--region', TEST_REGION,
       '--force',
     ], temp);
     await execModule.executeCommand('npm install', { cwd: temp.directory });
@@ -170,8 +177,8 @@ describe('LZA Installer Version - update command', () => {
     await runCli(cli, [
       'init',
       '--blueprint', 'foundational',
-      '--accounts-root-email', 'test@example.com',
-      '--region', 'us-east-1',
+      '--accounts-root-email', TEST_EMAIL,
+      '--region', TEST_REGION,
       '--force',
     ], temp);
     await execModule.executeCommand('npm install', { cwd: temp.directory });
