@@ -81,7 +81,7 @@ describe('LZA Installer Version - update command', () => {
     ssmMock.on(GetParameterCommand).resolves({
       Parameter: {
         Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-        Value: '1.12.2',
+        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
         Type: 'String',
       },
     });
