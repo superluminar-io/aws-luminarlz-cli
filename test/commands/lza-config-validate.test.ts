@@ -95,7 +95,7 @@ describe('LZA Config Validate command', () => {
     });
   });
 
-  afterAll(() => {
+  afterEach(() => {
     temp.restore();
   });
 

@@ -104,7 +104,7 @@ describe('LZA Core Bootstrap command', () => {
     });
   });
 
-  afterAll(() => {
+  afterEach(() => {
     temp.restore();
   });
 
