@@ -1,0 +1,20 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Condition": {
+        "StringNotEquals": {
+          "aws:RequestedRegion": <% enabledRegions | json %>
+        },
+        "ArnNotLike": {
+          "aws:PrincipalARN": [
+            "arn:${PARTITION}:iam::*:role/${MANAGEMENT_ACCOUNT_ACCESS_ROLE}"
+          ]
+        }
+      },
+      "Resource": "*",
+      "Effect": "Deny",
+      "Action": "*"
+    }
+  ]
+}
