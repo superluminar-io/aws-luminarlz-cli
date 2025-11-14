@@ -9,8 +9,11 @@ export function useTempDir(prefix = 'aws-luminarlz-cli-') {
   return {
     directory,
     restore() {
-      try { process.chdir(originalCwd); } catch {}
-      fs.rmSync(directory, { recursive: true, force: true });
+      try {
+        process.chdir(originalCwd);
+      } finally {
+        fs.rmSync(directory, { recursive: true, force: true });
+      }
     },
   };
 }
