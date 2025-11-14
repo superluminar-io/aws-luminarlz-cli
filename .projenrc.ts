@@ -71,10 +71,10 @@ wf.addJobs({
       },
       {
         name: 'Setup Node',
-        uses: 'actions/setup-node@v4',
+        uses: 'actions/setup-node@v6',
         with: {
-          'node-version': '20', // or matrix if you want multiple versions
-          'cache': 'npm', // change to "yarn" or "pnpm" if you use those
+          'node-version': '22', // or matrix if you want multiple versions
+          'cache': 'yarn', // change to "yarn" or "pnpm" if you use those
         },
       },
       { name: 'Install deps', run: 'yarn --frozen-lockfile' },

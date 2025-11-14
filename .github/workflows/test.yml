@@ -13,13 +13,16 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/checkout@v5
         with:
-          node-version: "20"
-          cache: npm
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: yarn
       - name: Install deps
-        run: npm ci
+        run: yarn --frozen-lockfile
       - name: Run tests
-        run: npx projen test
+        run: yarn projen test
