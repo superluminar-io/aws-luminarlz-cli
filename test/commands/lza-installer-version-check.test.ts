@@ -121,7 +121,9 @@ describe('LZA Installer Version - check command', () => {
       '--force',
     ], temp);
     await execModule.executeCommand('npm install', { cwd: temp.directory });
-    await expect(runCli(cli, ['lza', 'installer-version', 'check'], temp)).rejects.toThrow(CliError);
+    const result = runCli(cli, ['lza', 'installer-version', 'check'], temp);
+
+    await expect(result).rejects.toThrow(CliError);
 
     expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 2);
     expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {

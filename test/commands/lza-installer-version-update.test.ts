@@ -183,7 +183,9 @@ describe('LZA Installer Version - update command', () => {
     ], temp);
     await execModule.executeCommand('npm install', { cwd: temp.directory });
 
-    await expect(runCli(cli, ['lza', 'installer-version', 'update'], temp)).rejects.toThrow(CliError);
+    const result = runCli(cli, ['lza', 'installer-version', 'update'], temp);
+
+    await expect(result).rejects.toThrow(CliError);
     expect(cfnMock).toHaveReceivedCommandTimes(UpdateStackCommand, 0);
   });
 });
