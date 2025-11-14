@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { AwsAcceleratorPipelineStack } from '../lib/aws-accelerator-pipeline-stack';
-import { CliCredentialsStackSynthesizer, Tags } from 'aws-cdk-lib';
+import { Tags } from 'aws-cdk-lib';
+import { CliCredentialsStackSynthesizer } from '../lib/synthesizer/cli-credentials-stack-synthesizer';
 import { cdkAccelAssetsBucketNamePrefix } from '@superluminar-io/aws-luminarlz-cli/lib/config';
 import { config, Groups } from '../../config';
 import { CostCategoriesStack } from '../lib/cost-categories-stack';
@@ -17,29 +18,19 @@ const defaultStackSynthesizer = new CliCredentialsStackSynthesizer({
   fileAssetsBucketName: `${cdkAccelAssetsBucketNamePrefix(config)}\${AWS::Region}`,
 });
 
-const props = {
-  synthesizer: defaultStackSynthesizer,
-  analyticsReporting: false,
-};
 const StackPrefix = 'LzaCustomization-';
 
-const app = new cdk.App();
+const app = new cdk.App({
+  defaultStackSynthesizer,
+  analyticsReporting: false,
+});
 new OrganizationsServiceAccessStack(
   app,
   `${StackPrefix}OrganizationsServiceAccess`,
-  {
-    ...props,
-  },
 );
-new AwsAcceleratorPipelineStack(app, `${StackPrefix}AwsAcceleratorPipeline`, {
-  ...props,
-});
-new CostCategoriesStack(app, `${StackPrefix}CostCategories`, {
-  ...props,
-});
-new AlternateContactsStack(app, `${StackPrefix}AlternateContacts`, {
-  ...props,
-});
+new AwsAcceleratorPipelineStack(app, `${StackPrefix}AwsAcceleratorPipeline`);
+new CostCategoriesStack(app, `${StackPrefix}CostCategories`);
+new AlternateContactsStack(app, `${StackPrefix}AlternateContacts`);
 
 /**
  * Custom Security Hub setup.
@@ -52,23 +43,14 @@ new AlternateContactsStack(app, `${StackPrefix}AlternateContacts`, {
 // new SecurityHubDelegatedAdminStack(
 //   app,
 //   `${StackPrefix}SecurityHubDelegatedAdmin`,
-//   {
-//     ...props,
-//   },
 // );
 // new SecurityHubCentralConfigurationStack(
 //   app,
 //   `${StackPrefix}SecurityHubCentralConfiguration`,
-//   {
-//     ...props,
-//   },
 // );
 // new SecurityHubAutomationRulesStack(
 //   app,
 //   `${StackPrefix}SecurityHubAutomationRules`,
-//   {
-//     ...props,
-//   },
 // );
 
 Tags.of(app).add('Owner', Groups.awsAdministrator);

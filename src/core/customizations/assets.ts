@@ -40,9 +40,8 @@ export const customizationsPublishCdkAssets = async (): Promise<void> => {
 
   const progressListener = new ConsoleProgress();
 
-  // publish the asset files in chunks to avoid throttling
-  const maxConcurrentUploads = 30;
-  for (const chunk of chunks(assetManifests, maxConcurrentUploads)) {
+  // publish the asset files in chunks to limit the overall number of parallel uploads
+  for (const chunk of chunks(assetManifests, config.maxParallelCdkAssetManifestUploads)) {
     const execs = chunk.map(({ assetManifest, region }) => {
       const assetPublishing = new AssetPublishing(assetManifest, {
         aws: RegionAwareAwsClient.makeClient(region),
