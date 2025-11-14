@@ -2,6 +2,7 @@ import { Stack, StackProps, aws_securityhub as securityhub } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { CfnAutomationRule } from 'aws-cdk-lib/aws-securityhub';
 import AutomationRulesFindingFiltersProperty = CfnAutomationRule.AutomationRulesFindingFiltersProperty;
+import { Groups } from '../../config';
 
 /**
  * Configures AWS Security Hub automation rules in the delegated admin account
@@ -54,12 +55,10 @@ export class SecurityHubAutomationRulesStack extends Stack {
             workflow: {
               status: 'SUPPRESSED',
             },
-            // This is not working due to https://github.com/aws/aws-cdk/issues/26749
-            // The workaround described in the issue cannot be used because the LZA validation of the CloudFormation template fails
-            // note: {
-            //   updatedBy: AdministratorTeamName,
-            //   text: description,
-            // },
+            note: {
+              updatedBy: Groups.awsAdministrator,
+              text: description,
+            },
           },
           type: 'FINDING_FIELDS_UPDATE',
         },
