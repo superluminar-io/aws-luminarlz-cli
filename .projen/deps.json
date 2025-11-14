@@ -24,6 +24,14 @@
       "type": "build"
     },
     {
+      "name": "aws-sdk-client-mock",
+      "type": "build"
+    },
+    {
+      "name": "aws-sdk-client-mock-jest",
+      "type": "build"
+    },
+    {
       "name": "commit-and-tag-version",
       "version": "^12",
       "type": "build"

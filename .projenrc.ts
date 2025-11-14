@@ -30,10 +30,26 @@ const project = new typescript.TypeScriptProject({
     'typescript',
     'zip-lib',
   ],
+  devDeps: [
+    'aws-sdk-client-mock',
+    'aws-sdk-client-mock-jest',
+  ],
   sampleCode: false,
   gitignore: ['/blueprints/**/package-lock.json', '/blueprints/**/yarn.lock'],
   githubOptions: {
     projenCredentials: github.GithubCredentials.fromApp(),
   },
 });
+project.jest!.config.setupFilesAfterEnv = ['<rootDir>/test/jest-setup.ts'];
+project.jest!.config.testTimeout = 120_000;
+project.jest!.config.coveragePathIgnorePatterns = ['/test/', '/node_modules/'];
+
+project.tsconfigDev?.file?.addOverride('compilerOptions.types', [
+  'node',
+  'jest',
+  'aws-sdk-client-mock-jest',
+]);
+project.tsconfigDev?.file?.addOverride('files', ['test/jest.custom-matchers.d.ts']);
+project.tsconfigDev?.file?.addOverride('compilerOptions.allowJs', true);
+
 project.synth();
