@@ -5,7 +5,6 @@ import { cdkAccelAssetsBucketNamePrefix } from '@superluminar-io/aws-luminarlz-c
 import { config, Groups } from '../../config';
 import { CostCategoriesStack } from '../lib/cost-categories-stack';
 import { AlternateContactsStack } from '../lib/alternate-contacts-stack';
-import { CostAndUsageReportStack } from '../lib/cost-and-usage-report-stack';
 import { SecurityHubDelegatedAdminStack } from '../lib/security-hub-delegated-admin-stack';
 import { SecurityHubCentralConfigurationStack } from '../lib/security-hub-central-configuration-stack';
 import { SecurityHubAutomationRulesStack } from '../lib/security-hub-automation-rules-stack';
@@ -33,9 +32,6 @@ new OrganizationsServiceAccessStack(
   },
 );
 new AwsAcceleratorPipelineStack(app, `${StackPrefix}AwsAcceleratorPipeline`, {
-  ...props,
-});
-new CostAndUsageReportStack(app, `${StackPrefix}CostAndUsageReport`, {
   ...props,
 });
 new CostCategoriesStack(app, `${StackPrefix}CostCategories`, {

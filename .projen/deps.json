@@ -72,6 +72,10 @@
       "type": "build"
     },
     {
+      "name": "@aws-cdk/cdk-assets-lib",
+      "type": "runtime"
+    },
+    {
       "name": "@aws-sdk/client-cloudformation",
       "type": "runtime"
     },
@@ -97,10 +101,6 @@
     },
     {
       "name": "@aws-sdk/credential-providers",
-      "type": "runtime"
-    },
-    {
-      "name": "cdk-assets",
       "type": "runtime"
     },
     {

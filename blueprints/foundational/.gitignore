@@ -3,3 +3,4 @@ node_modules/
 /aws-accelerator-config.out
 /aws-accelerator-config.out.zip
 /customizations/cdk.out/
+/.landing-zone-accelerator-on-aws-*

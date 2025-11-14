@@ -9,7 +9,7 @@ to manage and deploy the LZA config.
 ### Directory structure
 
 * [templates](templates) contains the liquid templates and other files that are used to generate the LZA config.
-* [customizations](customizations) contains a CDK app used to generate the Cloudformation templates that are defined in the [customizations-config](templates/customizations-config.yaml.liquid).
+* [customizations](customizations) contains a CDK app used to generate the CloudFormation templates that are defined in the [customizations-config](templates/customizations-config.yaml.liquid).
 * [config.ts](config.ts) defines how the templates are generated and all project relevant configurations.
 * [docs](docs) contains:
   * [Architecture Decision Records (ADRs)](docs/adrs) that document project-specific decisions.
@@ -17,12 +17,12 @@ to manage and deploy the LZA config.
 
 ### Customizations
 
-Parts of the landing zone are [customizations](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/customizing-the-solution.html)
+Parts of the landing zone are [Customizations](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/customizing-the-solution.html)
 that are deployed via the LZA.
 
 These are configured in the [customizations-config](templates/customizations-config.yaml.liquid) file.
-LZA supports deploying Cloudformation templates
-which in this project are generated via the [customizations](customizations/bin/customizations.ts) CDK app.
+LZA supports deploying CloudFormation templates
+which in this project are generated via the [Customizations](customizations/bin/customizations.ts) CDK app.
 
 ## AWS access
 
@@ -54,9 +54,9 @@ Underneath it uses the [LZA Core CLI](https://awslabs.github.io/landing-zone-acc
 npm run cli -- lza config validate
 ```
 
-### Deploy a LZA customizations stack
+### Deploy a LZA Customizations stack
 
-This allows you to deploy a LZA customizations stack manually during development.
+This allows you to deploy a LZA Customizations stack manually during development.
 Underneath it uses the [LZA Core CLI](https://awslabs.github.io/landing-zone-accelerator-on-aws/latest/developer-guide/scripts/#core-cli).
 
 ```bash
@@ -84,11 +84,28 @@ npm run cli -- lza stage deploy # by default the customizations stage is deploye
 npm run cli -- lza stage deploy --help
 ```
 
+### Deploying a new region
+
+If you just add a new region and call `npm run cli -- deploy` it will fail
+when trying to upload the CDK assets for the Customizations to the new region.
+This is because it's expecting the new region already to be bootstrapped
+which includes the s3 bucket for the CDK assets.
+
+To deploy a new region:
+
+1. Add the new region to the `ENABLED_REGIONS` in the [config.ts](config.ts) file.
+2. Bootstrap the new region using the LZA:
+
+```bash
+npm run cli -- lza core bootstrap
+```
+Afterward you can commit your changes and trigger a deployment with `npm run cli -- deploy`.
+
 ## Deployment
 
-A deployment consists of synthesizing the LZA config and uploading it to s3.
+A deployment consists of synthesizing the LZA config and uploading it to S3.
 
-Uploading the LZA config to s3 then triggers the [LZA Core pipeline](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/awsaccelerator-pipeline.html).
+Uploading the LZA config to S3 then triggers the [LZA Core pipeline](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/awsaccelerator-pipeline.html).
 
 [//]: # (TODO: Add this if you are using a GitHub Action CD pipeline.)
 [//]: # (Deployment of the LZA config happens automatically via a GitHub Actions CD pipeline on the main branch.)
@@ -102,7 +119,7 @@ npm run cli -- deploy
 ## Update the Landing Zone Accelerator version
 
 To update the LZA version,
-you can follow [LZA the update guide](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/update-the-solution.html)
+you can follow [the LZA update guide](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/update-the-solution.html)
 or use this CLI as follows:
 
 1. Check that the locally configured version is in sync with the deployed version:

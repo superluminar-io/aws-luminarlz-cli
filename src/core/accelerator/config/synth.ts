@@ -50,7 +50,7 @@ export const synthConfigOut = async () => {
           filePath.endsWith(t.fileName + '.liquid'),
         );
         if (!template) {
-          throw new Error('Template not found in config.');
+          throw new Error(`Template for '${filePath}' not found in config.`);
         }
         const output = liquid.renderFileSync(
           path.join(templatePath, `${template.fileName}.liquid`),

@@ -39,6 +39,7 @@ export const AWS_ACCOUNTS_ROOT_EMAIL = '<<AWS_ACCOUNTS_ROOT_EMAIL>>';
 
 /**
  * The AWS regions in use. The global region is always us-east-1.
+ * Before adding new regions have a look at the [README](README.md#deploying-a-new-region).
  */
 export const HOME_REGION = '<<AWS_HOME_REGION>>';
 export const ENABLED_REGIONS = [GLOBAL_REGION, HOME_REGION];

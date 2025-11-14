@@ -1,5 +1,6 @@
 # Define home region set in Control Tower
 homeRegion: <% homeRegion %>
+useV2Stacks: true
 # Define regions enabled in Control Tower
 enabledRegions:
   {% for enabledRegion in enabledRegions %}
@@ -117,3 +118,24 @@ snsTopics:
 tags:
   - key: Owner
     value: <% owner %>
+reports:
+  # Sets up an hourly Cost and Usage Report that archives all costs in a s3 bucket
+  # As recommended by: https://aws.amazon.com/solutions/guidance/establishing-an-initial-foundation-using-control-tower-on-aws/
+  # See: https://docs.aws.amazon.com/cur/latest/userguide/what-is-cur.html
+  costAndUsageReport:
+    compression: Parquet
+    format: Parquet
+    reportName: accelerator-cur-hourly
+    s3Prefix: cur-hourly
+    timeUnit: HOURLY
+    refreshClosedReports: true
+    reportVersioning: OVERWRITE_REPORT # overwrite the report to save costs
+    lifecycleRules:
+      # after a year the reports are moved to DEEP_ARCHIVE storage to save costs
+      - enabled: true
+        abortIncompleteMultipartUpload: 1
+        expiration: 1825 # expire after 5 years
+        noncurrentVersionExpiration: 366
+        transitions:
+          - storageClass: DEEP_ARCHIVE
+            transitionAfter: 365
