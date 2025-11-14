@@ -3,19 +3,19 @@ import { BaseContext, Cli, CommandClass } from 'clipanion';
 import { useTempDir } from './use-temp-dir';
 
 
-class CliError extends Error {
+export class CliError extends Error {
   constructor() {
     super('CLI exited with code 1');
   }
 }
 
-function createCliFor<C extends BaseContext>(...commands: CommandClass<C>[]): Cli<C> {
+export function createCliFor<C extends BaseContext>(...commands: CommandClass<C>[]): Cli<C> {
   const cli = new Cli<C>();
   commands.forEach(command => cli.register(command));
   return cli;
 }
 
-async function runCli(cli: Cli<any>, argv: string[], temp: ReturnType<typeof useTempDir>) {
+export async function runCli(cli: Cli<any>, argv: string[], temp: ReturnType<typeof useTempDir>) {
   const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
   try {
     const prevCwd = process.cwd();
@@ -43,5 +43,3 @@ async function runCli(cli: Cli<any>, argv: string[], temp: ReturnType<typeof use
     logSpy.mockRestore();
   }
 }
-
-export { createCliFor, runCli, CliError };
