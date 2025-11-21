@@ -51,6 +51,7 @@ export const customizationsPublishCdkAssets = async (): Promise<void> => {
     });
     await Promise.all(execs);
   }
+  console.log(`Published ${assetManifests.length} asset manifests to the regions: ${[...new Set(assetManifests.map((assetManifest) => assetManifest.region))].join(', ')}.`);
 };
 
 /**
@@ -112,9 +113,6 @@ class ConsoleProgress implements IPublishProgressListener {
     switch (ConsoleProgress.EVENT_TO_LEVEL[type]) {
       case 'error':
         console.error(ConsoleProgress.EVENT_TO_LEVEL[type], `[${event.percentComplete}%] ${type}: ${event.message}`);
-        break;
-      case 'info':
-        console.info(ConsoleProgress.EVENT_TO_LEVEL[type], `[${event.percentComplete}%] ${type}: ${event.message}`);
         break;
     }
   }
