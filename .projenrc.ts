@@ -14,6 +14,7 @@ const project = new typescript.TypeScriptProject({
   authorUrl: 'https://superluminar.io',
   authorName: 'superluminar GmbH',
   releaseToNpm: true,
+  npmTrustedPublishing: true,
   release: true,
   package: true,
   npmAccess: NpmAccess.PUBLIC,
