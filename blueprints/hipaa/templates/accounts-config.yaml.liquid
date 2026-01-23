@@ -1,0 +1,42 @@
+# Mandatory accounts, necessary for LZA to function
+mandatoryAccounts:
+  - name: Management
+    description: >-
+      The management (primary) account. Do not change the name field for this
+      mandatory account. Note, the account name key does not need to match the
+      AWS account name.
+    email: <% managementAccount.email %>
+    organizationalUnit: <% managementAccount.organizationalUnit %>
+    warm: false
+
+  # Security accounts
+  - name: LogArchive
+    description: >-
+      The log archive account. Do not change the name field for this mandatory
+      account. Note, the account name key does not need to match the AWS account
+      name.
+    email: <% logArchiveAccount.email %>
+    organizationalUnit: <% logArchiveAccount.organizationalUnit %>
+    warm: false
+  - name: Audit
+    description: >-
+      The security audit account (also referred to as the audit account). Do not
+      change the name field for this mandatory account. Note, the account name
+      key does not need to match the AWS account name.
+    email: <% auditAccount.email %>
+    organizationalUnit: <% auditAccount.organizationalUnit %>
+    warm: false
+
+# Optional accounts (the name workload is a bit confusing and not related to belows OU)
+workloadAccounts:
+  # When adding more than 3 accounts in one pipeline run,
+  # Control Tower Account Factory will fail due to current quota limits!
+  # For when things go wrong:
+  # https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/problem-account-enrollment-and-environment-validation-failures.html
+
+  # Accounts containing different kinds workloads
+  {% for workloadAccount in workloadAccounts %}
+  - name: <% workloadAccount.name %>
+    email: <% workloadAccount.email %>
+    organizationalUnit: <% workloadAccount.organizationalUnit %>
+  {% endfor %}

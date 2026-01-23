@@ -1,0 +1,149 @@
+# Define home region set in Control Tower
+homeRegion: <% homeRegion %>
+useV2Stacks: true
+# Define regions enabled in Control Tower
+enabledRegions:
+  {% for enabledRegion in enabledRegions %}
+  - <% enabledRegion %>
+  {% endfor %}
+# tell LZA to use the Control Tower role to access the member accounts
+managementAccountAccessRole: AWSControlTowerExecution
+# using the same retention as the Control Tower defaults here
+# HIPAA: Extended retention for compliance requirements (6 years minimum recommended)
+cloudwatchLogRetentionInDays: 2555
+# LZA configures a centralized bucket for CDK bootstrapping and uses the managementAccountAccessRole to access member accounts
+cdkOptions:
+  centralizeBuckets: true
+  useManagementAccessRole: true
+# enable termination protection for the Cloudformation stacks
+terminationProtection: true
+# disable opt-in regions
+enableOptInRegions: false
+# use Control Tower as a basis
+controlTower:
+  enable: true
+  landingZone:
+    version: '4.0'
+    logging:
+      # HIPAA: Extended retention for audit logs (6 years minimum recommended)
+      loggingBucketRetentionDays: 2555
+      accessLoggingBucketRetentionDays: 3650
+      organizationTrail: true
+    security:
+      enableIdentityCenterAccess: true
+  controls: []
+logging:
+  account: LogArchive
+  # disable Cloudtrail here since it's already deployed and managed by Control Tower
+  cloudtrail:
+    enable: false
+    organizationTrail: false
+    organizationTrailSettings:
+      multiRegionTrail: true
+      globalServiceEvents: true
+      managementEvents: true
+      s3DataEvents: false
+      lambdaDataEvents: false
+      sendToCloudWatchLogs: true
+      apiErrorRateInsight: false
+      apiCallRateInsight: false
+  # HIPAA: Extended retention for central logs (6 years)
+  # using extended retention for HIPAA compliance requirements
+  centralLogBucket:
+    lifecycleRules:
+      - enabled: true
+        id: RetentionRule
+        expiration: 2555
+        noncurrentVersionExpiration: 2555
+        abortIncompleteMultipartUpload: 1
+  # expire s3 access logs after 10 years
+  # using the same retention as the Control Tower defaults here
+  accessLogBucket:
+    lifecycleRules:
+      - enabled: true
+        id: RetentionRule
+        expiration: 3650
+        noncurrentVersionExpiration: 3650
+        abortIncompleteMultipartUpload: 1
+  # HIPAA: ELB logs with extended retention
+  elbLogBucket:
+    lifecycleRules:
+      - enabled: true
+        id: RetentionRule
+        expiration: 2555
+        noncurrentVersionExpiration: 2555
+        abortIncompleteMultipartUpload: 1
+  # HIPAA: Enable Session Manager activity logging for audit compliance
+  # See: https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-logging.html
+  sessionManager:
+    sendToCloudWatchLogs: true
+    sendToS3: true
+    lifecycleRules:
+      - enabled: true
+        id: RetentionRule
+        expiration: 2555
+        noncurrentVersionExpiration: 2555
+        abortIncompleteMultipartUpload: 1
+  # HIPAA: Enable Cloudwatch Logs forwarding for centralized logging
+  cloudwatchLogs:
+    enable: true
+    dynamicPartitioning: false
+    replicate: true
+# automated quota increase requests
+limits: []
+  {% comment %}
+  # Increase the default maximum number of accounts in the organization
+  - serviceCode: organizations
+    quotaCode: L-E619E033
+    desiredValue: 100
+    regions:
+      - <% globalRegion %>
+    deploymentTargets:
+      accounts:
+        - Management
+  # An example for a AWS Lambda concurrent executions quota increase request
+  # Important: New AWS accounts have reduced concurrency and memory quotas. AWS raises these quotas automatically based on your usage.
+  # See: https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html
+  - serviceCode: lambda
+    quotaCode: L-B99A9384 # Concurrent executions
+    regions:
+      - <% homeRegion %>
+    desiredValue: 400
+    deploymentTargets:
+      accounts:
+        - Audit
+  {% endcomment %}
+# topic for sending security alarms
+snsTopics:
+  deploymentTargets:
+    accounts:
+      - Management
+  topics:
+    - name: security
+      emailAddresses:
+        - <% managementNotificationsEmail %>
+# custom tags for all LZA resources can be added here
+tags:
+  - key: Owner
+    value: <% owner %>
+reports:
+  # Sets up an hourly Cost and Usage Report that archives all costs in a s3 bucket
+  # As recommended by: https://aws.amazon.com/solutions/guidance/establishing-an-initial-foundation-using-control-tower-on-aws/
+  # See: https://docs.aws.amazon.com/cur/latest/userguide/what-is-cur.html
+  costAndUsageReport:
+    compression: Parquet
+    format: Parquet
+    reportName: accelerator-cur-hourly
+    s3Prefix: cur-hourly
+    timeUnit: HOURLY
+    refreshClosedReports: true
+    reportVersioning: OVERWRITE_REPORT # overwrite the report to save costs
+    lifecycleRules:
+      # after a year the reports are moved to DEEP_ARCHIVE storage to save costs
+      - enabled: true
+        abortIncompleteMultipartUpload: 1
+        expiration: 1825 # expire after 5 years
+        noncurrentVersionExpiration: 366
+        transitions:
+          - storageClass: DEEP_ARCHIVE
+            transitionAfter: 365

@@ -31,7 +31,12 @@ to make deployment and development with the [Landing Zone Accelerator on AWS (LZ
 
 This is a step-by-step guide to initialize a new AWS landing zone using the luminarlz CLI.
 
-We'll use the [foundational blueprint](blueprints/foundational/) that is heavily aligned with the [Guidance for Establishing an Initial Foundation using Control Tower on AWS](https://aws.amazon.com/solutions/guidance/establishing-an-initial-foundation-using-control-tower-on-aws).
+#### Available Blueprints
+
+- **[foundational](blueprints/foundational/)**: A general-purpose blueprint heavily aligned with the [Guidance for Establishing an Initial Foundation using Control Tower on AWS](https://aws.amazon.com/solutions/guidance/establishing-an-initial-foundation-using-control-tower-on-aws).
+- **[hipaa](blueprints/hipaa/)**: A HIPAA-compliant blueprint based on the LZA Universal Configuration for HIPAA, with enhanced security controls, encryption requirements, comprehensive logging, and compliance monitoring for healthcare workloads.
+
+We'll use the foundational blueprint as an example. For HIPAA workloads, use `--blueprint hipaa` instead.
 
 We recommend reading through the [Guidance](https://aws.amazon.com/solutions/guidance/establishing-an-initial-foundation-using-control-tower-on-aws) first
 as there are parts that require some manual steps and upfront planning like the root email strategy.
@@ -45,6 +50,8 @@ as there are parts that require some manual steps and upfront planning like the 
 5. Init the project using:
 ```bash
 npx @superluminar-io/aws-luminarlz-cli init
+# or for HIPAA compliance:
+# npx @superluminar-io/aws-luminarlz-cli init --blueprint hipaa
 ```
 6. Install the new dependencies:
 ```bash

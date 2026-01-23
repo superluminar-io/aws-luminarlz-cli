@@ -101,4 +101,37 @@ describe('Init Command', () => {
     const configContent = fs.readFileSync(configPath, 'utf8');
     expect(configContent).toMatchSnapshot();
   });
+
+  it('should initialize a project with the HIPAA blueprint', async () => {
+    const cli = createCliFor(Init);
+    const region = TEST_REGION;
+    const email = TEST_EMAIL;
+
+    await runCli(cli, [
+      'init',
+      '--blueprint', 'hipaa',
+      '--region', region,
+      '--accounts-root-email', email,
+    ], temp);
+
+    const configPath = path.join(temp.directory, 'config.ts');
+    expect(fs.existsSync(configPath)).toBe(true);
+
+    // Verify HIPAA-specific files exist
+    const securityConfigPath = path.join(temp.directory, 'templates', 'security-config.yaml.liquid');
+    expect(fs.existsSync(securityConfigPath)).toBe(true);
+
+    const securityConfigContent = fs.readFileSync(securityConfigPath, 'utf8');
+    // Check for HIPAA-specific configurations
+    expect(securityConfigContent).toContain('HIPAA');
+    expect(securityConfigContent).toContain('enable: true'); // GuardDuty, Macie, SecurityHub should be enabled
+
+    // Verify HIPAA ADR exists
+    const hipaaAdrPath = path.join(temp.directory, 'docs', 'adrs', '004-hipaa-compliance-configuration.md');
+    expect(fs.existsSync(hipaaAdrPath)).toBe(true);
+
+    // Verify KMS policy exists
+    const kmsPath = path.join(temp.directory, 'templates', 'kms-policies', 'hipaa-encryption-key.json');
+    expect(fs.existsSync(kmsPath)).toBe(true);
+  });
 });

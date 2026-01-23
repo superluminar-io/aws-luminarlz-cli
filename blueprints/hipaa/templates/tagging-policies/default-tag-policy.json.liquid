@@ -1,0 +1,20 @@
+{
+  "tags": {
+    "owner": {
+      "tag_key": {
+        "@@assign": "Owner"
+      },
+      "tag_value": {
+        "@@assign": <% owners | json %>
+      }
+    },
+    "environment": {
+      "tag_key": {
+        "@@assign": "Environment"
+      },
+      "tag_value": {
+        "@@assign": <% environments | json %>
+      }
+    }
+  }
+}

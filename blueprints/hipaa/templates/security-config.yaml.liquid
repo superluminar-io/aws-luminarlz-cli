@@ -1,0 +1,174 @@
+centralSecurityServices:
+  delegatedAdminAccount: Audit
+  ebsDefaultVolumeEncryption:
+    enable: true
+    excludeRegions: []
+  s3PublicAccessBlock:
+    enable: true
+    excludeAccounts: []
+  scpRevertChangesConfig:
+    enable: false
+  snsSubscriptions: []
+  macie:
+    # HIPAA: Enable Macie for PHI (Protected Health Information) discovery
+    enable: true
+    excludeRegions: []
+    policyFindingsPublishingFrequency: FIFTEEN_MINUTES
+    publishSensitiveDataFindings: true
+  guardduty:
+    # HIPAA: Enable GuardDuty for threat detection
+    enable: true
+    excludeRegions: []
+    s3Protection:
+      enable: true
+      excludeRegions: []
+    eksProtection:
+      enable: true
+      excludeRegions: []
+    exportConfiguration:
+      enable: true
+      overrideExisting: true
+      destinationType: S3
+      exportFrequency: FIFTEEN_MINUTES
+  securityHub:
+    # HIPAA: Enable Security Hub with HIPAA security standards
+    enable: true
+    regionAggregation: true
+    snsTopicName: security
+    notificationLevel: HIGH
+    standards:
+      - name: AWS Foundational Security Best Practices v1.0.0
+        enable: true
+        controlsToDisable: []
+      - name: CIS AWS Foundations Benchmark v1.4.0
+        enable: true
+        controlsToDisable: []
+      # HIPAA Security Standard
+      - name: HIPAA Security
+        enable: true
+        controlsToDisable: []
+  ssmAutomation:
+    excludeRegions: []
+    documentSets: []
+accessAnalyzer:
+  enable: true
+iamPasswordPolicy:
+  # HIPAA: Enhanced password policy for HIPAA compliance
+  allowUsersToChangePassword: true
+  hardExpiry: false
+  requireUppercaseCharacters: true
+  requireLowercaseCharacters: true
+  requireSymbols: true
+  requireNumbers: true
+  minimumPasswordLength: 14
+  passwordReusePrevention: 24
+  maxPasswordAge: 90
+awsConfig:
+  # HIPAA: Enable AWS Config for configuration compliance tracking
+  enableConfigurationRecorder: true
+  enableDeliveryChannel: true
+  ruleSets:
+    # HIPAA-specific AWS Config rules
+    - deploymentTargets:
+        organizationalUnits:
+          - Root
+      rules:
+        # HIPAA: Ensure EBS volumes are encrypted
+        - name: encrypted-volumes
+          complianceResourceTypes:
+            - AWS::EC2::Volume
+          type: AWS_MANAGED
+        # HIPAA: Ensure RDS instances are encrypted
+        - name: rds-storage-encrypted
+          type: AWS_MANAGED
+        # HIPAA: Ensure S3 buckets have encryption enabled
+        - name: s3-bucket-server-side-encryption-enabled
+          type: AWS_MANAGED
+        # HIPAA: Ensure CloudTrail is enabled
+        - name: cloud-trail-enabled
+          type: AWS_MANAGED
+        # HIPAA: Ensure CloudTrail log file validation is enabled
+        - name: cloud-trail-log-file-validation-enabled
+          type: AWS_MANAGED
+        # HIPAA: Ensure CloudWatch alarm exists for unauthorized API calls
+        - name: cloudwatch-alarm-action-check
+          type: AWS_MANAGED
+        # HIPAA: Ensure MFA is enabled for IAM users
+        - name: iam-user-mfa-enabled
+          type: AWS_MANAGED
+        # HIPAA: Ensure root account MFA is enabled
+        - name: root-account-mfa-enabled
+          type: AWS_MANAGED
+        # HIPAA: Ensure S3 bucket logging is enabled
+        - name: s3-bucket-logging-enabled
+          type: AWS_MANAGED
+        # HIPAA: Ensure VPC flow logging is enabled
+        - name: vpc-flow-logs-enabled
+          type: AWS_MANAGED
+cloudWatch:
+  metricSets:
+    - regions:
+        # The log group for organization-level AWS CloudTrail trails is in the home region
+        - <% homeRegion %>
+      deploymentTargets:
+        accounts:
+          - Management
+      metrics:
+        # Monitor the use of the root users
+        - filterName: RootUserUsageMetricFilter
+          logGroupName: aws-controltower/CloudTrailLogs
+          filterPattern: '{$.userIdentity.type="Root" && $.userIdentity.invokedBy NOT EXISTS && $.eventType !="AwsServiceEvent"}'
+          metricNamespace: LogMetrics
+          metricName: RootUserUsage
+          metricValue: "1"
+        # Monitor the use of IAM users on the management account
+        - filterName: IamUserUsageMetricFilter
+          logGroupName: aws-controltower/CloudTrailLogs
+          filterPattern: '{$.userIdentity.type="IAMUser" && $.userIdentity.invokedBy NOT EXISTS && $.userIdentity.accountId = "{{account Management}}" && $.eventType !="AwsServiceEvent"}'
+          metricNamespace: LogMetrics
+          metricName: IamUserUsage
+          metricValue: "1"
+  alarmSets:
+    - regions:
+        - <% homeRegion %>
+      deploymentTargets:
+        accounts:
+          - Management
+      alarms:
+        # Alarm for the use of the root user
+        - alarmName: RootUserUsage
+          alarmDescription: Somebody is using the management-primary account root user!
+          snsTopicName: security # defined in global-config.yaml
+          metricName: RootUserUsage
+          namespace: LogMetrics
+          comparisonOperator: GreaterThanOrEqualToThreshold
+          evaluationPeriods: 1
+          period: 300
+          statistic: Sum
+          threshold: 1
+          treatMissingData: notBreaching
+        # Alarm for the use of IAM users on the management account (breakglass access)
+        - alarmName: IamUserUsage
+          alarmDescription: Somebody is using an IAM user in the management-primary account!
+          snsTopicName: security # defined in global-config.yaml
+          metricName: IamUserUsage
+          namespace: LogMetrics
+          comparisonOperator: GreaterThanOrEqualToThreshold
+          evaluationPeriods: 1
+          period: 300
+          statistic: Sum
+          threshold: 1
+          treatMissingData: notBreaching
+keyManagementService:
+  # HIPAA: KMS keys for encryption at rest
+  keySets:
+    - name: hipaa-encryption-key
+      deploymentTargets:
+        organizationalUnits:
+          - Root
+      alias: alias/hipaa-encryption
+      policy: kms-policies/hipaa-encryption-key.json
+      description: KMS key for HIPAA-compliant encryption at rest
+      enabled: true
+      enableKeyRotation: true
+      removalPolicy: retain
