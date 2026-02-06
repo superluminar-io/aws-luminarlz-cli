@@ -58,12 +58,24 @@ npm install
 # You'll need the `Management` account credentials with administrator rights to be configured in your terminal.
 npm run cli -- deploy
 ```
+Note: `deploy` runs the doctor preflight automatically and aborts on failures. Use `--skip-doctor` to bypass the checks.
 10. Search for open `TODO` comments in the generated files and adapt them to your needs.
 
 ### Other CLI commands
 
 Documentation for the other CLI commands can be found in the README generated when intializing a new AWS landing zone.
 Have a look at the [foundational blueprint README](blueprints/foundational/README.md).
+
+#### Doctor (preflight checks)
+
+Run a preflight check before deploys:
+```bash
+npm run cli -- doctor
+```
+
+`deploy` runs the doctor preflight automatically and aborts on failures. Use `--skip-doctor` to bypass the checks.
+
+Full details (check list, IDs, and fixture usage) are in the [foundational blueprint README](blueprints/foundational/README.md#doctor-preflight-checks).
 
 #### LZA Core CLI
 

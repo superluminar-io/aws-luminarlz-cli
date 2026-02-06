@@ -41,6 +41,9 @@ const project = new typescript.TypeScriptProject({
     projenCredentials: github.GithubCredentials.fromApp(),
   },
 });
+project.addScripts({
+  cli: './src/index.ts',
+});
 project.jest!.config.setupFilesAfterEnv = ['<rootDir>/test/jest-setup.ts'];
 project.jest!.config.testTimeout = 120_000;
 project.jest!.config.coveragePathIgnorePatterns = ['/test/', '/node_modules/'];

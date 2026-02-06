@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { CloudTrailClient, DescribeTrailsCommand } from '@aws-sdk/client-cloudtrail';
+import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
 import { DescribeOrganizationCommand, ListRootsCommand, OrganizationsClient } from '@aws-sdk/client-organizations';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { HeadBucketCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { ListInstancesCommand, SSOAdminClient } from '@aws-sdk/client-sso-admin';
 import { GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
@@ -12,9 +13,11 @@ import { Init } from '../../src/commands/init';
 import {
   AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
   awsAcceleratorConfigBucketName,
+  awsAcceleratorInstallerRepositoryBranchName,
   Config,
   loadConfigSync,
 } from '../../src/config';
+import { getCheckoutPath } from '../../src/core/accelerator/repository/checkout';
 import * as assets from '../../src/core/customizations/assets';
 import {
   TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
@@ -35,6 +38,7 @@ describe('Deploy command', () => {
   const ssoAdminMock = mockClient(SSOAdminClient);
   const s3Mock = mockClient(S3Client);
   const cloudTrailMock = mockClient(CloudTrailClient);
+  const cloudFormationMock = mockClient(CloudFormationClient);
 
   let customizationsPublishCdkAssetsSpy: jest.SpyInstance;
 
@@ -47,6 +51,7 @@ describe('Deploy command', () => {
     ssoAdminMock.reset();
     s3Mock.reset();
     cloudTrailMock.reset();
+    cloudFormationMock.reset();
 
     jest.clearAllMocks();
 
@@ -101,16 +106,24 @@ describe('Deploy command', () => {
         },
       ],
     });
+
+    cloudFormationMock.on(DescribeStacksCommand).resolves({
+      Stacks: [{
+        StackName: 'AWSAccelerator-InstallerStack',
+        CreationTime: new Date(),
+        StackStatus: 'CREATE_COMPLETE',
+      }],
+    });
+    s3Mock.on(HeadBucketCommand).resolves({});
   });
 
   afterEach(() => {
     temp.restore();
   });
 
-  it('should deploy after initializing a project with the specified blueprint', async () => {
-    const cli = createCliFor(Init, Deploy);
-
-    await runCli(cli, [
+  it('should deploy after initializing a project with the specified blueprint (skip doctor)', async () => {
+      const cli = createCliFor(Init, Deploy);
+      await runCli(cli, [
       'init',
       '--accounts-root-email', TEST_EMAIL,
       '--region', TEST_REGION,
@@ -128,6 +141,58 @@ describe('Deploy command', () => {
     });
     expect(customizationsPublishCdkAssetsSpy).toHaveBeenCalled();
   });
+
+    it('should deploy when doctor succeeds', async () => {
+        const cli = createCliFor(Init, Deploy);
+        await runCli(cli, [
+            'init',
+            '--accounts-root-email', TEST_EMAIL,
+            '--region', TEST_REGION,
+        ], temp);
+
+        const config = loadConfigSync();
+        const checkoutPath = getCheckoutPath();
+        fs.mkdirSync(path.join(checkoutPath, '.git'), { recursive: true });
+        fs.writeFileSync(
+            path.join(checkoutPath, '.git', 'HEAD'),
+            `ref: refs/heads/${awsAcceleratorInstallerRepositoryBranchName(config)}`,
+        );
+
+        await runCli(cli, ['deploy'], temp);
+
+        expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.directory });
+        expect(s3Mock).toHaveReceivedCommandWith(PutObjectCommand, {
+            Bucket: awsAcceleratorConfigBucketName(config),
+            Key: config.awsAcceleratorConfigDeploymentArtifactPath,
+            Body: getAcceleratorConfigZip(config),
+        });
+        expect(customizationsPublishCdkAssetsSpy).toHaveBeenCalled();
+    });
+
+    it('should abort when doctor fails', async () => {
+        const cli = createCliFor(Init, Deploy);
+        await runCli(cli, [
+            'init',
+            '--accounts-root-email', TEST_EMAIL,
+            '--region', TEST_REGION,
+        ], temp);
+
+        const config = loadConfigSync();
+        const checkoutPath = getCheckoutPath();
+        fs.mkdirSync(path.join(checkoutPath, '.git'), { recursive: true });
+        fs.writeFileSync(
+            path.join(checkoutPath, '.git', 'HEAD'),
+            `ref: refs/heads/${awsAcceleratorInstallerRepositoryBranchName(config)}`,
+        );
+
+        s3Mock.on(HeadBucketCommand).rejects(new Error('NotFound'));
+
+        const result = await runCli(cli, ['deploy'], temp);
+
+        expect(result).toBe(0);
+        expect(customizationsPublishCdkAssetsSpy).not.toHaveBeenCalled();
+        expect(s3Mock).toHaveReceivedCommandTimes(PutObjectCommand, 0);
+    });
 });
 
 function getAcceleratorConfigZip(config: Config) {
