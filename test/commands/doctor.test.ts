@@ -1,6 +1,8 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { DescribeStacksCommand, CloudFormationClient } from '@aws-sdk/client-cloudformation';
+import { GetAccountSettingsCommand, LambdaClient } from '@aws-sdk/client-lambda';
+import { ListAccountsCommand, OrganizationsClient } from '@aws-sdk/client-organizations';
 import { HeadBucketCommand, S3Client } from '@aws-sdk/client-s3';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
@@ -21,6 +23,8 @@ const stsMock = mockClient(STSClient);
 const ssmMock = mockClient(SSMClient);
 const cloudFormationMock = mockClient(CloudFormationClient);
 const s3Mock = mockClient(S3Client);
+const lambdaMock = mockClient(LambdaClient);
+const organizationsMock = mockClient(OrganizationsClient);
 
 const managementAccountId = TEST_ACCOUNT_ID;
 const homeRegion = TEST_REGION;
@@ -41,6 +45,7 @@ const baseSetup = {
   checkoutBranch: `release/v${configuredInstallerVersion}`,
   checkoutMissing: false,
   installerStackMissing: false,
+  lambdaConcurrency: 1000,
 };
 
 describe('Doctor preflight checks', () => {
@@ -51,6 +56,8 @@ describe('Doctor preflight checks', () => {
     ssmMock.reset();
     cloudFormationMock.reset();
     s3Mock.reset();
+    lambdaMock.reset();
+    organizationsMock.reset();
   });
 
   afterEach(() => {
@@ -68,6 +75,7 @@ describe('Doctor preflight checks', () => {
     expect(getCheckStatus(summary, 'installer-stack')).toBe(CheckStatus.OK);
     expect(getCheckStatus(summary, 'config-bucket')).toBe(CheckStatus.OK);
     expect(getCheckStatus(summary, 'cdk-assets-buckets')).toBe(CheckStatus.OK);
+    expect(getCheckStatus(summary, 'lambda-concurrency')).toBe(CheckStatus.OK);
     expect(getCheckStatus(summary, 'lza-checkout')).toBe(CheckStatus.OK);
   });
 
@@ -135,6 +143,15 @@ describe('Doctor preflight checks', () => {
     expect(summary.hasFailures).toBe(true);
     expect(getCheckStatus(summary, 'lza-checkout')).toBe(CheckStatus.FAIL);
   });
+
+  it('should fail when lambda concurrency is below minimum', async () => {
+    setupDoctor({ lambdaConcurrency: 100 });
+
+    const summary = await runDoctor();
+
+    expect(summary.hasFailures).toBe(true);
+    expect(getCheckStatus(summary, 'lambda-concurrency')).toBe(CheckStatus.FAIL);
+  });
 });
 
 function setupDoctor(overrides: SetupOverrides = {}) {
@@ -168,6 +185,21 @@ function setupDoctor(overrides: SetupOverrides = {}) {
     [cdkBucketHome]: setup.cdkBucketHomeOk,
     [cdkBucketEu]: setup.cdkBucketEuOk,
   });
+
+  lambdaMock.on(GetAccountSettingsCommand).resolves({
+    AccountLimit: {
+      ConcurrentExecutions: setup.lambdaConcurrency,
+    },
+  });
+
+  organizationsMock.on(ListAccountsCommand).resolves({
+    Accounts: [
+      {
+        Id: managementAccountId,
+        Status: 'ACTIVE',
+      },
+    ],
+  });
 }
 
 function writeConfig(version: string, region: string, regions: string[]) {
@@ -186,6 +218,7 @@ export const config = {
   awsAcceleratorInstallerRepositoryBranchNamePrefix: 'release/v',
   awsAcceleratorInstallerStackTemplateUrlPattern: 'https://s3.amazonaws.com/solutions-reference/landing-zone-accelerator-on-aws/v%s/AWSAccelerator-InstallerStack.template',
   maxParallelCdkAssetManifestUploads: 200,
+  minLambdaConcurrency: 1000,
   awsAcceleratorVersion: '${version}',
   environments: {},
   templates: [],

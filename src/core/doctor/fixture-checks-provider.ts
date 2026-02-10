@@ -20,6 +20,11 @@ export class FixtureChecksProvider extends BaseChecksProvider implements ChecksP
       this.checkCdkAssetsBucketsFromFixture(),
     ];
 
+    const lambdaCheck = this.checkLambdaConcurrencyFromFixture();
+    if (lambdaCheck) {
+      results.push(lambdaCheck);
+    }
+
     const checkoutCheck = this.checkLzaCheckoutFromFixture();
     if (checkoutCheck) {
       results.push(checkoutCheck);
@@ -80,5 +85,65 @@ export class FixtureChecksProvider extends BaseChecksProvider implements ChecksP
       CheckStatus.OK,
       'Checkout present and branch matches',
     );
+  }
+
+  private checkLambdaConcurrencyFromFixture(): CheckResult | null {
+    if (!this.fixtures.lambdaConcurrencyByRegion && !this.fixtures.lambdaConcurrencyByAccountRegion) {
+      return null;
+    }
+
+    const minConcurrency = this.getMinLambdaConcurrency();
+    const regions = this.getLambdaRegionsToCheck();
+    const insufficient: { accountId: string; region: string; current: number }[] = [];
+    const missing: { accountId: string; region: string }[] = [];
+
+    if (this.fixtures.lambdaConcurrencyByAccountRegion) {
+      for (const [accountId, accountRegions] of Object.entries(this.fixtures.lambdaConcurrencyByAccountRegion)) {
+        regions.forEach((region) => {
+          const current = accountRegions?.[region];
+          if (current === undefined || current === null) {
+            missing.push({ accountId, region });
+            return;
+          }
+          if (current < minConcurrency) {
+            insufficient.push({ accountId, region, current });
+          }
+        });
+      }
+    } else if (this.fixtures.lambdaConcurrencyByRegion) {
+      const accountId = this.fixtures.accountId;
+      regions.forEach((region) => {
+        const current = this.fixtures.lambdaConcurrencyByRegion?.[region];
+        if (current === undefined || current === null) {
+          missing.push({ accountId, region });
+          return;
+        }
+        if (current < minConcurrency) {
+          insufficient.push({ accountId, region, current });
+        }
+      });
+    }
+
+    return this.buildLambdaConcurrencyCheck(minConcurrency, regions, insufficient, missing, [], []);
+  }
+
+  private getLambdaRegionsToCheck(): string[] {
+    return Array.from(new Set(this.config.enabledRegions));
+  }
+
+  private getMinLambdaConcurrency(): number {
+    const fromConfig = this.config.minLambdaConcurrency;
+    if (Number.isFinite(fromConfig) && fromConfig > 0) {
+      return Math.floor(fromConfig);
+    }
+    const raw = process.env.LZA_MIN_LAMBDA_CONCURRENCY;
+    if (!raw) {
+      return 1000;
+    }
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return 1000;
+    }
+    return Math.floor(parsed);
   }
 }

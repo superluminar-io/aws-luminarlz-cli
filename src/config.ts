@@ -53,6 +53,7 @@ export interface BaseConfig {
   awsAcceleratorInstallerStackTemplateUrlPattern: string;
   maxParallelCdkAssetManifestUploads: number;
   cloudTrailLogGroupName: string;
+  minLambdaConcurrency: number;
 }
 
 export interface Config extends BaseConfig {
@@ -79,6 +80,7 @@ export const baseConfig: BaseConfig = {
   awsAcceleratorInstallerStackTemplateUrlPattern: AWS_ACCELERATOR_INSTALLER_STACK_TEMPLATE_URL_PATTERN,
   maxParallelCdkAssetManifestUploads: 200,
   cloudTrailLogGroupName: '__AUTO__',
+  minLambdaConcurrency: 1000,
 };
 
 let loadedConfig: Config | undefined;

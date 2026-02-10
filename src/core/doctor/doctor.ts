@@ -27,6 +27,8 @@ export interface DoctorFixture {
   installerStackExists: boolean;
   configBucketExists: boolean;
   cdkAssetsBuckets: Record<string, boolean>;
+  lambdaConcurrencyByRegion?: Record<string, number>;
+  lambdaConcurrencyByAccountRegion?: Record<string, Record<string, number>>;
 }
 
 export interface CheckResult {

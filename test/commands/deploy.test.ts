@@ -2,7 +2,13 @@ import fs from 'fs';
 import path from 'path';
 import { CloudTrailClient, DescribeTrailsCommand } from '@aws-sdk/client-cloudtrail';
 import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
-import { DescribeOrganizationCommand, ListRootsCommand, OrganizationsClient } from '@aws-sdk/client-organizations';
+import { GetAccountSettingsCommand, LambdaClient } from '@aws-sdk/client-lambda';
+import {
+  DescribeOrganizationCommand,
+  ListAccountsCommand,
+  ListRootsCommand,
+  OrganizationsClient,
+} from '@aws-sdk/client-organizations';
 import { HeadBucketCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { ListInstancesCommand, SSOAdminClient } from '@aws-sdk/client-sso-admin';
@@ -19,6 +25,8 @@ import {
 } from '../../src/config';
 import { getCheckoutPath } from '../../src/core/accelerator/repository/checkout';
 import * as assets from '../../src/core/customizations/assets';
+import * as synth from '../../src/core/customizations/synth';
+import { executeCommand } from '../../src/core/util/exec';
 import {
   TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
   TEST_ACCOUNT_ID,
@@ -39,8 +47,11 @@ describe('Deploy command', () => {
   const s3Mock = mockClient(S3Client);
   const cloudTrailMock = mockClient(CloudTrailClient);
   const cloudFormationMock = mockClient(CloudFormationClient);
+  const lambdaMock = mockClient(LambdaClient);
 
   let customizationsPublishCdkAssetsSpy: jest.SpyInstance;
+  let customizationsCdkSynthSpy: jest.SpyInstance;
+  const cli = createCliFor(Init, Deploy);
 
   beforeEach(() => {
     temp = useTempDir();
@@ -52,10 +63,16 @@ describe('Deploy command', () => {
     s3Mock.reset();
     cloudTrailMock.reset();
     cloudFormationMock.reset();
+    lambdaMock.reset();
 
     jest.clearAllMocks();
 
     customizationsPublishCdkAssetsSpy = jest.spyOn(assets, 'customizationsPublishCdkAssets').mockResolvedValue();
+    customizationsCdkSynthSpy = jest.spyOn(synth, 'customizationsCdkSynth').mockImplementation(async () => {
+      const cdkOutDir = path.join(temp.directory, 'customizations', 'cdk.out');
+      fs.mkdirSync(cdkOutDir, { recursive: true });
+      fs.writeFileSync(path.join(cdkOutDir, 'dummy.template.json'), '{}');
+    });
 
     ssmMock.on(GetParameterCommand).resolves({
       Parameter: {
@@ -88,6 +105,14 @@ describe('Deploy command', () => {
         },
       ],
     });
+    organizationsMock.on(ListAccountsCommand).resolves({
+      Accounts: [
+        {
+          Id: TEST_ACCOUNT_ID,
+          Status: 'ACTIVE',
+        },
+      ],
+    });
 
     ssoAdminMock.on(ListInstancesCommand).resolves({
       Instances: [
@@ -96,6 +121,12 @@ describe('Deploy command', () => {
           IdentityStoreId: 'd-example123',
         },
       ],
+    });
+
+    lambdaMock.on(GetAccountSettingsCommand).resolves({
+      AccountLimit: {
+        ConcurrentExecutions: 1000,
+      },
     });
 
     cloudTrailMock.on(DescribeTrailsCommand).resolves({

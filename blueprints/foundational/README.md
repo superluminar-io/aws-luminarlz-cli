@@ -71,6 +71,7 @@ Checks performed:
 - Installer stack exists (required for LZA pipelines)
 - Config bucket exists (required for config uploads)
 - CDK assets buckets exist for all `enabledRegions` (created by `lza core bootstrap`, required for customizations assets)
+- Lambda account concurrency meets `minLambdaConcurrency` for all enabled regions (checks only the current account unless Control Tower enrollment exists for members)
 - LZA checkout exists under `.landing-zone-accelerator-on-aws-<release>` and the checked-out branch matches `awsAcceleratorVersion` (ensures local checkout matches config)
 
 Check IDs for `--only`:
@@ -80,6 +81,7 @@ Check IDs for `--only`:
 - `installer-stack` – Installer stack exists
 - `config-bucket` – Config bucket exists
 - `cdk-assets-buckets` – CDK assets buckets exist for all `enabledRegions`
+- `lambda-concurrency` – Lambda concurrent executions quota meets `minLambdaConcurrency`
 - `lza-checkout` – LZA checkout branch matches `awsAcceleratorVersion`
 
 Run only specific checks:

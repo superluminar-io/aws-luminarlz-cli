@@ -78,4 +78,111 @@ export abstract class BaseChecksProvider {
       fix,
     };
   }
+
+  protected buildLambdaConcurrencyCheck(
+    minConcurrency: number,
+    regions: string[],
+    insufficient: { accountId: string; region: string; current: number }[],
+    missing: { accountId: string; region: string }[],
+    errors: string[],
+    skippedAccounts: string[],
+  ): CheckResult {
+    const hasIssues = insufficient.length > 0 || missing.length > 0 || errors.length > 0;
+    const details = this.buildLambdaConcurrencyDetails({
+      hasIssues,
+      insufficient,
+      missing,
+      errors,
+      skippedAccounts,
+      minConcurrency,
+      regions,
+    });
+
+    return {
+      id: 'lambda-concurrency',
+      label: 'Lambda Concurrency',
+      status: hasIssues ? CheckStatus.FAIL : CheckStatus.OK,
+      details: details.join('\n'),
+      fix: hasIssues
+        ? `Increase AWS Lambda concurrent executions quota to at least ${minConcurrency} in the listed regions.`
+        : undefined,
+    };
+  }
+
+  private buildLambdaConcurrencyDetails({
+    hasIssues,
+    insufficient,
+    missing,
+    errors,
+    skippedAccounts,
+    minConcurrency,
+    regions,
+  }: {
+    hasIssues: boolean;
+    insufficient: { accountId: string; region: string; current: number }[];
+    missing: { accountId: string; region: string }[];
+    errors: string[];
+    skippedAccounts: string[];
+    minConcurrency: number;
+    regions: string[];
+  }): string[] {
+    const details: string[] = [];
+
+    if (hasIssues) {
+      details.push(...this.renderLambdaConcurrencyInsufficient(insufficient));
+      details.push(...this.renderLambdaConcurrencyMissing(missing));
+      if (errors.length > 0) {
+        details.push('Errors:', ...errors.map((item) => `- ${item}`));
+      }
+    } else {
+      details.push(`Minimum: ${minConcurrency}`, `Regions: ${regions.join(', ')}`);
+    }
+
+    if (skippedAccounts.length > 0) {
+      details.push('Skipped accounts (role missing):', ...skippedAccounts.map((accountId) => `- ${accountId}`));
+    }
+
+    return details;
+  }
+
+  private renderLambdaConcurrencyInsufficient(
+    insufficient: { accountId: string; region: string; current: number }[],
+  ): string[] {
+    if (insufficient.length === 0) {
+      return [];
+    }
+    const grouped = new Map<string, { region: string; current: number }[]>();
+    insufficient.forEach((item) => {
+      const list = grouped.get(item.accountId) ?? [];
+      list.push({ region: item.region, current: item.current });
+      grouped.set(item.accountId, list);
+    });
+    const lines = ['Insufficient:'];
+    Array.from(grouped.keys()).sort().forEach((accountId) => {
+      const entries = (grouped.get(accountId) ?? []).sort((a, b) => a.region.localeCompare(b.region));
+      const summary = entries.map((entry) => `${entry.region}=${entry.current}`).join(', ');
+      lines.push(`- ${accountId}: ${summary}`);
+    });
+    return lines;
+  }
+
+  private renderLambdaConcurrencyMissing(
+    missing: { accountId: string; region: string }[],
+  ): string[] {
+    if (missing.length === 0) {
+      return [];
+    }
+    const grouped = new Map<string, string[]>();
+    missing.forEach((item) => {
+      const list = grouped.get(item.accountId) ?? [];
+      list.push(item.region);
+      grouped.set(item.accountId, list);
+    });
+    const lines = ['Missing:'];
+    Array.from(grouped.keys()).sort().forEach((accountId) => {
+      const regionsList = (grouped.get(accountId) ?? []).sort();
+      lines.push(`- ${accountId}: ${regionsList.join(', ')}`);
+    });
+    return lines;
+  }
 }
