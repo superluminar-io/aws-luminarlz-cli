@@ -1,6 +1,7 @@
 import { BaseChecksProvider } from './base-checks-provider';
 import { ChecksProvider } from './checks-provider';
 import { CheckResult, CheckStatus, DoctorFixture } from './doctor';
+import { getLambdaRegionsToCheck, getMinLambdaConcurrency } from './lambda-concurrency';
 import {
   awsAcceleratorInstallerRepositoryBranchName,
   Config,
@@ -92,8 +93,8 @@ export class FixtureChecksProvider extends BaseChecksProvider implements ChecksP
       return null;
     }
 
-    const minConcurrency = this.getMinLambdaConcurrency();
-    const regions = this.getLambdaRegionsToCheck();
+    const minConcurrency = getMinLambdaConcurrency(this.config);
+    const regions = getLambdaRegionsToCheck(this.config);
     const insufficient: { accountId: string; region: string; current: number }[] = [];
     const missing: { accountId: string; region: string }[] = [];
 
@@ -125,25 +126,5 @@ export class FixtureChecksProvider extends BaseChecksProvider implements ChecksP
     }
 
     return this.buildLambdaConcurrencyCheck(minConcurrency, regions, insufficient, missing, [], []);
-  }
-
-  private getLambdaRegionsToCheck(): string[] {
-    return Array.from(new Set(this.config.enabledRegions));
-  }
-
-  private getMinLambdaConcurrency(): number {
-    const fromConfig = this.config.minLambdaConcurrency;
-    if (Number.isFinite(fromConfig) && fromConfig > 0) {
-      return Math.floor(fromConfig);
-    }
-    const raw = process.env.LZA_MIN_LAMBDA_CONCURRENCY;
-    if (!raw) {
-      return 1000;
-    }
-    const parsed = Number(raw);
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      return 1000;
-    }
-    return Math.floor(parsed);
   }
 }

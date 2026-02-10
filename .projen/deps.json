@@ -104,6 +104,10 @@
       "type": "runtime"
     },
     {
+      "name": "@aws-sdk/client-service-quotas",
+      "type": "runtime"
+    },
+    {
       "name": "@aws-sdk/client-ssm",
       "type": "runtime"
     },

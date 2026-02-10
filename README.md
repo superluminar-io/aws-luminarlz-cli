@@ -65,6 +65,7 @@ Note: `deploy` runs the doctor preflight automatically and aborts on failures. U
 
 Documentation for the other CLI commands can be found in the README generated when intializing a new AWS landing zone.
 Have a look at the [foundational blueprint README](blueprints/foundational/README.md).
+The quota request command for Lambda concurrency is documented there as well.
 
 #### Doctor (preflight checks)
 

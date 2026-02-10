@@ -101,6 +101,22 @@ npm run cli -- doctor --fixtures fixtures/doctor-fail-cdk-assets.json
 npm run cli -- doctor --fixtures fixtures/doctor-fail-lza-checkout.json
 ```
 
+### Quota requests (Lambda concurrency)
+
+Request Lambda concurrency quota increases for enrolled accounts and enabled regions:
+```bash
+npm run cli -- quotas lambda-concurrency request
+```
+
+Dry run (no requests submitted):
+```bash
+npm run cli -- quotas lambda-concurrency request --dry-run
+```
+
+Notes:
+- Uses `minLambdaConcurrency` from `config.ts`.
+- Skips member accounts where `AWSControlTowerExecution` does not exist yet.
+
 ### Deploy a LZA Customizations stack
 
 This allows you to deploy a LZA Customizations stack manually during development.

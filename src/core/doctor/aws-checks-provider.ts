@@ -5,12 +5,17 @@ import {
   DescribeStacksCommand,
 } from '@aws-sdk/client-cloudformation';
 import { GetAccountSettingsCommand, LambdaClient } from '@aws-sdk/client-lambda';
-import { ListAccountsCommand, OrganizationsClient } from '@aws-sdk/client-organizations';
 import { HeadBucketCommand, S3Client } from '@aws-sdk/client-s3';
-import { AssumeRoleCommand, GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
+import { GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
 import { BaseChecksProvider } from './base-checks-provider';
 import { ChecksProvider } from './checks-provider';
 import { CheckResult, CheckStatus } from './doctor';
+import {
+  assumeRoleForAccount,
+  getLambdaRegionsToCheck,
+  getMinLambdaConcurrency,
+  listOrganizationAccountIds,
+} from './lambda-concurrency';
 import {
   awsAcceleratorConfigBucketName,
   awsAcceleratorInstallerRepositoryBranchName,
@@ -142,17 +147,17 @@ export class AwsChecksProvider extends BaseChecksProvider implements ChecksProvi
   }
 
   private async checkLambdaConcurrency(): Promise<CheckResult> {
-    const minConcurrency = this.getMinLambdaConcurrency();
-    const regions = this.getLambdaRegionsToCheck();
+    const minConcurrency = getMinLambdaConcurrency(this.config);
+    const regions = getLambdaRegionsToCheck(this.config);
     const insufficient: { accountId: string; region: string; current: number }[] = [];
     const missing: { accountId: string; region: string }[] = [];
     const errors: string[] = [];
     const skippedAccounts: string[] = [];
 
-    const accountIds = await this.getOrganizationAccountIds();
+    const accountIds = await listOrganizationAccountIds(this.config);
 
     const checks = await Promise.allSettled(accountIds.map(async (accountId) => {
-      const credentials = await this.getAssumedCredentialsIfNeeded(accountId);
+      const credentials = await assumeRoleForAccount(this.config, accountId);
       if (credentials === null) {
         skippedAccounts.push(accountId);
         return;
@@ -179,81 +184,6 @@ export class AwsChecksProvider extends BaseChecksProvider implements ChecksProvi
     });
 
     return this.buildLambdaConcurrencyCheck(minConcurrency, regions, insufficient, missing, errors, skippedAccounts);
-  }
-
-  private getLambdaRegionsToCheck(): string[] {
-    return Array.from(new Set(this.config.enabledRegions));
-  }
-
-  private getMinLambdaConcurrency(): number {
-    const fromConfig = this.config.minLambdaConcurrency;
-    if (Number.isFinite(fromConfig) && fromConfig > 0) {
-      return Math.floor(fromConfig);
-    }
-    const raw = process.env.LZA_MIN_LAMBDA_CONCURRENCY;
-    if (!raw) {
-      return 1000;
-    }
-    const parsed = Number(raw);
-    if (!Number.isFinite(parsed) || parsed <= 0) {
-      return 1000;
-    }
-    return Math.floor(parsed);
-  }
-
-  private async getOrganizationAccountIds(): Promise<string[]> {
-    const client = new OrganizationsClient({ region: this.config.homeRegion });
-    const accounts: string[] = [];
-    let nextToken: string | undefined;
-    try {
-      do {
-        const result = await client.send(new ListAccountsCommand({ NextToken: nextToken }));
-        (result.Accounts ?? []).forEach((account) => {
-          if (account.Id && account.Status === 'ACTIVE') {
-            accounts.push(account.Id);
-          }
-        });
-        nextToken = result.NextToken;
-      } while (nextToken);
-    } catch {
-      return [this.config.managementAccountId];
-    }
-
-    if (accounts.length === 0) {
-      return [this.config.managementAccountId];
-    }
-
-    return accounts;
-  }
-
-  private async getAssumedCredentialsIfNeeded(accountId: string) {
-    if (accountId === this.config.managementAccountId) {
-      return undefined;
-    }
-
-    const roleName = this.getLambdaCheckRoleName();
-    const roleArn = `arn:aws:iam::${accountId}:role/${roleName}`;
-    const sts = new STSClient({ region: this.config.homeRegion });
-    try {
-      const result = await sts.send(new AssumeRoleCommand({
-        RoleArn: roleArn,
-        RoleSessionName: `aws-luminarlz-cli-doctor-${Date.now()}`,
-      }));
-      if (!result.Credentials) {
-        return null;
-      }
-      return {
-        accessKeyId: result.Credentials.AccessKeyId ?? '',
-        secretAccessKey: result.Credentials.SecretAccessKey ?? '',
-        sessionToken: result.Credentials.SessionToken,
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  private getLambdaCheckRoleName(): string {
-    return process.env.LZA_ASSUME_ROLE_NAME || 'AWSControlTowerExecution';
   }
 
   private async headBucket(bucketName: string, region: string): Promise<boolean> {

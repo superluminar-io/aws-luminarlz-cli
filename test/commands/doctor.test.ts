@@ -5,7 +5,7 @@ import { GetAccountSettingsCommand, LambdaClient } from '@aws-sdk/client-lambda'
 import { ListAccountsCommand, OrganizationsClient } from '@aws-sdk/client-organizations';
 import { HeadBucketCommand, S3Client } from '@aws-sdk/client-s3';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
-import { GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
+import { AssumeRoleCommand, GetCallerIdentityCommand, STSClient } from '@aws-sdk/client-sts';
 import { mockClient } from 'aws-sdk-client-mock';
 import { CheckStatus, runDoctor } from '../../src/core/doctor/doctor';
 import {
@@ -200,6 +200,7 @@ function setupDoctor(overrides: SetupOverrides = {}) {
       },
     ],
   });
+  stsMock.on(AssumeRoleCommand).rejects(new Error('Role missing'));
 }
 
 function writeConfig(version: string, region: string, regions: string[]) {

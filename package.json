@@ -61,6 +61,7 @@
     "@aws-sdk/client-lambda": "^3.943.0",
     "@aws-sdk/client-organizations": "^3.943.0",
     "@aws-sdk/client-s3": "^3.943.0",
+    "@aws-sdk/client-service-quotas": "^3.986.0",
     "@aws-sdk/client-ssm": "^3.943.0",
     "@aws-sdk/client-sso-admin": "^3.943.0",
     "@aws-sdk/client-sts": "^3.943.0",
