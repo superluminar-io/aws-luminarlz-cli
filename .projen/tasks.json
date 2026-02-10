@@ -231,13 +231,13 @@
       },
       "steps": [
         {
-          "exec": "npx npm-check-updates@18 --upgrade --target=minor --peer --no-deprecated --dep=dev,peer,prod,optional --filter=@types/jest,@types/node,aws-sdk-client-mock,aws-sdk-client-mock-jest,eslint-import-resolver-typescript,eslint-plugin-import,jest,projen,ts-jest,ts-node,typescript,@aws-cdk/cdk-assets-lib,@aws-sdk/client-cloudformation,@aws-sdk/client-organizations,@aws-sdk/client-s3,@aws-sdk/client-ssm,@aws-sdk/client-sso-admin,@aws-sdk/client-sts,@aws-sdk/credential-providers,clipanion,liquidjs,zip-lib"
+          "exec": "npx npm-check-updates@18 --upgrade --target=minor --peer --no-deprecated --dep=dev,peer,prod,optional --filter=@types/jest,@types/node,aws-sdk-client-mock,aws-sdk-client-mock-jest,eslint-import-resolver-typescript,eslint-plugin-import,jest,projen,ts-jest,ts-node,typescript,@aws-cdk/cdk-assets-lib,@aws-sdk/client-cloudformation,@aws-sdk/client-cloudtrail,@aws-sdk/client-organizations,@aws-sdk/client-s3,@aws-sdk/client-ssm,@aws-sdk/client-sso-admin,@aws-sdk/client-sts,@aws-sdk/credential-providers,clipanion,liquidjs,zip-lib"
         },
         {
           "exec": "yarn install --check-files"
         },
         {
-          "exec": "yarn upgrade @stylistic/eslint-plugin @types/jest @types/node @typescript-eslint/eslint-plugin @typescript-eslint/parser aws-sdk-client-mock aws-sdk-client-mock-jest commit-and-tag-version constructs eslint-import-resolver-typescript eslint-plugin-import eslint jest jest-junit projen ts-jest ts-node typescript @aws-cdk/cdk-assets-lib @aws-sdk/client-cloudformation @aws-sdk/client-organizations @aws-sdk/client-s3 @aws-sdk/client-ssm @aws-sdk/client-sso-admin @aws-sdk/client-sts @aws-sdk/credential-providers clipanion liquidjs zip-lib"
+          "exec": "yarn upgrade @stylistic/eslint-plugin @types/jest @types/node @typescript-eslint/eslint-plugin @typescript-eslint/parser aws-sdk-client-mock aws-sdk-client-mock-jest commit-and-tag-version constructs eslint-import-resolver-typescript eslint-plugin-import eslint jest jest-junit projen ts-jest ts-node typescript @aws-cdk/cdk-assets-lib @aws-sdk/client-cloudformation @aws-sdk/client-cloudtrail @aws-sdk/client-organizations @aws-sdk/client-s3 @aws-sdk/client-ssm @aws-sdk/client-sso-admin @aws-sdk/client-sts @aws-sdk/credential-providers clipanion liquidjs zip-lib"
         },
         {
           "exec": "npx projen"

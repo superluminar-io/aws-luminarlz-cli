@@ -20,6 +20,7 @@ import {
   TEST_USER_ID, TEST_ORGANIZATION_ID, TEST_ROOT_ID,
 } from '../constants';
 import { createCliFor, runCli } from '../test-helper/cli';
+import { installLocalLuminarlzCliForTests } from '../test-helper/install-local-luminarlz-cli';
 import { useTempDir } from '../test-helper/use-temp-dir';
 
 let temp: ReturnType<typeof useTempDir>;
@@ -31,6 +32,7 @@ describe('LZA Config Validate command', () => {
 
   let execSpy: jest.SpyInstance;
   const realExecute = execModule.executeCommand;
+  const repoRoot = path.resolve(__dirname, '..', '..');
 
   beforeEach(() => {
     temp = useTempDir();
@@ -47,6 +49,9 @@ describe('LZA Config Validate command', () => {
           return Promise.resolve({ stdout: '', stderr: '' } as any) as any;
         }
         if (command.startsWith('yarn')) {
+          if (opts?.cwd && path.resolve(opts.cwd) === repoRoot) {
+            return (realExecute as any)(command, opts);
+          }
           return Promise.resolve({ stdout: '', stderr: '' } as any) as any;
         }
       }
@@ -109,7 +114,7 @@ describe('LZA Config Validate command', () => {
       '--region', TEST_REGION,
       '--force',
     ], temp);
-    await execModule.executeCommand('npm install', { cwd: temp.directory });
+    await installLocalLuminarlzCliForTests(temp);
     await runCli(cli, ['lza', 'config', 'validate'], temp);
 
     const checkoutPath = getCheckoutPath();

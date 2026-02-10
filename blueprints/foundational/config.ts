@@ -45,6 +45,12 @@ export const HOME_REGION = '<<AWS_HOME_REGION>>';
 export const ENABLED_REGIONS = [GLOBAL_REGION, HOME_REGION];
 
 /**
+ * The CloudTrail log group that Control Tower creates in the home region.
+ * Use '__AUTO__' to resolve it during deployment.
+ */
+export const CLOUDTRAIL_LOG_GROUP_NAME = '__AUTO__';
+
+/**
  * The groups should be aligned with the groups in the AWS IAM Identity Center.
  * The group names are also being used for the Owner Cost Category and as possible values for the Owner tag.
  * TODO: The group values should be replaced with IAM Identity Center group names that actually exist in your project!
@@ -281,6 +287,7 @@ export const templates: Template[] = [
     fileName: 'security-config.yaml',
     parameters: {
       homeRegion: HOME_REGION,
+      cloudTrailLogGroupName: CLOUDTRAIL_LOG_GROUP_NAME,
     },
   },
   {
@@ -299,5 +306,6 @@ export const config: Config = {
   managementAccountId: MANAGEMENT_ACCOUNT_ID,
   homeRegion: HOME_REGION,
   enabledRegions: ENABLED_REGIONS,
+  cloudTrailLogGroupName: CLOUDTRAIL_LOG_GROUP_NAME,
   awsAcceleratorVersion: AWS_ACCELERATOR_VERSION,
 };

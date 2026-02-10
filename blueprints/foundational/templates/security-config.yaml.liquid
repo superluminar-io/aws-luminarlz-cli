@@ -58,14 +58,14 @@ cloudWatch:
       metrics:
         # Monitor the use of the root users
         - filterName: RootUserUsageMetricFilter
-          logGroupName: aws-controltower/CloudTrailLogs
+          logGroupName: <% cloudTrailLogGroupName %>
           filterPattern: '{$.userIdentity.type="Root" && $.userIdentity.invokedBy NOT EXISTS && $.eventType !="AwsServiceEvent"}'
           metricNamespace: LogMetrics
           metricName: RootUserUsage
           metricValue: "1"
         # Monitor the use of IAM users on the management account
         - filterName: IamUserUsageMetricFilter
-          logGroupName: aws-controltower/CloudTrailLogs
+          logGroupName: <% cloudTrailLogGroupName %>
           filterPattern: '{$.userIdentity.type="IAMUser" && $.userIdentity.invokedBy NOT EXISTS && $.userIdentity.accountId = "{{account Management}}" && $.eventType !="AwsServiceEvent"}'
           metricNamespace: LogMetrics
           metricName: IamUserUsage

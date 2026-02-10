@@ -52,6 +52,7 @@ export interface BaseConfig {
   awsAcceleratorInstallerRepositoryBranchNamePrefix: string;
   awsAcceleratorInstallerStackTemplateUrlPattern: string;
   maxParallelCdkAssetManifestUploads: number;
+  cloudTrailLogGroupName: string;
 }
 
 export interface Config extends BaseConfig {
@@ -77,6 +78,7 @@ export const baseConfig: BaseConfig = {
   awsAcceleratorInstallerRepositoryBranchNamePrefix: AWS_ACCELERATOR_INSTALLER_REPOSITORY_BRANCH_NAME_PREFIX,
   awsAcceleratorInstallerStackTemplateUrlPattern: AWS_ACCELERATOR_INSTALLER_STACK_TEMPLATE_URL_PATTERN,
   maxParallelCdkAssetManifestUploads: 200,
+  cloudTrailLogGroupName: '__AUTO__',
 };
 
 let loadedConfig: Config | undefined;

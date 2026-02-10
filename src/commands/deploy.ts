@@ -1,4 +1,5 @@
 import { Command } from 'clipanion';
+import { applyAutoCloudTrailLogGroupName } from '../core/accelerator/config/cloudtrail';
 import { publishConfigOut } from '../core/accelerator/config/publish';
 import { synthConfigOut } from '../core/accelerator/config/synth';
 import { customizationsPublishCdkAssets } from '../core/customizations/assets';
@@ -14,6 +15,7 @@ export class Deploy extends Command {
   async execute() {
     await customizationsCdkSynth();
     await synthConfigOut();
+    await applyAutoCloudTrailLogGroupName();
     await customizationsPublishCdkAssets();
     await publishConfigOut();
     console.log('Done. ✅');
