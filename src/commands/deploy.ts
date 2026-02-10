@@ -1,5 +1,4 @@
 import { Command, Option } from 'clipanion';
-import { Command } from 'clipanion';
 import { applyAutoCloudTrailLogGroupName } from '../core/accelerator/config/cloudtrail';
 import { publishConfigOut } from '../core/accelerator/config/publish';
 import { synthConfigOut } from '../core/accelerator/config/synth';

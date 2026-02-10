@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { CloudTrailClient, DescribeTrailsCommand } from '@aws-sdk/client-cloudtrail';
 import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
+import { CloudTrailClient, DescribeTrailsCommand } from '@aws-sdk/client-cloudtrail';
 import { GetAccountSettingsCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import {
   DescribeOrganizationCommand,
@@ -25,8 +25,6 @@ import {
 } from '../../src/config';
 import { getCheckoutPath } from '../../src/core/accelerator/repository/checkout';
 import * as assets from '../../src/core/customizations/assets';
-import * as synth from '../../src/core/customizations/synth';
-import { executeCommand } from '../../src/core/util/exec';
 import {
   TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
   TEST_ACCOUNT_ID,
@@ -50,7 +48,6 @@ describe('Deploy command', () => {
   const lambdaMock = mockClient(LambdaClient);
 
   let customizationsPublishCdkAssetsSpy: jest.SpyInstance;
-  let customizationsCdkSynthSpy: jest.SpyInstance;
   const cli = createCliFor(Init, Deploy);
 
   beforeEach(() => {
@@ -68,11 +65,6 @@ describe('Deploy command', () => {
     jest.clearAllMocks();
 
     customizationsPublishCdkAssetsSpy = jest.spyOn(assets, 'customizationsPublishCdkAssets').mockResolvedValue();
-    customizationsCdkSynthSpy = jest.spyOn(synth, 'customizationsCdkSynth').mockImplementation(async () => {
-      const cdkOutDir = path.join(temp.directory, 'customizations', 'cdk.out');
-      fs.mkdirSync(cdkOutDir, { recursive: true });
-      fs.writeFileSync(path.join(cdkOutDir, 'dummy.template.json'), '{}');
-    });
 
     ssmMock.on(GetParameterCommand).resolves({
       Parameter: {
@@ -153,14 +145,13 @@ describe('Deploy command', () => {
   });
 
   it('should deploy after initializing a project with the specified blueprint (skip doctor)', async () => {
-      const cli = createCliFor(Init, Deploy);
-      await runCli(cli, [
+    await runCli(cli, [
       'init',
       '--accounts-root-email', TEST_EMAIL,
       '--region', TEST_REGION,
     ], temp);
     await installLocalLuminarlzCliForTests(temp);
-    await runCli(cli, ['deploy'], temp);
+    await runCli(cli, ['deploy', '--skip-doctor'], temp);
 
     const config = loadConfigSync();
     expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.directory });
@@ -173,57 +164,58 @@ describe('Deploy command', () => {
     expect(customizationsPublishCdkAssetsSpy).toHaveBeenCalled();
   });
 
-    it('should deploy when doctor succeeds', async () => {
-        const cli = createCliFor(Init, Deploy);
-        await runCli(cli, [
-            'init',
-            '--accounts-root-email', TEST_EMAIL,
-            '--region', TEST_REGION,
-        ], temp);
+  it('should deploy when doctor succeeds', async () => {
+    await runCli(cli, [
+      'init',
+      '--accounts-root-email', TEST_EMAIL,
+      '--region', TEST_REGION,
+    ], temp);
+    await installLocalLuminarlzCliForTests(temp);
 
-        const config = loadConfigSync();
-        const checkoutPath = getCheckoutPath();
-        fs.mkdirSync(path.join(checkoutPath, '.git'), { recursive: true });
-        fs.writeFileSync(
-            path.join(checkoutPath, '.git', 'HEAD'),
-            `ref: refs/heads/${awsAcceleratorInstallerRepositoryBranchName(config)}`,
-        );
+    const config = loadConfigSync();
+    const checkoutPath = getCheckoutPath();
+    fs.mkdirSync(path.join(checkoutPath, '.git'), { recursive: true });
+    fs.writeFileSync(
+      path.join(checkoutPath, '.git', 'HEAD'),
+      `ref: refs/heads/${awsAcceleratorInstallerRepositoryBranchName(config)}`,
+    );
 
-        await runCli(cli, ['deploy'], temp);
+    await runCli(cli, ['deploy'], temp);
 
-        expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.directory });
-        expect(s3Mock).toHaveReceivedCommandWith(PutObjectCommand, {
-            Bucket: awsAcceleratorConfigBucketName(config),
-            Key: config.awsAcceleratorConfigDeploymentArtifactPath,
-            Body: getAcceleratorConfigZip(config),
-        });
-        expect(customizationsPublishCdkAssetsSpy).toHaveBeenCalled();
+    expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.directory });
+    expect(getSecurityConfigContents()).toContain('aws-controltower/CloudTrailLogs-xyz');
+    expect(s3Mock).toHaveReceivedCommandWith(PutObjectCommand, {
+      Bucket: awsAcceleratorConfigBucketName(config),
+      Key: config.awsAcceleratorConfigDeploymentArtifactPath,
+      Body: getAcceleratorConfigZip(config),
     });
+    expect(customizationsPublishCdkAssetsSpy).toHaveBeenCalled();
+  });
 
-    it('should abort when doctor fails', async () => {
-        const cli = createCliFor(Init, Deploy);
-        await runCli(cli, [
-            'init',
-            '--accounts-root-email', TEST_EMAIL,
-            '--region', TEST_REGION,
-        ], temp);
+  it('should abort when doctor fails', async () => {
+    await runCli(cli, [
+      'init',
+      '--accounts-root-email', TEST_EMAIL,
+      '--region', TEST_REGION,
+    ], temp);
+    await installLocalLuminarlzCliForTests(temp);
 
-        const config = loadConfigSync();
-        const checkoutPath = getCheckoutPath();
-        fs.mkdirSync(path.join(checkoutPath, '.git'), { recursive: true });
-        fs.writeFileSync(
-            path.join(checkoutPath, '.git', 'HEAD'),
-            `ref: refs/heads/${awsAcceleratorInstallerRepositoryBranchName(config)}`,
-        );
+    const config = loadConfigSync();
+    const checkoutPath = getCheckoutPath();
+    fs.mkdirSync(path.join(checkoutPath, '.git'), { recursive: true });
+    fs.writeFileSync(
+      path.join(checkoutPath, '.git', 'HEAD'),
+      `ref: refs/heads/${awsAcceleratorInstallerRepositoryBranchName(config)}`,
+    );
 
-        s3Mock.on(HeadBucketCommand).rejects(new Error('NotFound'));
+    s3Mock.on(HeadBucketCommand).rejects(new Error('NotFound'));
 
-        const result = await runCli(cli, ['deploy'], temp);
+    const result = await runCli(cli, ['deploy'], temp);
 
-        expect(result).toBe(0);
-        expect(customizationsPublishCdkAssetsSpy).not.toHaveBeenCalled();
-        expect(s3Mock).toHaveReceivedCommandTimes(PutObjectCommand, 0);
-    });
+    expect(result).toBe(0);
+    expect(customizationsPublishCdkAssetsSpy).not.toHaveBeenCalled();
+    expect(s3Mock).toHaveReceivedCommandTimes(PutObjectCommand, 0);
+  });
 });
 
 function getAcceleratorConfigZip(config: Config) {

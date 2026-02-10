@@ -52,8 +52,8 @@ export interface BaseConfig {
   awsAcceleratorInstallerRepositoryBranchNamePrefix: string;
   awsAcceleratorInstallerStackTemplateUrlPattern: string;
   maxParallelCdkAssetManifestUploads: number;
-  cloudTrailLogGroupName: string;
   minLambdaConcurrency: number;
+  cloudTrailLogGroupName: string;
 }
 
 export interface Config extends BaseConfig {

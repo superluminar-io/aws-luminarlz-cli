@@ -305,7 +305,7 @@ export const config = {
   managementAccountId: MANAGEMENT_ACCOUNT_ID,
   homeRegion: HOME_REGION,
   enabledRegions: ENABLED_REGIONS,
-  cloudTrailLogGroupName: CLOUDTRAIL_LOG_GROUP_NAME,
   minLambdaConcurrency: 1000,
+  cloudTrailLogGroupName: CLOUDTRAIL_LOG_GROUP_NAME,
   awsAcceleratorVersion: AWS_ACCELERATOR_VERSION,
 };

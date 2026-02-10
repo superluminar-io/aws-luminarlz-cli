@@ -6,7 +6,6 @@ import { mockClient } from 'aws-sdk-client-mock';
 import { Init } from '../../src/commands/init';
 import { LzaInstallerVersionCheck } from '../../src/commands/lza-installer-version-check';
 import { AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME } from '../../src/config';
-import * as execModule from '../../src/core/util/exec';
 import {
   TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
   TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_3,
@@ -15,6 +14,7 @@ import {
   TEST_REGION, TEST_USER_ID, TEST_ORGANIZATION_ID, TEST_ROOT_ID,
 } from '../constants';
 import { CliError, createCliFor, runCli } from '../test-helper/cli';
+import { installLocalCliForTests } from '../test-helper/patch-local-cli';
 import { useTempDir } from '../test-helper/use-temp-dir';
 
 let temp: ReturnType<typeof useTempDir>;
@@ -84,7 +84,7 @@ describe('LZA Installer Version - check command', () => {
       '--region', TEST_REGION,
       '--force',
     ], temp);
-    await execModule.executeCommand('npm install', { cwd: temp.directory });
+    await installLocalCliForTests(temp);
     await runCli(cli, ['lza', 'installer-version', 'check'], temp);
 
     expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 2);
@@ -120,7 +120,7 @@ describe('LZA Installer Version - check command', () => {
       '--region', TEST_REGION,
       '--force',
     ], temp);
-    await execModule.executeCommand('npm install', { cwd: temp.directory });
+    await installLocalCliForTests(temp);
     const result = runCli(cli, ['lza', 'installer-version', 'check'], temp);
 
     await expect(result).rejects.toThrow(CliError);
