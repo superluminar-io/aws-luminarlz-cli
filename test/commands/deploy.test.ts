@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
 import { CloudTrailClient, DescribeTrailsCommand } from '@aws-sdk/client-cloudtrail';
+import { CodePipelineClient, ListPipelineExecutionsCommand } from '@aws-sdk/client-codepipeline';
 import { GetAccountSettingsCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import {
   DescribeOrganizationCommand,
@@ -46,6 +47,7 @@ describe('Deploy command', () => {
   const cloudTrailMock = mockClient(CloudTrailClient);
   const cloudFormationMock = mockClient(CloudFormationClient);
   const lambdaMock = mockClient(LambdaClient);
+  const codePipelineMock = mockClient(CodePipelineClient);
 
   let customizationsPublishCdkAssetsSpy: jest.SpyInstance;
   const cli = createCliFor(Init, Deploy);
@@ -61,6 +63,7 @@ describe('Deploy command', () => {
     cloudTrailMock.reset();
     cloudFormationMock.reset();
     lambdaMock.reset();
+    codePipelineMock.reset();
 
     jest.clearAllMocks();
 
@@ -138,6 +141,9 @@ describe('Deploy command', () => {
       }],
     });
     s3Mock.on(HeadBucketCommand).resolves({});
+    codePipelineMock.on(ListPipelineExecutionsCommand).resolves({
+      pipelineExecutionSummaries: [],
+    });
   });
 
   afterEach(() => {
@@ -211,6 +217,30 @@ describe('Deploy command', () => {
     s3Mock.on(HeadBucketCommand).rejects(new Error('NotFound'));
 
     const result = await runCli(cli, ['deploy'], temp);
+
+    expect(result).toBe(0);
+    expect(customizationsPublishCdkAssetsSpy).not.toHaveBeenCalled();
+    expect(s3Mock).toHaveReceivedCommandTimes(PutObjectCommand, 0);
+  });
+
+  it('should abort when a pipeline execution is already in progress', async () => {
+    await runCli(cli, [
+      'init',
+      '--accounts-root-email', TEST_EMAIL,
+      '--region', TEST_REGION,
+    ], temp);
+    await installLocalLuminarlzCliForTests(temp);
+
+    codePipelineMock.on(ListPipelineExecutionsCommand).resolves({
+      pipelineExecutionSummaries: [
+        {
+          pipelineExecutionId: 'execution-123',
+          status: 'InProgress',
+        },
+      ],
+    });
+
+    const result = await runCli(cli, ['deploy', '--skip-doctor'], temp);
 
     expect(result).toBe(0);
     expect(customizationsPublishCdkAssetsSpy).not.toHaveBeenCalled();

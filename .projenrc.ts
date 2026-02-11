@@ -24,6 +24,7 @@ const project = new typescript.TypeScriptProject({
     '@aws-sdk/client-s3',
     '@aws-sdk/client-cloudformation',
     '@aws-sdk/client-cloudtrail',
+    '@aws-sdk/client-codepipeline',
     '@aws-sdk/client-service-quotas',
     '@aws-sdk/client-lambda',
     '@aws-sdk/client-organizations',

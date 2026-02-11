@@ -2,6 +2,7 @@ import { Command, Option } from 'clipanion';
 import { applyAutoCloudTrailLogGroupName } from '../core/accelerator/config/cloudtrail';
 import { publishConfigOut } from '../core/accelerator/config/publish';
 import { synthConfigOut } from '../core/accelerator/config/synth';
+import { abortIfPipelineExecutionInProgress } from '../core/accelerator/pipeline/execution-guard';
 import { ensureCheckoutExists } from '../core/accelerator/repository/checkout';
 import { customizationsPublishCdkAssets } from '../core/customizations/assets';
 import { customizationsCdkSynth } from '../core/customizations/synth';
@@ -20,6 +21,10 @@ export class Deploy extends Command {
   });
 
   async execute() {
+    const aborted = await abortIfPipelineExecutionInProgress();
+    if (aborted) {
+      return;
+    }
     if (!this.skipDoctor) {
       await ensureCheckoutExists();
       const summary = await runDoctor();
