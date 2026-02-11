@@ -4,7 +4,7 @@ const indentLines = (text: string, indent: string): string[] => {
   return text.split('\n').map((line) => `${indent}${line}`);
 };
 
-const printCheck = (result: CheckResult): string[] => {
+const formatCheckLines = (result: CheckResult): string[] => {
   const lines: string[] = [];
   lines.push(`${result.status.toUpperCase()}: ${result.label}`);
   lines.push(...indentLines(`ID: ${result.id}`, '  '));
@@ -17,10 +17,10 @@ const printCheck = (result: CheckResult): string[] => {
   return lines;
 };
 
-export const printDoctorSummary = (summary: DoctorSummary): string[] => {
+export const formatDoctorSummaryLines = (summary: DoctorSummary): string[] => {
   const lines: string[] = ['Doctor Check:'];
   summary.results.forEach((result, index) => {
-    lines.push(...printCheck(result));
+    lines.push(...formatCheckLines(result));
     if (index < summary.results.length - 1) {
       lines.push('');
     }
@@ -29,4 +29,13 @@ export const printDoctorSummary = (summary: DoctorSummary): string[] => {
   lines.push(`Failures: ${failureCount} / ${summary.results.length}`);
   lines.push(summary.hasFailures ? 'Doctor: failures found.' : 'Doctor: all checks passed.');
   return lines;
+};
+
+export const writeDoctorSummary = (
+  summary: DoctorSummary,
+  writer: (line: string) => void = console.info,
+): void => {
+  for (const line of formatDoctorSummaryLines(summary)) {
+    writer(line);
+  }
 };

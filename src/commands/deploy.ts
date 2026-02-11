@@ -2,9 +2,11 @@ import { Command, Option } from 'clipanion';
 import { applyAutoCloudTrailLogGroupName } from '../core/accelerator/config/cloudtrail';
 import { publishConfigOut } from '../core/accelerator/config/publish';
 import { synthConfigOut } from '../core/accelerator/config/synth';
+import { ensureCheckoutExists } from '../core/accelerator/repository/checkout';
 import { customizationsPublishCdkAssets } from '../core/customizations/assets';
 import { customizationsCdkSynth } from '../core/customizations/synth';
 import { runDoctor } from '../core/doctor/doctor';
+import { writeDoctorSummary } from '../core/doctor/printer';
 
 export class Deploy extends Command {
   static paths = [['deploy']];
@@ -19,7 +21,9 @@ export class Deploy extends Command {
 
   async execute() {
     if (!this.skipDoctor) {
+      await ensureCheckoutExists();
       const summary = await runDoctor();
+      writeDoctorSummary(summary);
       if (summary.hasFailures) {
         console.info('Deploy aborted: doctor checks failed.');
         return;

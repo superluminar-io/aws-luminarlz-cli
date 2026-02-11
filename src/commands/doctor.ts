@@ -1,6 +1,6 @@
 import { Command, Option } from 'clipanion';
 import { runDoctor } from '../core/doctor/doctor';
-import { printDoctorSummary } from '../core/doctor/printer';
+import { writeDoctorSummary } from '../core/doctor/printer';
 
 export class Doctor extends Command {
   static paths = [['doctor']];
@@ -29,10 +29,7 @@ export class Doctor extends Command {
       console.info('FIXTURE MODE: No AWS calls were made.');
       console.info('---');
     }
-    const lines = printDoctorSummary(summary);
-    for (const line of lines) {
-      console.info(line);
-    }
+    writeDoctorSummary(summary);
     return summary.hasFailures ? 1 : 0;
   }
 }
