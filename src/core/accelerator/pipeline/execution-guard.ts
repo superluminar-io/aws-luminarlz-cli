@@ -10,7 +10,7 @@ const IN_PROGRESS_STATUS = 'InProgress';
 const isExecutionInProgress = (execution: PipelineExecutionSummary): boolean =>
   execution.status === IN_PROGRESS_STATUS;
 
-const formatExecutionDetails = (execution: PipelineExecutionSummary): string => {
+export const formatExecutionDetails = (execution: PipelineExecutionSummary): string => {
   if (execution.pipelineExecutionId) {
     return ` (execution ${execution.pipelineExecutionId})`;
   }
