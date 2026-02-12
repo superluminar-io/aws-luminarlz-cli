@@ -1,5 +1,6 @@
 import {
   baseConfig,
+  Config,
   GLOBAL_REGION,
   Template,
 } from '@superluminar-io/aws-luminarlz-cli/lib/config';
@@ -298,7 +299,7 @@ export const templates: Template[] = [
   },
 ];
 
-export const config = {
+export const config: Config = {
   ...baseConfig,
   templates,
   environments,
