@@ -1,6 +1,7 @@
 #!/usr/bin/env -S npx ts-node
 
 import { Builtins, Cli } from 'clipanion';
+import { BlueprintUpdate } from './commands/blueprint-update';
 import { Deploy } from './commands/deploy';
 import { Init } from './commands/init';
 import { LzaConfigValidate } from './commands/lza-config-validate';
@@ -31,4 +32,5 @@ cli.register(LzaStageSynth);
 cli.register(Synth);
 cli.register(Deploy);
 cli.register(Init);
+cli.register(BlueprintUpdate);
 void cli.runExit(args);

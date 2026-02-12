@@ -65,6 +65,8 @@ npm run cli -- deploy
 Documentation for the other CLI commands can be found in the README generated when intializing a new AWS landing zone.
 Have a look at the [foundational blueprint README](blueprints/foundational/README.md).
 
+This includes `blueprint update`, which updates existing project files from the selected blueprint with interactive diffs.
+
 #### LZA Core CLI
 
 Some of the CLI commands are using the [LZA Core CLI](https://awslabs.github.io/landing-zone-accelerator-on-aws/latest/developer-guide/scripts/#core-cli) underneath.
