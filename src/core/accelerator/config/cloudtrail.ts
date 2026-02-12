@@ -10,28 +10,6 @@ const SECURITY_CONFIG_FILE = 'security-config.yaml';
 const CONTROL_TOWER_LOG_GROUP_PREFIX = 'aws-controltower/CloudTrailLogs';
 
 type TrailEntry = { trail: { IsOrganizationTrail?: boolean }; logGroupName: string };
-type SelectionRule = {
-  name: string;
-  matches: (entry: TrailEntry) => boolean;
-};
-
-const logGroupSelectionOrder: SelectionRule[] = [
-  {
-    name: 'Organization trail with Control Tower prefix',
-    matches: (entry) =>
-      entry.trail.IsOrganizationTrail === true &&
-      entry.logGroupName.startsWith(CONTROL_TOWER_LOG_GROUP_PREFIX),
-  },
-  {
-    name: 'Any trail with Control Tower prefix',
-    matches: (entry) =>
-      entry.logGroupName.startsWith(CONTROL_TOWER_LOG_GROUP_PREFIX),
-  },
-  {
-    name: 'Any organization trail',
-    matches: (entry) => entry.trail.IsOrganizationTrail === true,
-  },
-];
 
 const parseLogGroupName = (arn: string): string | null => {
   const marker = ':log-group:';
@@ -59,13 +37,31 @@ const extractTrailLogGroups = (trails: Array<{ CloudWatchLogsLogGroupArn?: strin
   return candidates;
 };
 
-const selectLogGroupName = (trailCandidates: TrailEntry[], matchOrder: SelectionRule[]): string | null => {
-  const selectedRule = matchOrder.find((rule) => trailCandidates.some(rule.matches));
-  const selectedTrail = selectedRule ? trailCandidates.find(selectedRule.matches) : null;
-  if (!selectedTrail) {
-    return null;
+const isControlTowerLogGroup = (entry: TrailEntry): boolean =>
+  entry.logGroupName.startsWith(CONTROL_TOWER_LOG_GROUP_PREFIX);
+
+const selectControlTowerLogGroupName = (trailCandidates: TrailEntry[], region: string): string => {
+  const controlTowerCandidates = trailCandidates.filter(isControlTowerLogGroup);
+
+  if (controlTowerCandidates.length === 1) {
+    return controlTowerCandidates[0].logGroupName;
   }
-  return selectedTrail.logGroupName;
+
+  const controlTowerOrganizationCandidates = controlTowerCandidates.filter(
+    (entry) => entry.trail.IsOrganizationTrail === true,
+  );
+  if (controlTowerOrganizationCandidates.length === 1) {
+    return controlTowerOrganizationCandidates[0].logGroupName;
+  }
+
+  if (controlTowerCandidates.length === 0) {
+    throw new Error(`Unable to find a Control Tower CloudTrail log group in ${region}.`);
+  }
+
+  throw new Error(
+    `Found multiple Control Tower CloudTrail log groups in ${region}. ` +
+    'Set cloudTrailLogGroupName explicitly in config.ts and re-run deploy.',
+  );
 };
 
 const resolveCloudTrailLogGroupName = async (region: string): Promise<string> => {
@@ -76,16 +72,7 @@ const resolveCloudTrailLogGroupName = async (region: string): Promise<string> =>
   const trails = response.trailList || [];
   const trailsWithLogGroup = extractTrailLogGroups(trails);
 
-  const preferredLogGroup = selectLogGroupName(trailsWithLogGroup, logGroupSelectionOrder);
-  if (preferredLogGroup) {
-    return preferredLogGroup;
-  }
-
-  if (trailsWithLogGroup.length === 0) {
-    throw new Error(`Unable to resolve the Control Tower CloudTrail log group in ${region}.`);
-  }
-
-  return trailsWithLogGroup[0].logGroupName;
+  return selectControlTowerLogGroupName(trailsWithLogGroup, region);
 };
 
 const buildMissingConfigError = (region: string, originalError: Error): Error => {
