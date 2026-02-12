@@ -23,6 +23,7 @@ const project = new typescript.TypeScriptProject({
     '@aws-cdk/cdk-assets-lib',
     '@aws-sdk/client-s3',
     '@aws-sdk/client-cloudformation',
+    '@aws-sdk/client-cloudtrail',
     '@aws-sdk/client-organizations',
     '@aws-sdk/client-ssm',
     '@aws-sdk/client-sso-admin',

@@ -88,6 +88,10 @@
       "type": "runtime"
     },
     {
+      "name": "@aws-sdk/client-cloudtrail",
+      "type": "runtime"
+    },
+    {
       "name": "@aws-sdk/client-organizations",
       "type": "runtime"
     },

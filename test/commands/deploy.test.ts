@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { CloudTrailClient, DescribeTrailsCommand } from '@aws-sdk/client-cloudtrail';
 import { DescribeOrganizationCommand, ListRootsCommand, OrganizationsClient } from '@aws-sdk/client-organizations';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
@@ -15,7 +16,6 @@ import {
   loadConfigSync,
 } from '../../src/config';
 import * as assets from '../../src/core/customizations/assets';
-import { executeCommand } from '../../src/core/util/exec';
 import {
   TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
   TEST_ACCOUNT_ID,
@@ -24,6 +24,7 @@ import {
   TEST_USER_ID, TEST_ORGANIZATION_ID, TEST_ROOT_ID,
 } from '../constants';
 import { createCliFor, runCli } from '../test-helper/cli';
+import { installLocalLuminarlzCliForTests } from '../test-helper/install-local-luminarlz-cli';
 import { useTempDir } from '../test-helper/use-temp-dir';
 
 let temp: ReturnType<typeof useTempDir>;
@@ -33,6 +34,7 @@ describe('Deploy command', () => {
   const organizationsMock = mockClient(OrganizationsClient);
   const ssoAdminMock = mockClient(SSOAdminClient);
   const s3Mock = mockClient(S3Client);
+  const cloudTrailMock = mockClient(CloudTrailClient);
 
   let customizationsPublishCdkAssetsSpy: jest.SpyInstance;
 
@@ -44,6 +46,7 @@ describe('Deploy command', () => {
     organizationsMock.reset();
     ssoAdminMock.reset();
     s3Mock.reset();
+    cloudTrailMock.reset();
 
     jest.clearAllMocks();
 
@@ -89,6 +92,15 @@ describe('Deploy command', () => {
         },
       ],
     });
+
+    cloudTrailMock.on(DescribeTrailsCommand).resolves({
+      trailList: [
+        {
+          IsOrganizationTrail: true,
+          CloudWatchLogsLogGroupArn: `arn:aws:logs:${TEST_REGION}:${TEST_ACCOUNT_ID}:log-group:aws-controltower/CloudTrailLogs-xyz`,
+        },
+      ],
+    });
   });
 
   afterEach(() => {
@@ -103,11 +115,12 @@ describe('Deploy command', () => {
       '--accounts-root-email', TEST_EMAIL,
       '--region', TEST_REGION,
     ], temp);
-    await executeCommand('npm install', { cwd: temp.directory });
+    await installLocalLuminarlzCliForTests(temp);
     await runCli(cli, ['deploy'], temp);
 
     const config = loadConfigSync();
     expect(config).toHaveCreatedCdkTemplates({ baseDir: temp.directory });
+    expect(getSecurityConfigContents()).toContain('aws-controltower/CloudTrailLogs-xyz');
     expect(s3Mock).toHaveReceivedCommandWith(PutObjectCommand, {
       Bucket: awsAcceleratorConfigBucketName(config),
       Key: config.awsAcceleratorConfigDeploymentArtifactPath,
@@ -123,4 +136,8 @@ function getAcceleratorConfigZip(config: Config) {
     `${config.awsAcceleratorConfigOutPath}.zip`,
   );
   return fs.readFileSync(zipPath);
+}
+
+function getSecurityConfigContents() {
+  return fs.readFileSync(path.join(temp.directory, 'aws-accelerator-config.out', 'security-config.yaml'), 'utf8');
 }
