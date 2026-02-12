@@ -88,11 +88,19 @@ const resolveCloudTrailLogGroupName = async (region: string): Promise<string> =>
   return trailsWithLogGroup[0].logGroupName;
 };
 
-const buildMissingConfigError = (region: string): Error => {
-  return new Error(
+const buildMissingConfigError = (region: string, originalError: Error): Error => {
+  const message =
     `Unable to resolve the Control Tower CloudTrail log group in ${region}. ` +
-    'Set cloudTrailLogGroupName explicitly in config.ts and re-run deploy.',
-  );
+    'Set cloudTrailLogGroupName explicitly in config.ts and re-run deploy.';
+
+  return new Error(`${message} Cause: ${originalError.message}`);
+};
+
+const toError = (value: unknown): Error => {
+  if (value instanceof Error) {
+    return value;
+  }
+  return new Error(String(value));
 };
 
 const replaceAutoPlaceholder = (contents: string, value: string): string => {
@@ -125,19 +133,19 @@ export const applyAutoCloudTrailLogGroupName = async (): Promise<void> => {
   }
 
   const acceleratorConfigOutDir = resolveProjectPath(config.awsAcceleratorConfigOutPath);
-  let logGroupName: string;
-  try {
-    logGroupName = await resolveCloudTrailLogGroupName(config.homeRegion);
-  } catch (error) {
-    throw buildMissingConfigError(config.homeRegion);
-  }
-
   const securityConfigContents = readSecurityConfig(
     acceleratorConfigOutDir,
     config.awsAcceleratorConfigOutPath,
   );
   if (!securityConfigContents.includes(AUTO_LOG_GROUP_PLACEHOLDER)) {
     return;
+  }
+
+  let logGroupName: string;
+  try {
+    logGroupName = await resolveCloudTrailLogGroupName(config.homeRegion);
+  } catch (error) {
+    throw buildMissingConfigError(config.homeRegion, toError(error));
   }
 
   const updated = replaceAutoPlaceholder(securityConfigContents, logGroupName);
