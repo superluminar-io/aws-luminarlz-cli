@@ -8,7 +8,7 @@
     "@types/aws-lambda": "^8.10.148",
     "@types/node": "24.10.1",
     "@types/object-hash": "^3.0.6",
-    "aws-cdk": "2.1105.0",
+    "aws-cdk": "2.1106.0",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.2"
   },
