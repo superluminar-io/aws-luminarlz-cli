@@ -25,7 +25,7 @@ const isPatchBodyLine = (line: string): boolean =>
   line.startsWith(' ') || line.startsWith('-') || line.startsWith('+');
 
 const parseDiffHunks = (diffText: string): DiffHunk[] => {
-  const lines = diffText.split('\n');
+  const lines = splitNormalizedLines(diffText);
   const hunks: DiffHunk[] = [];
 
   let currentHunk: DiffHunk | null = null;
@@ -84,7 +84,7 @@ const renderGitStyleDiff = (fileDiff: BlueprintFileDiff): string => {
   }
 
   return rawDiff
-    .split('\n')
+    .split(/\r\n|\n|\r/)
     .map((line) => line
       .split(currentPath).join(`a/${fileDiff.relativePath}`)
       .split(renderedPath).join(`b/${fileDiff.relativePath}`))
@@ -92,11 +92,21 @@ const renderGitStyleDiff = (fileDiff: BlueprintFileDiff): string => {
 };
 
 const detectLineDelimiter = (content: string): string => {
-  return content.includes('\r\n') ? '\r\n' : '\n';
+  if (content.includes('\r\n')) {
+    return '\r\n';
+  }
+  if (content.includes('\r')) {
+    return '\r';
+  }
+  return '\n';
 };
 
 const joinWithOriginalDelimiter = (content: string, lines: string[]): string => {
   return lines.join(detectLineDelimiter(content));
+};
+
+const splitNormalizedLines = (content: string): string[] => {
+  return content.split(/\r\n|\n|\r/);
 };
 
 export const parseFileDiffHunks = (fileDiff: BlueprintFileDiff): DiffHunk[] => {
@@ -127,7 +137,7 @@ export const rebuildContentFromHunks = (
   currentContent: string,
   hunkApplications: HunkApplication[],
 ): string => {
-  const originalLines = currentContent.split('\n');
+  const originalLines = splitNormalizedLines(currentContent);
   const resultLines: string[] = [];
   let lineCursor = 1;
 
