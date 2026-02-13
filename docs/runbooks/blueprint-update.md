@@ -11,6 +11,9 @@ It is useful when:
 - the CLI blueprint changed (new defaults, fixes, docs, stack wiring),
 - your project was initialized earlier and drifted from current template files,
 - you want controlled adoption of upstream blueprint improvements.
+- you are testing local CLI blueprint/template changes in a real setup repository and need a safe way to apply them incrementally.
+
+For the full local development workflow (`projen compile` + `file:` dependency install), see the [Local CLI Development Runbook](local-cli-development-with-real-setup.md).
 
 ## What it does
 
@@ -60,11 +63,13 @@ yarn compile
 yarn eslint
 ```
 
-6. For config-related blueprint changes, also run:
+6. For config-related blueprint changes, run a real command path in your project repository, for example:
 
 ```bash
-npm run cli -- doctor
+npm run cli -- deploy
 ```
+
+If your branch/version includes `doctor`, you can run it as an additional preflight check.
 
 ## Verification checklist
 
