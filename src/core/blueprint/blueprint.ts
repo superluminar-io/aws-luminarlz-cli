@@ -4,6 +4,8 @@ import * as organizations from '@aws-sdk/client-organizations';
 import * as ssoAdmin from '@aws-sdk/client-sso-admin';
 import * as sts from '@aws-sdk/client-sts';
 import { Liquid } from 'liquidjs';
+import { assertInitControlTowerPrerequisites } from './init-prechecks';
+import { resolveControlTowerCloudTrailLogGroupName } from '../accelerator/config/cloudtrail';
 import { getVersion } from '../accelerator/installer/installer';
 import { resolveProjectPath } from '../util/path';
 
@@ -63,10 +65,12 @@ export const renderBlueprint = async (blueprintName: string, { forceOverwrite, a
   region: string;
 }) => {
   const managementAccountId = await getAwsAccountId(region);
+  await assertInitControlTowerPrerequisites(region, managementAccountId);
   const installerVersion = await getVersion(region);
   const organizationId = await getOrganizationId(region);
   const rootOuId = await getRootOuId(region);
   const identityStoreId = await getIdentityStoreId(region);
+  const cloudTrailLogGroupName = await resolveControlTowerCloudTrailLogGroupName(region);
 
   const projectRoot = resolveProjectPath();
   const blueprintRoot = buildBlueprintPath(blueprintName);
@@ -110,6 +114,7 @@ export const renderBlueprint = async (blueprintName: string, { forceOverwrite, a
           AWS_ACCOUNTS_ROOT_EMAIL: accountsRootEmail,
           AWS_HOME_REGION: region,
           AWS_IDENTITY_STORE_ID: identityStoreId,
+          AWS_CLOUDTRAIL_LOG_GROUP_NAME: cloudTrailLogGroupName,
         },
       );
       // if a target file already exists, skip it until force overwrite is enabled

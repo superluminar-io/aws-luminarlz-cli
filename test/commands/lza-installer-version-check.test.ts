@@ -1,3 +1,4 @@
+import { CloudTrailClient, DescribeTrailsCommand } from '@aws-sdk/client-cloudtrail';
 import { DescribeOrganizationCommand, ListRootsCommand, OrganizationsClient } from '@aws-sdk/client-organizations';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { ListInstancesCommand, SSOAdminClient } from '@aws-sdk/client-sso-admin';
@@ -28,6 +29,9 @@ describe('LZA Installer Version - check command', () => {
   const stsMock = mockClient(STSClient);
   const organizationsMock = mockClient(OrganizationsClient);
   const ssoAdminMock = mockClient(SSOAdminClient);
+  const cloudTrailMock = mockClient(CloudTrailClient);
+  const LZA_PREFIX_PARAMETER_NAME = '/accelerator/lza-prefix';
+  const FINALIZE_VERSION_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${TEST_REGION}/version`;
 
   beforeEach(() => {
     temp = useTempDir();
@@ -36,6 +40,7 @@ describe('LZA Installer Version - check command', () => {
     stsMock.reset();
     organizationsMock.reset();
     ssoAdminMock.reset();
+    cloudTrailMock.reset();
     jest.clearAllMocks();
 
     stsMock.on(GetCallerIdentityCommand).resolves({
@@ -60,6 +65,14 @@ describe('LZA Installer Version - check command', () => {
         { InstanceArn: 'arn:aws:sso:::instance/ssoins-example', IdentityStoreId: 'd-example123' },
       ],
     });
+    cloudTrailMock.on(DescribeTrailsCommand).resolves({
+      trailList: [
+        {
+          IsOrganizationTrail: true,
+          CloudWatchLogsLogGroupArn: `arn:aws:logs:${TEST_REGION}:${TEST_ACCOUNT_ID}:log-group:aws-controltower/CloudTrailLogs-xyz`,
+        },
+      ],
+    });
   });
 
   afterEach(() => {
@@ -68,7 +81,27 @@ describe('LZA Installer Version - check command', () => {
 
   it('should succeed after init when installed version matches configured version', async () => {
     // Arrange SSM mock to return the configured version
-    ssmMock.on(GetParameterCommand).resolves({
+    ssmMock.on(GetParameterCommand, {
+      Name: LZA_PREFIX_PARAMETER_NAME,
+    }).resolves({
+      Parameter: {
+        Name: LZA_PREFIX_PARAMETER_NAME,
+        Value: 'AWSAccelerator',
+        Type: 'String',
+      },
+    });
+    ssmMock.on(GetParameterCommand, {
+      Name: FINALIZE_VERSION_PARAMETER_NAME,
+    }).resolves({
+      Parameter: {
+        Name: FINALIZE_VERSION_PARAMETER_NAME,
+        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
+        Type: 'String',
+      },
+    });
+    ssmMock.on(GetParameterCommand, {
+      Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+    }).resolves({
       Parameter: {
         Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
         Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
@@ -85,31 +118,52 @@ describe('LZA Installer Version - check command', () => {
       '--force',
     ], temp);
     await execModule.executeCommand('npm install', { cwd: temp.directory });
+    ssmMock.reset();
+    ssmMock.on(GetParameterCommand, {
+      Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+    }).resolves({
+      Parameter: {
+        Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
+        Type: 'String',
+      },
+    });
     await runCli(cli, ['lza', 'installer-version', 'check'], temp);
 
-    expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 2);
+    expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 1);
     expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
       Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
     });
   });
 
   it('should fail after init when installed version does not match configured version', async () => {
-    // First SSM call (during init) returns 1.12.2, then check returns 1.12.3
-    ssmMock.on(GetParameterCommand)
-      .resolvesOnce({
-        Parameter: {
-          Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-          Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
-          Type: 'String',
-        },
-      })
-      .resolves({
-        Parameter: {
-          Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-          Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_3,
-          Type: 'String',
-        },
-      });
+    ssmMock.on(GetParameterCommand, {
+      Name: LZA_PREFIX_PARAMETER_NAME,
+    }).resolves({
+      Parameter: {
+        Name: LZA_PREFIX_PARAMETER_NAME,
+        Value: 'AWSAccelerator',
+        Type: 'String',
+      },
+    });
+    ssmMock.on(GetParameterCommand, {
+      Name: FINALIZE_VERSION_PARAMETER_NAME,
+    }).resolves({
+      Parameter: {
+        Name: FINALIZE_VERSION_PARAMETER_NAME,
+        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
+        Type: 'String',
+      },
+    });
+    ssmMock.on(GetParameterCommand, {
+      Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+    }).resolves({
+      Parameter: {
+        Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
+        Type: 'String',
+      },
+    });
     // Run init to generate config.ts with 1.12.2
     const cli = createCliFor(Init, LzaInstallerVersionCheck);
 
@@ -121,11 +175,21 @@ describe('LZA Installer Version - check command', () => {
       '--force',
     ], temp);
     await execModule.executeCommand('npm install', { cwd: temp.directory });
+    ssmMock.reset();
+    ssmMock.on(GetParameterCommand, {
+      Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+    }).resolves({
+      Parameter: {
+        Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_3,
+        Type: 'String',
+      },
+    });
     const result = runCli(cli, ['lza', 'installer-version', 'check'], temp);
 
     await expect(result).rejects.toThrow(CliError);
 
-    expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 2);
+    expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 1);
     expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
       Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
     });
