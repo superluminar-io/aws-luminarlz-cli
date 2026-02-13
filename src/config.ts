@@ -17,7 +17,6 @@ export const AWS_ACCELERATOR_CONFIG_DEPLOYMENT_ARTIFACT_PATH = 'zipped/aws-accel
 export const CDK_ACCEL_ASSETS_BUCKET_NAME_PATTERN = 'cdk-accel-assets-%s-';
 export const AWS_ACCELERATOR_PIPELINE_NAME = 'AWSAccelerator-Pipeline';
 export const AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME = '/accelerator/AWSAccelerator-InstallerStack/version';
-export const AWS_ACCELERATOR_PENDING_DEPLOY_FLOW_ENABLED_SSM_PARAMETER_NAME = '/accelerator/pending-deploy-flow/enabled';
 export const LZA_REPOSITORY_GIT_URL = 'https://github.com/awslabs/landing-zone-accelerator-on-aws.git';
 export const LZA_SOURCE_PATH = 'source';
 export const LZA_ACCELERATOR_PACKAGE_PATH = path.join(
@@ -123,10 +122,3 @@ export const awsAcceleratorInstallerStackTemplateUrl = (config: Config): string 
 
 export const awsAcceleratorInstallerRepositoryBranchName = (config: Config): string =>
   config.awsAcceleratorInstallerRepositoryBranchNamePrefix + config.awsAcceleratorVersion;
-
-export const toPendingConfigArtifactPath = (artifactPath: string): string => {
-  if (artifactPath.endsWith('.zip')) {
-    return `${artifactPath.slice(0, -4)}-pending.zip`;
-  }
-  return `${artifactPath}-pending`;
-};

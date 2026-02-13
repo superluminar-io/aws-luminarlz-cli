@@ -101,3 +101,19 @@ Fix:
 Verify:
 
 - rerun completes without fixed 45-minute timeout failure.
+
+## 5. Overlapping pipeline executions cause account lookup failures
+
+Symptoms:
+
+- later pipeline stages fail with messages such as:
+  - `Account Name not found for undefined`
+- failures appear when a second deploy is triggered while a previous execution is still running.
+
+Cause:
+
+- commit-filtered account lookup in config DynamoDB combined with shared keys per account email can produce missing rows for one execution during overlap.
+
+Detailed analysis, evidence collection commands, and mitigation are documented here:
+
+- `docs/runbooks/pipeline-overlap-commit-race.md`

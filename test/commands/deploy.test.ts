@@ -18,11 +18,9 @@ import { mockClient } from 'aws-sdk-client-mock';
 import { Deploy } from '../../src/commands/deploy';
 import { Init } from '../../src/commands/init';
 import {
-  AWS_ACCELERATOR_PENDING_DEPLOY_FLOW_ENABLED_SSM_PARAMETER_NAME,
   AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
   awsAcceleratorConfigBucketName,
   awsAcceleratorInstallerRepositoryBranchName,
-  toPendingConfigArtifactPath,
   Config,
   loadConfigSync,
 } from '../../src/config';
@@ -80,16 +78,6 @@ describe('Deploy command', () => {
         Type: 'String',
       },
     });
-    ssmMock.on(GetParameterCommand, {
-      Name: AWS_ACCELERATOR_PENDING_DEPLOY_FLOW_ENABLED_SSM_PARAMETER_NAME,
-    }).resolves({
-      Parameter: {
-        Name: AWS_ACCELERATOR_PENDING_DEPLOY_FLOW_ENABLED_SSM_PARAMETER_NAME,
-        Value: 'true',
-        Type: 'String',
-      },
-    });
-
     stsMock.on(GetCallerIdentityCommand).resolves({
       Account: TEST_ACCOUNT_ID,
       Arn: `arn:aws:iam::${TEST_ACCOUNT_ID}:role/Admin`,
@@ -236,7 +224,7 @@ describe('Deploy command', () => {
     expect(s3Mock).toHaveReceivedCommandTimes(PutObjectCommand, 0);
   });
 
-  it('should upload a pending config artifact when a pipeline execution is already in progress', async () => {
+  it('should upload the active config artifact when a pipeline execution is already in progress', async () => {
     await runCli(cli, [
       'init',
       '--accounts-root-email', TEST_EMAIL,
@@ -260,41 +248,9 @@ describe('Deploy command', () => {
     expect(customizationsPublishCdkAssetsSpy).toHaveBeenCalled();
     expect(s3Mock).toHaveReceivedCommandWith(PutObjectCommand, {
       Bucket: awsAcceleratorConfigBucketName(config),
-      Key: toPendingConfigArtifactPath(config.awsAcceleratorConfigDeploymentArtifactPath),
+      Key: config.awsAcceleratorConfigDeploymentArtifactPath,
       Body: getAcceleratorConfigZip(config),
     });
-  });
-
-  it('should abort when a pipeline execution is in progress and pending flow is disabled', async () => {
-    await runCli(cli, [
-      'init',
-      '--accounts-root-email', TEST_EMAIL,
-      '--region', TEST_REGION,
-    ], temp);
-    await installLocalLuminarlzCliForTests(temp);
-
-    codePipelineMock.on(ListPipelineExecutionsCommand).resolves({
-      pipelineExecutionSummaries: [
-        {
-          pipelineExecutionId: 'execution-123',
-          status: 'InProgress',
-        },
-      ],
-    });
-    ssmMock.on(GetParameterCommand, {
-      Name: AWS_ACCELERATOR_PENDING_DEPLOY_FLOW_ENABLED_SSM_PARAMETER_NAME,
-    }).resolves({
-      Parameter: {
-        Name: AWS_ACCELERATOR_PENDING_DEPLOY_FLOW_ENABLED_SSM_PARAMETER_NAME,
-        Value: 'false',
-        Type: 'String',
-      },
-    });
-
-    const result = await runCli(cli, ['deploy', '--skip-doctor'], temp);
-
-    expect(result).toBe(0);
-    expect(s3Mock).toHaveReceivedCommandTimes(PutObjectCommand, 0);
   });
 });
 

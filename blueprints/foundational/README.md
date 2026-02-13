@@ -181,11 +181,6 @@ npm run cli -- deploy
 
 Note: `deploy` runs the doctor preflight automatically and aborts on failures. Use `--skip-doctor` to bypass the checks.
 
-If the accelerator pipeline is already running, `deploy` uploads a pending config artifact (`zipped/aws-accelerator-config-pending.zip`) instead of replacing the active artifact.
-The pending artifact is promoted after the current pipeline execution completes.
-Safety fallback: if `/accelerator/pending-deploy-flow/enabled` is missing or `false`, `deploy` aborts when an execution is already in progress.
-Decision rationale: [ADR 004](docs/adrs/004-pending-deploy-flow-for-in-progress-pipeline-runs.md).
-
 ## Update the Landing Zone Accelerator version
 
 To update the LZA version,

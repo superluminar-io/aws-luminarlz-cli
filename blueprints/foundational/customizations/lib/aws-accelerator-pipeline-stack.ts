@@ -1,20 +1,13 @@
 import * as cdk from 'aws-cdk-lib';
 import { Arn } from 'aws-cdk-lib';
-import * as path from 'node:path';
 import { Construct } from 'constructs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
-import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as sns from 'aws-cdk-lib/aws-sns';
-import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as ssm from 'aws-cdk-lib/aws-ssm';
 import {
-  AWS_ACCELERATOR_PENDING_DEPLOY_FLOW_ENABLED_SSM_PARAMETER_NAME,
-  toPendingConfigArtifactPath,
   awsAcceleratorConfigBucketName,
   AWS_ACCELERATOR_PIPELINE_FAILURE_TOPIC_NAME,
 } from '@superluminar-io/aws-luminarlz-cli/lib/config';
@@ -41,12 +34,7 @@ export class AwsAcceleratorPipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const { pipeline, bucketName } = this.configureConfigBucketPipelineTrigger();
-    this.configurePendingPromotionOnPipelineCompletion({
-      pipeline,
-      bucketName,
-    });
-    this.createPendingDeployFlowMarker();
+    this.configureConfigBucketPipelineTrigger();
     this.configureFailureNotifications();
     // TODO: Optionally, we can uncomment this to grant GitHub Actions access to update the accelerator-config zip file and to upload CDK assets.
     // this.githubActionsOidcAwsAcceleratorDeploymentAccess();
@@ -237,124 +225,9 @@ export class AwsAcceleratorPipelineStack extends cdk.Stack {
           bucket: {
             name: [bucketName],
           },
-          object: {
-            key: [config.awsAcceleratorConfigDeploymentArtifactPath],
-          },
         },
       },
     });
     rule.addTarget(new targets.CodePipeline(pipeline));
-  }
-
-  private configurePendingPromotionOnPipelineCompletion({
-    pipeline,
-    bucketName,
-  }: PipelineTriggerContext) {
-    const activeArtifactPath = config.awsAcceleratorConfigDeploymentArtifactPath;
-    const pendingArtifactPath = toPendingConfigArtifactPath(activeArtifactPath);
-    const promotePendingArtifactFn = this.createPromotePendingArtifactFunction({
-      bucketName,
-      activeArtifactPath,
-      pendingArtifactPath,
-    });
-    this.grantPromotePendingArtifactAccess({
-      lambdaFunction: promotePendingArtifactFn,
-      bucketName,
-      activeArtifactPath,
-      pendingArtifactPath,
-    });
-    this.createPipelineCompletionPromotionRule({
-      pipeline,
-      promotePendingArtifactFn,
-    });
-  }
-
-  private createPromotePendingArtifactFunction({
-    bucketName,
-    activeArtifactPath,
-    pendingArtifactPath,
-  }: {
-    bucketName: string;
-    activeArtifactPath: string;
-    pendingArtifactPath: string;
-  }): lambdaNodejs.NodejsFunction {
-    return new lambdaNodejs.NodejsFunction(this, 'PromotePendingConfigArtifactFn', {
-      entry: path.join(
-        __dirname,
-        'lambda',
-        'promote-pending-config-artifact.ts',
-      ),
-      runtime: lambda.Runtime.NODEJS_22_X,
-      handler: 'handler',
-      timeout: cdk.Duration.seconds(30),
-      environment: {
-        CONFIG_BUCKET: bucketName,
-        ACTIVE_ARTIFACT_KEY: activeArtifactPath,
-        PENDING_ARTIFACT_KEY: pendingArtifactPath,
-      },
-    });
-  }
-
-  private grantPromotePendingArtifactAccess({
-    lambdaFunction,
-    bucketName,
-    activeArtifactPath,
-    pendingArtifactPath,
-  }: {
-    lambdaFunction: lambdaNodejs.NodejsFunction;
-    bucketName: string;
-    activeArtifactPath: string;
-    pendingArtifactPath: string;
-  }) {
-    const configBucket = s3.Bucket.fromBucketName(
-      this,
-      'ConfigBucketForPendingPromotion',
-      bucketName,
-    );
-    configBucket.grantReadWrite(lambdaFunction, activeArtifactPath);
-    configBucket.grantReadWrite(lambdaFunction, pendingArtifactPath);
-    lambdaFunction.addToRolePolicy(new iam.PolicyStatement({
-      actions: [
-        'kms:Decrypt',
-        'kms:Encrypt',
-        'kms:GenerateDataKey',
-        'kms:ReEncrypt*',
-        'kms:DescribeKey',
-      ],
-      resources: ['*'],
-      conditions: {
-        StringEquals: {
-          'kms:ViaService': `s3.${this.region}.${this.urlSuffix}`,
-          'kms:CallerAccount': this.account,
-        },
-      },
-    }));
-  }
-
-  private createPipelineCompletionPromotionRule({
-    pipeline,
-    promotePendingArtifactFn,
-  }: {
-    pipeline: codepipeline.IPipeline;
-    promotePendingArtifactFn: lambdaNodejs.NodejsFunction;
-  }) {
-    const rule = new events.Rule(this, 'PipelineCompletionPromotePendingRule', {
-      eventPattern: {
-        source: ['aws.codepipeline'],
-        detailType: ['CodePipeline Pipeline Execution State Change'],
-        detail: {
-          pipeline: [pipeline.pipelineName],
-          state: ['SUCCEEDED', 'FAILED', 'STOPPED', 'CANCELED', 'SUPERSEDED'],
-        },
-      },
-    });
-    rule.addTarget(new targets.LambdaFunction(promotePendingArtifactFn));
-  }
-
-  private createPendingDeployFlowMarker() {
-    new ssm.StringParameter(this, 'PendingDeployFlowEnabledParameter', {
-      parameterName: AWS_ACCELERATOR_PENDING_DEPLOY_FLOW_ENABLED_SSM_PARAMETER_NAME,
-      stringValue: 'true',
-    });
   }
 }
