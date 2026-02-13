@@ -1,10 +1,10 @@
-# Blueprint Update Runbook
+# Setup Update Runbook
 
-This runbook explains why and how to use `blueprint update` safely in existing projects.
+This runbook explains why and how to use `setup update` safely in existing projects.
 
 ## Why use it
 
-`blueprint update` helps you keep project scaffolding aligned with current blueprint defaults without blindly overwriting your local changes.
+`setup update` helps you keep project scaffolding aligned with current blueprint defaults without blindly overwriting your local changes.
 
 It is useful when:
 
@@ -41,19 +41,19 @@ git status
 2. Preview changes first:
 
 ```bash
-npm run cli -- blueprint update --dry-run
+npm run cli -- setup update --dry-run
 ```
 
 3. Apply interactively:
 
 ```bash
-npm run cli -- blueprint update
+npm run cli -- setup update
 ```
 
 4. If needed for detailed review:
 
 ```bash
-npm run cli -- blueprint update --line-mode
+npm run cli -- setup update --line-mode
 ```
 
 5. Validate project after changes:

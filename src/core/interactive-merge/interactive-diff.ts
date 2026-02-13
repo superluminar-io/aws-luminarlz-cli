@@ -2,8 +2,8 @@ import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { BlueprintFileDiff } from './blueprint';
 import { DiffHunk, HunkApplication } from './interactive-types';
+import { BlueprintFileDiff } from '../blueprint/blueprint';
 
 const isHunkHeader = (line: string): boolean => line.startsWith('@@ ');
 const HUNK_HEADER_REGEX = /^@@ -(\d+)(?:,(\d+))? \+\d+(?:,\d+)? @@/;

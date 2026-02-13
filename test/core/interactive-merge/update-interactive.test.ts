@@ -1,6 +1,6 @@
 import * as readline from 'node:readline/promises';
-import { BlueprintFileDiff } from '../../src/core/blueprint/blueprint';
-import { createInteractiveDiffSelector, UserAbortError } from '../../src/core/blueprint/update-interactive';
+import { BlueprintFileDiff } from '../../../src/core/blueprint/blueprint';
+import { createInteractiveDiffSelector, UserAbortError } from '../../../src/core/interactive-merge';
 
 type PromptReader = Pick<readline.Interface, 'question'>;
 
@@ -40,7 +40,7 @@ const makeFileDiff = (currentContent: string, renderedContent: string): Blueprin
   renderedContent,
 });
 
-describe('Blueprint update interactive diff selector', () => {
+describe('Setup update interactive diff selector', () => {
   beforeEach(() => {
     Object.defineProperty(process.stdin, 'isTTY', { value: false, configurable: true });
   });

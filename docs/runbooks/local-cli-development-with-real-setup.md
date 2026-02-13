@@ -47,8 +47,8 @@ Landing-zone project repository: adjust the relative path so it points to your l
 4. Run in the landing-zone project repository when blueprint/template changes are part of the local CLI change:
 
 ```bash
-npm run cli -- blueprint update --dry-run
-npm run cli -- blueprint update
+npm run cli -- setup update --dry-run
+npm run cli -- setup update
 ```
 
 Landing-zone project repository: this is especially useful when your CLI changes include blueprint/template updates.
@@ -77,11 +77,11 @@ yarn why @superluminar-io/aws-luminarlz-cli
   - `npx projen compile`
 - Run in landing-zone project repository:
   - `yarn add @superluminar-io/aws-luminarlz-cli@file:../aws-luminarlz-cli --force`
-  - `npm run cli -- blueprint update ...`
+  - `npm run cli -- setup update ...`
   - `npm run cli -- deploy`
 
 ## Common pitfalls
 
 - Forgetting `npx projen compile`: landing-zone project repository still executes stale `lib/` output.
 - Wrong `file:` path in `yarn add`: landing-zone project repository uses another package source than expected.
-- Updating CLI logic only: no need for `blueprint update` unless blueprint/template files changed.
+- Updating CLI logic only: no need for `setup update` unless blueprint/template files changed.

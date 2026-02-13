@@ -1,4 +1,3 @@
-import { BlueprintFileDiff, ExistingFileDecision } from './blueprint';
 import {
   materializeAppliedHunkLines,
   materializeOriginalHunkLines,
@@ -10,6 +9,7 @@ import { InteractiveLineModeProcessor } from './interactive-line-mode';
 import { colorizeDiffLine, colorizeInfo, colorizeMuted } from './interactive-output';
 import { InteractiveTerminalInput } from './interactive-terminal-input';
 import { DiffHunk, HunkApplication, OutputWriter, PromptReader } from './interactive-types';
+import { BlueprintFileDiff, ExistingFileDecision } from '../blueprint/blueprint';
 
 const BLOCK_MODE_CHOICES = new Set(['y', 'n', 'l', 'a']);
 const LINE_MODE_CHOICES = new Set(['y', 'n', 'a']);

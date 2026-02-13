@@ -115,7 +115,7 @@ export class InteractiveTerminalInput {
           return;
         }
 
-        this.write(`${outcome.value}\n`);
+        this.write('\n');
         resolve(outcome.value);
       };
 

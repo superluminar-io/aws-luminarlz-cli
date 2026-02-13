@@ -1,5 +1,5 @@
 import * as readline from 'node:readline/promises';
-import { BlueprintFileDiff, ExistingFileDecision } from './blueprint';
+import { BlueprintFileDiff, ExistingFileDecision } from '../blueprint/blueprint';
 
 export interface DiffHunk {
   oldStart: number;

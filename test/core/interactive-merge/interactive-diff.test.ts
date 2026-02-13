@@ -2,8 +2,8 @@ import { BlueprintFileDiff } from '../../../src/core/blueprint/blueprint';
 import {
   parseFileDiffHunks,
   rebuildContentFromHunks,
-} from '../../../src/core/blueprint/interactive-diff';
-import { HunkApplication } from '../../../src/core/blueprint/interactive-types';
+} from '../../../src/core/interactive-merge/interactive-diff';
+import { HunkApplication } from '../../../src/core/interactive-merge/interactive-types';
 
 describe('interactive-diff', () => {
   it('should rebuild content using CRLF delimiter without carriage return artifacts', () => {

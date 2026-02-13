@@ -5,11 +5,10 @@ import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import { SSOAdminClient, ListInstancesCommand } from '@aws-sdk/client-sso-admin';
 import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
 import { mockClient } from 'aws-sdk-client-mock';
-import { BlueprintUpdate } from '../../src/commands/blueprint-update';
 import { Init } from '../../src/commands/init';
+import { SetupUpdate } from '../../src/commands/setup-update';
 import { AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME } from '../../src/config';
-import { BlueprintFileDiff, updateBlueprint } from '../../src/core/blueprint/blueprint';
-import { createInteractiveDiffSelector } from '../../src/core/blueprint/update-interactive';
+import { updateBlueprint } from '../../src/core/blueprint/blueprint';
 import {
   TEST_ACCOUNT_ID,
   TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
@@ -78,7 +77,7 @@ const initializeAwsMocks = () => {
 };
 
 const initializeProject = async () => {
-  const cli = createCliFor(Init, BlueprintUpdate);
+  const cli = createCliFor(Init, SetupUpdate);
 
   await runCli(cli, [
     'init',
@@ -101,7 +100,7 @@ const readPackageJson = (): { packagePath: string; content: string } => {
   return { packagePath, content };
 };
 
-describe('Blueprint update command', () => {
+describe('Setup files update command', () => {
   beforeEach(() => {
     temp = useTempDir();
 
@@ -125,7 +124,7 @@ describe('Blueprint update command', () => {
       fs.writeFileSync(configPath, `${baselineConfig}\n// local-change`);
 
       await runCli(cli, [
-        'blueprint',
+        'setup',
         'update',
         '--region', TEST_REGION,
         '--accounts-root-email', TEST_EMAIL,
@@ -143,7 +142,7 @@ describe('Blueprint update command', () => {
       fs.writeFileSync(configPath, localConfig);
 
       await runCli(cli, [
-        'blueprint',
+        'setup',
         'update',
         '--region', TEST_REGION,
         '--accounts-root-email', TEST_EMAIL,
@@ -159,7 +158,7 @@ describe('Blueprint update command', () => {
       const cli = await initializeProject();
 
       await runCli(cli, [
-        'blueprint',
+        'setup',
         'update',
         '--yes',
         '--dry-run',
@@ -170,7 +169,7 @@ describe('Blueprint update command', () => {
       const cli = await initializeProject();
 
       await runCli(cli, [
-        'blueprint',
+        'setup',
         'update',
         '--yes',
         '--line-mode',
@@ -436,48 +435,4 @@ describe('Blueprint update command', () => {
     });
   });
 
-  describe('when selecting interactive diff handling mode', () => {
-    const noDiff: BlueprintFileDiff = {
-      relativePath: 'config.ts',
-      targetPath: '/tmp/config.ts',
-      currentContent: 'same',
-      renderedContent: 'same',
-    };
-
-    it('should return apply when autoApply is enabled', async () => {
-      const selector = createInteractiveDiffSelector({
-        rl: { question: jest.fn() } as never,
-        autoApply: true,
-        dryRun: true,
-        lineMode: true,
-      });
-
-      const decision = await selector(noDiff);
-      expect(decision).toBe('apply');
-    });
-
-    it('should return skip for no-diff files in dryRun mode', async () => {
-      const selector = createInteractiveDiffSelector({
-        rl: { question: jest.fn() } as never,
-        autoApply: false,
-        dryRun: true,
-        lineMode: true,
-      });
-
-      const decision = await selector(noDiff);
-      expect(decision).toBe('skip');
-    });
-
-    it('should return skip for no-diff files in lineMode', async () => {
-      const selector = createInteractiveDiffSelector({
-        rl: { question: jest.fn() } as never,
-        autoApply: false,
-        dryRun: false,
-        lineMode: true,
-      });
-
-      const decision = await selector(noDiff);
-      expect(decision).toBe('skip');
-    });
-  });
 });

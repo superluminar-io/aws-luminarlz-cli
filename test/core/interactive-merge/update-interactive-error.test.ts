@@ -1,5 +1,5 @@
 import * as readline from 'node:readline/promises';
-import { BlueprintFileDiff } from '../../src/core/blueprint/blueprint';
+import { BlueprintFileDiff } from '../../../src/core/blueprint/blueprint';
 
 type PromptReader = Pick<readline.Interface, 'question'>;
 
@@ -10,7 +10,7 @@ const makeFileDiff = (currentContent: string, renderedContent: string): Blueprin
   renderedContent,
 });
 
-describe('Blueprint update interactive diff selector error handling', () => {
+describe('Setup update interactive diff selector error handling', () => {
   beforeEach(() => {
     Object.defineProperty(process.stdin, 'isTTY', { value: false, configurable: true });
     jest.resetModules();
@@ -23,7 +23,7 @@ describe('Blueprint update interactive diff selector error handling', () => {
       })),
     }));
 
-    const module = await import('../../src/core/blueprint/update-interactive');
+    const module = await import('../../../src/core/interactive-merge');
 
     const rl: PromptReader = {
       question: jest.fn(async () => 'y'),

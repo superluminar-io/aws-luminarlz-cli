@@ -1,7 +1,7 @@
-import { BlueprintFileDiff } from './blueprint';
 import { UserAbortError } from './interactive-errors';
 import { InteractiveDiffSession } from './interactive-session';
 import { ExistingFileSelector, OutputWriter, PromptReader } from './interactive-types';
+import { BlueprintFileDiff } from '../blueprint/blueprint';
 
 export { UserAbortError };
 
