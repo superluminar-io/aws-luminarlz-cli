@@ -36,33 +36,58 @@ We'll use the [foundational blueprint](blueprints/foundational/) that is heavily
 We recommend reading through the [Guidance](https://aws.amazon.com/solutions/guidance/establishing-an-initial-foundation-using-control-tower-on-aws) first
 as there are parts that require some manual steps and upfront planning like the root email strategy.
 
+Run initial setup in the configured `homeRegion` (installer stack, `accelerator/github-token`, and CLI deploy context).
+Exception: `npm run cli -- lza core bootstrap` targets all configured `enabledRegions`.
+For first-rollout troubleshooting, see the [Initial Setup Common Issues Runbook](docs/runbooks/initial-setup-common-issues.md).
+
 1. Make sure you have an AWS Organizations management account which fulfils [the LZA prerequisites](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/prerequisites.html).
-2. Make sure to [deploy the LZA](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/deploy-the-solution.html) with the following settings:
-   - **Environment Configuration**: Leave all the defaults, `Control Tower Environment` needs to be set to `Yes`.
-   - **Config Repository Configuration**: Leave all the defaults and set `Configuration Repository Location` to `s3`.
-3. Wait until the initial LZA is [successfully deployed](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/step-2.-await-initial-environment-deployment.html).
-4. Configure your terminal with AWS administrator credentials for the `Management` AWS account.
-5. Init the project using:
+2. Create a GitHub Personal Access Token (Classic) for installer source access:
+   - use `public_repo` for public repositories,
+   - use `repo` for private repositories.
+3. Store the token in AWS Secrets Manager as a plain text string (no JSON) with the name `accelerator/github-token`.
+   If you update this secret later, prefer updates by secret ARN (not only by name) to match EventBridge patterns reliably.
+4. Deploy the LZA installer stack using the official guidance:
+   - [Step 1. Launch the stack](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/step-1.-launch-the-stack.html)
+   - [Deploy the solution](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/deploy-the-solution.html)
+   with:
+   - **Environment Configuration**: `Control Tower Environment = Yes`
+   - **Config Repository Configuration**: `Configuration Repository Location = s3`
+5. Wait until the initial LZA deployment is successful:
+   - [Step 2. Await initial environment deployment](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/step-2.-await-initial-environment-deployment.html)
+6. Configure your terminal with AWS administrator credentials for the `Management` AWS account.
+7. In your landing-zone project repository, initialize the project:
 ```bash
 npx @superluminar-io/aws-luminarlz-cli init
 ```
-6. Install the new dependencies:
+8. Install the new dependencies:
 ```bash
-npm install
+yarn install
 ```
-7. Adapt the settings and fill in the open `TODOS` in the generated `config.ts` file.
-8. Have a look at the generated [README](blueprints/foundational/README.md) file
+9. Adapt the settings and fill in the open `TODO`s in the generated `config.ts` file.
+10. Have a look at the generated [README](blueprints/foundational/README.md) file
    as it contains further documentation on how to use the AWS luminarlz CLI.
-9. Deploy your new LZA config using:
+11. Bootstrap the enabled regions before the first deploy (this creates required CDK assets buckets):
 ```bash
-# You'll need the `Management` account credentials with administrator rights to be configured in your terminal.
+npm run cli -- lza core bootstrap
+```
+12. Deploy your new LZA config:
+```bash
 npm run cli -- deploy
 ```
 Note: `deploy` runs the doctor preflight automatically and aborts on failures. Use `--skip-doctor` to bypass the checks.
 If the accelerator pipeline is already running, `deploy` uploads a pending config artifact (`zipped/aws-accelerator-config-pending.zip`) instead of replacing the active artifact.
 The pending artifact is promoted after the current pipeline execution completes.
 Safety fallback: if the pending flow marker parameter (`/accelerator/pending-deploy-flow/enabled`) is missing or `false`, `deploy` aborts when an execution is already in progress.
-10. Search for open `TODO` comments in the generated files and adapt them to your needs.
+13. If deploy fails with Lambda concurrency preflight issues, request quota increases and wait for approval:
+```bash
+npm run cli -- quotas lambda-concurrency request --dry-run
+npm run cli -- quotas lambda-concurrency request
+```
+After approval, rerun:
+```bash
+npm run cli -- deploy
+```
+14. Search for open `TODO` comments in the generated files and adapt them to your needs.
 
 ### Other CLI commands
 
