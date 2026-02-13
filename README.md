@@ -66,6 +66,7 @@ Documentation for the other CLI commands can be found in the README generated wh
 Have a look at the [foundational blueprint README](blueprints/foundational/README.md).
 
 This includes `blueprint update`, which updates existing project files from the selected blueprint with interactive diffs.
+For a practical step-by-step workflow, see the [Blueprint Update Runbook](docs/runbooks/blueprint-update.md).
 
 #### LZA Core CLI
 
