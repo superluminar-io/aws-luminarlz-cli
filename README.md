@@ -69,6 +69,7 @@ Safety fallback: if the pending flow marker parameter (`/accelerator/pending-dep
 Documentation for the other CLI commands can be found in the README generated when intializing a new AWS landing zone.
 Have a look at the [foundational blueprint README](blueprints/foundational/README.md).
 The quota request command for Lambda concurrency is documented there as well.
+Operator workflow guidance is in the [Lambda concurrency quota runbook](docs/runbooks/lambda-concurrency-quotas.md).
 
 #### Doctor (preflight checks)
 
@@ -80,6 +81,7 @@ npm run cli -- doctor
 `deploy` runs the doctor preflight automatically and aborts on failures. Use `--skip-doctor` to bypass the checks.
 
 Full details (check list, IDs, and fixture usage) are in the [foundational blueprint README](blueprints/foundational/README.md#doctor-preflight-checks).
+Operator workflow guidance is in the [Doctor preflight runbook](docs/runbooks/doctor-preflight.md).
 
 #### LZA Core CLI
 

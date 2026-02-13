@@ -63,10 +63,10 @@ npm run cli -- doctor
 ```
 
 `deploy` runs the doctor preflight automatically and aborts on failures. Use `--skip-doctor` to bypass the checks.
+For operator workflow and troubleshooting order, see the [Doctor preflight runbook](docs/runbooks/doctor-preflight.md).
 
 Checks performed:
 - AWS account matches `managementAccountId` (prevents running in the wrong account)
-- `homeRegion` matches config (LZA resources are scoped to the home region)
 - LZA installer version (SSM) matches `awsAcceleratorVersion` (avoids version drift)
 - Installer stack exists (required for LZA pipelines)
 - Config bucket exists (required for config uploads)
@@ -76,7 +76,6 @@ Checks performed:
 
 Check IDs for `--only`:
 - `aws-identity` – AWS account matches `managementAccountId`
-- `home-region` – `homeRegion` matches config
 - `installer-version` – LZA installer version matches `awsAcceleratorVersion`
 - `installer-stack` – Installer stack exists
 - `config-bucket` – Config bucket exists
@@ -116,6 +115,7 @@ npm run cli -- quotas lambda-concurrency request --dry-run
 Notes:
 - Uses `minLambdaConcurrency` from `config.ts`.
 - Skips member accounts where `AWSControlTowerExecution` does not exist yet.
+- Operator workflow and troubleshooting order: [Lambda concurrency quota runbook](docs/runbooks/lambda-concurrency-quotas.md).
 
 ### Deploy a LZA Customizations stack
 
@@ -184,6 +184,7 @@ Note: `deploy` runs the doctor preflight automatically and aborts on failures. U
 If the accelerator pipeline is already running, `deploy` uploads a pending config artifact (`zipped/aws-accelerator-config-pending.zip`) instead of replacing the active artifact.
 The pending artifact is promoted after the current pipeline execution completes.
 Safety fallback: if `/accelerator/pending-deploy-flow/enabled` is missing or `false`, `deploy` aborts when an execution is already in progress.
+Decision rationale: [ADR 004](docs/adrs/004-pending-deploy-flow-for-in-progress-pipeline-runs.md).
 
 ## Update the Landing Zone Accelerator version
 
