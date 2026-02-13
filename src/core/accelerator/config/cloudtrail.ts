@@ -75,6 +75,8 @@ const resolveCloudTrailLogGroupName = async (region: string): Promise<string> =>
   return selectControlTowerLogGroupName(trailsWithLogGroup, region);
 };
 
+export const resolveControlTowerCloudTrailLogGroupName = resolveCloudTrailLogGroupName;
+
 const buildMissingConfigError = (region: string, originalError: Error): Error => {
   const message =
     `Unable to resolve the Control Tower CloudTrail log group in ${region}. ` +
