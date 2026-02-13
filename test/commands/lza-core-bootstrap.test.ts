@@ -1,4 +1,5 @@
 import path from 'path';
+import { CloudTrailClient, DescribeTrailsCommand } from '@aws-sdk/client-cloudtrail';
 import { DescribeOrganizationCommand, ListRootsCommand, OrganizationsClient } from '@aws-sdk/client-organizations';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { ListInstancesCommand, SSOAdminClient } from '@aws-sdk/client-sso-admin';
@@ -32,6 +33,9 @@ describe('LZA Core Bootstrap command', () => {
   const stsMock = mockClient(STSClient);
   const organizationsMock = mockClient(OrganizationsClient);
   const ssoAdminMock = mockClient(SSOAdminClient);
+  const cloudTrailMock = mockClient(CloudTrailClient);
+  const LZA_PREFIX_PARAMETER_NAME = '/accelerator/lza-prefix';
+  const FINALIZE_VERSION_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${TEST_REGION}/version`;
 
   let execSpy: jest.SpyInstance;
   const realExecute = execModule.executeCommand;
@@ -44,6 +48,7 @@ describe('LZA Core Bootstrap command', () => {
     stsMock.reset();
     organizationsMock.reset();
     ssoAdminMock.reset();
+    cloudTrailMock.reset();
     jest.clearAllMocks();
 
     // Set up executeCommand spy with passthrough. Intercept only:
@@ -52,22 +57,45 @@ describe('LZA Core Bootstrap command', () => {
     // - yarn run ts-node --transpile-only cdk.ts synth ... (avoid running LZA synth)
     // - yarn run ts-node --transpile-only cdk.ts bootstrap ... (avoid running bootstrap)
     // Do NOT intercept `npx cdk synth` from customizationsCdkSynth
-    execSpy = jest.spyOn(execModule, 'executeCommand').mockImplementation(((command: any, opts: any) => {
+    execSpy = jest.spyOn(execModule, 'executeCommand').mockImplementation((command, opts) => {
+      const cwd = typeof opts === 'object' && opts !== null && 'cwd' in opts
+        ? opts.cwd
+        : undefined;
       if (typeof command === 'string') {
         if (command.startsWith('git clone ')) {
-          return Promise.resolve({ stdout: '', stderr: '' } as any) as any;
+          return realExecute('true');
         }
         if (command.startsWith('yarn')) {
-          if (opts?.cwd && path.resolve(opts.cwd) === repoRoot) {
-            return (realExecute as any)(command, opts);
+          if (typeof cwd === 'string' && path.resolve(cwd) === repoRoot) {
+            return realExecute(command, opts);
           }
-          return Promise.resolve({ stdout: '', stderr: '' } as any) as any;
+          return realExecute('true');
         }
       }
-      return (realExecute as any)(command, opts);
-    }) as any);
+      return realExecute(command, opts);
+    });
 
-    ssmMock.on(GetParameterCommand).resolves({
+    ssmMock.on(GetParameterCommand, {
+      Name: LZA_PREFIX_PARAMETER_NAME,
+    }).resolves({
+      Parameter: {
+        Name: LZA_PREFIX_PARAMETER_NAME,
+        Value: 'AWSAccelerator',
+        Type: 'String',
+      },
+    });
+    ssmMock.on(GetParameterCommand, {
+      Name: FINALIZE_VERSION_PARAMETER_NAME,
+    }).resolves({
+      Parameter: {
+        Name: FINALIZE_VERSION_PARAMETER_NAME,
+        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
+        Type: 'String',
+      },
+    });
+    ssmMock.on(GetParameterCommand, {
+      Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+    }).resolves({
       Parameter: {
         Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
         Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
@@ -104,6 +132,15 @@ describe('LZA Core Bootstrap command', () => {
         {
           InstanceArn: 'arn:aws:sso:::instance/ssoins-example',
           IdentityStoreId: 'd-example123',
+        },
+      ],
+    });
+
+    cloudTrailMock.on(DescribeTrailsCommand).resolves({
+      trailList: [
+        {
+          IsOrganizationTrail: true,
+          CloudWatchLogsLogGroupArn: `arn:aws:logs:${TEST_REGION}:${TEST_ACCOUNT_ID}:log-group:aws-controltower/CloudTrailLogs-xyz`,
         },
       ],
     });
