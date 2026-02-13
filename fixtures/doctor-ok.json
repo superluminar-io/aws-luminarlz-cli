@@ -1,0 +1,19 @@
+{
+  "accountId": "123456789012",
+  "managementAccountId": "123456789012",
+  "homeRegion": "eu-central-1",
+  "installerVersion": "1.11.0",
+  "awsAcceleratorVersion": "1.11.0",
+  "enabledRegions": [
+    "eu-central-1",
+    "us-east-1"
+  ],
+  "lzaCheckoutExists": true,
+  "lzaCheckoutBranch": "release/v1.11.0",
+  "installerStackExists": true,
+  "configBucketExists": true,
+  "cdkAssetsBuckets": {
+    "eu-central-1": true,
+    "us-east-1": true
+  }
+}

@@ -92,11 +92,23 @@
       "type": "runtime"
     },
     {
+      "name": "@aws-sdk/client-codepipeline",
+      "type": "runtime"
+    },
+    {
+      "name": "@aws-sdk/client-lambda",
+      "type": "runtime"
+    },
+    {
       "name": "@aws-sdk/client-organizations",
       "type": "runtime"
     },
     {
       "name": "@aws-sdk/client-s3",
+      "type": "runtime"
+    },
+    {
+      "name": "@aws-sdk/client-service-quotas",
       "type": "runtime"
     },
     {

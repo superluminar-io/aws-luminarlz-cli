@@ -14,7 +14,6 @@ import {
   AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
   AWS_ACCELERATOR_INSTALLER_STACK_NAME,
 } from '../../src/config';
-import * as execModule from '../../src/core/util/exec';
 import {
   TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_1,
   TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
@@ -23,6 +22,7 @@ import {
   TEST_REGION, TEST_USER_ID, TEST_ORGANIZATION_ID, TEST_ROOT_ID,
 } from '../constants';
 import { CliError, createCliFor, runCli } from '../test-helper/cli';
+import { installLocalCliForTests } from '../test-helper/patch-local-cli';
 import { useTempDir } from '../test-helper/use-temp-dir';
 
 let temp: ReturnType<typeof useTempDir>;
@@ -94,7 +94,7 @@ describe('LZA Installer Version - update command', () => {
       '--region', TEST_REGION,
       '--force',
     ], temp);
-    await execModule.executeCommand('npm install', { cwd: temp.directory });
+    await installLocalCliForTests(temp);
     await runCli(cli, ['lza', 'installer-version', 'update'], temp);
 
     expect(cfnMock).toHaveReceivedCommandTimes(UpdateStackCommand, 0);
@@ -144,7 +144,7 @@ describe('LZA Installer Version - update command', () => {
       '--region', TEST_REGION,
       '--force',
     ], temp);
-    await execModule.executeCommand('npm install', { cwd: temp.directory });
+    await installLocalCliForTests(temp);
     await runCli(cli, ['lza', 'installer-version', 'update'], temp);
 
     expect(cfnMock).toHaveReceivedCommandTimes(UpdateStackCommand, 1);
@@ -181,7 +181,7 @@ describe('LZA Installer Version - update command', () => {
       '--region', TEST_REGION,
       '--force',
     ], temp);
-    await execModule.executeCommand('npm install', { cwd: temp.directory });
+    await installLocalCliForTests(temp);
 
     const result = runCli(cli, ['lza', 'installer-version', 'update'], temp);
 

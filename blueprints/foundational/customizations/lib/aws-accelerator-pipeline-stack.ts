@@ -2,24 +2,14 @@ import * as cdk from 'aws-cdk-lib';
 import { Arn } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import {
-  CfnOIDCProvider,
-  FederatedPrincipal,
-  PolicyStatement,
-  Role,
-} from 'aws-cdk-lib/aws-iam';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as sns from 'aws-cdk-lib/aws-sns';
-import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as ssm from 'aws-cdk-lib/aws-ssm';
 import {
   awsAcceleratorConfigBucketName,
-  cdkAccelAssetsBucketNamePrefix,
   AWS_ACCELERATOR_PIPELINE_FAILURE_TOPIC_NAME,
-  AWS_ACCELERATOR_SSM_PARAMETER_INSTALLER_KMS_KEY_ARN,
 } from '@superluminar-io/aws-luminarlz-cli/lib/config';
 import {
   AwsCustomResource,
@@ -27,6 +17,11 @@ import {
   PhysicalResourceId,
 } from 'aws-cdk-lib/custom-resources';
 import { config, MANAGEMENT_NOTIFICATIONS_EMAIL } from '../../config';
+
+interface PipelineTriggerContext {
+  pipeline: codepipeline.IPipeline;
+  bucketName: string;
+}
 
 /**
  * Configures additions for the AWS Accelerator deployment pipeline:
@@ -39,8 +34,8 @@ export class AwsAcceleratorPipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    this.s3Trigger();
-    this.failureNotifications();
+    this.configureConfigBucketPipelineTrigger();
+    this.configureFailureNotifications();
     // TODO: Optionally, we can uncomment this to grant GitHub Actions access to update the accelerator-config zip file and to upload CDK assets.
     // this.githubActionsOidcAwsAcceleratorDeploymentAccess();
   }
@@ -121,7 +116,7 @@ export class AwsAcceleratorPipelineStack extends cdk.Stack {
   //   });
   // }
 
-  private failureNotifications() {
+  private configureFailureNotifications() {
     sns.Topic.fromTopicArn(
       this,
       'PipelineFailureTopic',
@@ -137,8 +132,23 @@ export class AwsAcceleratorPipelineStack extends cdk.Stack {
     );
   }
 
-  private s3Trigger() {
+  private configureConfigBucketPipelineTrigger(): PipelineTriggerContext {
     const bucketName = awsAcceleratorConfigBucketName(config);
+    this.enableConfigBucketEventBridgeNotifications(bucketName);
+
+    const pipeline = this.importAcceleratorPipeline();
+    this.createConfigBucketPipelineStartRule({
+      pipeline,
+      bucketName,
+    });
+
+    return {
+      pipeline,
+      bucketName,
+    };
+  }
+
+  private enableConfigBucketEventBridgeNotifications(bucketName: string) {
     new AwsCustomResource(this, 'S3BucketNotificationConfiguration', {
       onUpdate: {
         service: 's3',
@@ -176,8 +186,10 @@ export class AwsAcceleratorPipelineStack extends cdk.Stack {
         }),
       ]),
     });
+  }
 
-    const pipeline = codepipeline.Pipeline.fromPipelineArn(
+  private importAcceleratorPipeline(): codepipeline.IPipeline {
+    return codepipeline.Pipeline.fromPipelineArn(
       this,
       'Pipeline',
       Arn.format(
@@ -188,7 +200,9 @@ export class AwsAcceleratorPipelineStack extends cdk.Stack {
         this,
       ),
     );
+  }
 
+  private createConfigBucketPipelineStartRule({ pipeline, bucketName }: PipelineTriggerContext) {
     new iam.Role(this, 'Role', {
       assumedBy: new iam.ServicePrincipal('events.amazonaws.com'),
       inlinePolicies: {

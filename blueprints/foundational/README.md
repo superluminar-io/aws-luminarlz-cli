@@ -55,6 +55,68 @@ Underneath it uses the [LZA Core CLI](https://awslabs.github.io/landing-zone-acc
 npm run cli -- lza config validate
 ```
 
+### Doctor (preflight checks)
+
+Run a preflight check before deploys:
+```bash
+npm run cli -- doctor
+```
+
+`deploy` runs the doctor preflight automatically and aborts on failures. Use `--skip-doctor` to bypass the checks.
+For operator workflow and troubleshooting order, see the [Doctor preflight runbook](docs/runbooks/doctor-preflight.md).
+
+Checks performed:
+- AWS account matches `managementAccountId` (prevents running in the wrong account)
+- LZA installer version (SSM) matches `awsAcceleratorVersion` (avoids version drift)
+- Installer stack exists (required for LZA pipelines)
+- Config bucket exists (required for config uploads)
+- CDK assets buckets exist for all `enabledRegions` (created by `lza core bootstrap`, required for customizations assets)
+- Lambda account concurrency meets `minLambdaConcurrency` for all enabled regions (checks only the current account unless Control Tower enrollment exists for members)
+- LZA checkout exists under `.landing-zone-accelerator-on-aws-<release>` and the checked-out branch matches `awsAcceleratorVersion` (ensures local checkout matches config)
+
+Check IDs for `--only`:
+- `aws-identity` – AWS account matches `managementAccountId`
+- `installer-version` – LZA installer version matches `awsAcceleratorVersion`
+- `installer-stack` – Installer stack exists
+- `config-bucket` – Config bucket exists
+- `cdk-assets-buckets` – CDK assets buckets exist for all `enabledRegions`
+- `lambda-concurrency` – Lambda concurrent executions quota meets `minLambdaConcurrency`
+- `lza-checkout` – LZA checkout branch matches `awsAcceleratorVersion`
+
+Run only specific checks:
+```bash
+npm run cli -- doctor --only aws-identity,config-bucket
+```
+
+Offline testing with fixtures:
+```bash
+npm run cli -- doctor --fixtures fixtures/doctor-ok.json
+npm run cli -- doctor --fixtures fixtures/doctor-missing-bucket.json
+npm run cli -- doctor --fixtures fixtures/doctor-fail-account.json
+npm run cli -- doctor --fixtures fixtures/doctor-fail-version.json
+npm run cli -- doctor --fixtures fixtures/doctor-fail-installer-stack.json
+npm run cli -- doctor --fixtures fixtures/doctor-fail-config-bucket.json
+npm run cli -- doctor --fixtures fixtures/doctor-fail-cdk-assets.json
+npm run cli -- doctor --fixtures fixtures/doctor-fail-lza-checkout.json
+```
+
+### Quota requests (Lambda concurrency)
+
+Request Lambda concurrency quota increases for enrolled accounts and enabled regions:
+```bash
+npm run cli -- quotas lambda-concurrency request
+```
+
+Dry run (no requests submitted):
+```bash
+npm run cli -- quotas lambda-concurrency request --dry-run
+```
+
+Notes:
+- Uses `minLambdaConcurrency` from `config.ts`.
+- Skips member accounts where `AWSControlTowerExecution` does not exist yet.
+- Operator workflow and troubleshooting order: [Lambda concurrency quota runbook](docs/runbooks/lambda-concurrency-quotas.md).
+
 ### Deploy a LZA Customizations stack
 
 This allows you to deploy a LZA Customizations stack manually during development.
@@ -116,6 +178,8 @@ If you want to deploy manually from your local machine, you can use the followin
 ```bash
 npm run cli -- deploy
 ```
+
+Note: `deploy` runs the doctor preflight automatically and aborts on failures. Use `--skip-doctor` to bypass the checks.
 
 ## Update the Landing Zone Accelerator version
 

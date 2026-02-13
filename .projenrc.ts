@@ -24,6 +24,9 @@ const project = new typescript.TypeScriptProject({
     '@aws-sdk/client-s3',
     '@aws-sdk/client-cloudformation',
     '@aws-sdk/client-cloudtrail',
+    '@aws-sdk/client-codepipeline',
+    '@aws-sdk/client-service-quotas',
+    '@aws-sdk/client-lambda',
     '@aws-sdk/client-organizations',
     '@aws-sdk/client-ssm',
     '@aws-sdk/client-sso-admin',
@@ -40,6 +43,9 @@ const project = new typescript.TypeScriptProject({
   githubOptions: {
     projenCredentials: github.GithubCredentials.fromApp(),
   },
+});
+project.addScripts({
+  cli: './src/index.ts',
 });
 project.jest!.config.setupFilesAfterEnv = ['<rootDir>/test/jest-setup.ts'];
 project.jest!.config.testTimeout = 120_000;
