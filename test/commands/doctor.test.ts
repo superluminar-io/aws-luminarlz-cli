@@ -152,6 +152,44 @@ describe('Doctor preflight checks', () => {
     expect(summary.hasFailures).toBe(true);
     expect(getCheckStatus(summary, 'lambda-concurrency')).toBe(CheckStatus.FAIL);
   });
+
+  it('should return no results when only contains unknown check ids', async () => {
+    setupDoctor();
+
+    const summary = await runDoctor({ only: ['unknown-check-id'] });
+
+    expect(summary.results).toEqual([]);
+    expect(summary.hasFailures).toBe(false);
+  });
+
+  it('should evaluate fixture checks without config.ts and report failures', async () => {
+    const fixturePath = path.join(temp.directory, 'doctor-fixture-fail.json');
+    fs.writeFileSync(fixturePath, JSON.stringify({
+      accountId: managementAccountId,
+      homeRegion,
+      installerVersion: configuredInstallerVersion,
+      awsAcceleratorVersion: configuredInstallerVersion,
+      managementAccountId,
+      enabledRegions,
+      installerStackExists: true,
+      configBucketExists: false,
+      cdkAssetsBuckets: {
+        [homeRegion]: true,
+        'eu-central-1': true,
+      },
+      lambdaConcurrencyByRegion: {
+        [homeRegion]: 1000,
+        'eu-central-1': 1000,
+      },
+      lzaCheckoutExists: true,
+      lzaCheckoutBranch: `release/v${configuredInstallerVersion}`,
+    }, null, 2));
+
+    const summary = await runDoctor({ fixturesPath: fixturePath });
+
+    expect(summary.hasFailures).toBe(true);
+    expect(getCheckStatus(summary, 'config-bucket')).toBe(CheckStatus.FAIL);
+  });
 });
 
 function setupDoctor(overrides: SetupOverrides = {}) {
