@@ -46,9 +46,9 @@ export const ENABLED_REGIONS = [GLOBAL_REGION, HOME_REGION];
 
 /**
  * The CloudTrail log group that Control Tower creates in the home region.
- * Use '__AUTO__' to resolve it during deployment.
+ * This value is resolved during `init` when initial rollout prerequisites are available.
  */
-export const CLOUDTRAIL_LOG_GROUP_NAME = '__AUTO__';
+export const CLOUDTRAIL_LOG_GROUP_NAME = '<<AWS_CLOUDTRAIL_LOG_GROUP_NAME>>';
 
 /**
  * The groups should be aligned with the groups in the AWS IAM Identity Center.
