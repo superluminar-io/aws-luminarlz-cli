@@ -284,6 +284,18 @@ export const templates: Template[] = [
     fileName: 'organization-config.yaml',
     parameters: {
       organizationalUnits,
+      denyGlobalRegionScpTargets: {
+        organizationalUnits: organizationalUnits
+          .filter((ou) => !ou.name.includes('/')) // pick only top-level OUs
+          .filter((ou) => !ou.ignore) // ignore OUs that are not managed by the LZA
+          .map((ou) => ou.name),
+      },
+      denyAllRegionsExceptEnabledRegionsScpTargets: {
+        organizationalUnits: organizationalUnits
+          .filter((ou) => !ou.name.includes('/')) // pick only top-level OUs
+          .filter((ou) => !ou.ignore) // ignore OUs that are not managed by the LZA
+          .map((ou) => ou.name),
+      },
     },
   },
   {
@@ -298,6 +310,19 @@ export const templates: Template[] = [
     parameters: {
       owners: Object.values(Groups),
       environments: Object.values(environments),
+    },
+  },
+  {
+    fileName: 'service-control-policies/deny-global-region.json',
+    parameters: {
+      globalRegion: GLOBAL_REGION,
+    },
+  },
+  {
+    fileName:
+      'service-control-policies/deny-all-regions-except-enabled-regions.json',
+    parameters: {
+      enabledRegions: ENABLED_REGIONS,
     },
   },
 ];

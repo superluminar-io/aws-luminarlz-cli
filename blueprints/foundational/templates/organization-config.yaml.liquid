@@ -4,37 +4,67 @@ organizationalUnits:
   - name: <% organizationalUnit.name %>
     {% if organizationalUnit.ignore %}ignore: true{% endif %}
   {% endfor %}
+# Enabling the quarantine service control policies (SCPs)
+quarantineNewAccounts:
+  enable: true
+  scpPolicyName: Quarantine
 serviceControlPolicies:
   # Foundational hardening: organization hardening SCPs
-  # Source: https://aws.amazon.com/solutions/guidance/establishing-an-initial-foundation-using-control-tower-on-aws
-  - name: PreventLeavingOrganization
-    description: Prevent member accounts from leaving the organization.
-    policy: ./service-control-policies/prevent-leaving-organization.json
+  # Sources:
+  #  - https://aws.amazon.com/solutions/guidance/establishing-an-initial-foundation-using-control-tower-on-aws
+  #  - https://docs.aws.amazon.com/controltower/latest/controlreference/strongly-recommended-controls.html#disallow-root-access-keys
+  - name: OrganizationHardening
+    description: >
+      - Prevent member accounts from leaving the organization.
+      - Prevents users from creating resource shares that allow sharing with IAM users and roles that aren't part of the organization.
+      - Secures your AWS accounts by disallowing creation of access keys for the root user.
+    policy: service-control-policies/organization-hardening.json
     type: customerManaged
     deploymentTargets:
       organizationalUnits:
         - Root
-  - name: PreventExternalSharing
-    description: Prevents users from creating resource shares that allow sharing with IAM users and roles that aren't part of the organization.
-    policy: ./service-control-policies/prevent-external-sharing.json
+  # Denies access to the global AWS region
+  - name: DenyGlobalRegion
+    description: Prevents the use of the global region except for global services.
+    policy: service-control-policies/deny-global-region.json
     type: customerManaged
     deploymentTargets:
-      organizationalUnits:
-        # This should be set to Root, however:
-        # Currently, IPAM resource share sets AllowExternalPrincipals to true,
-        # and there is no way to deactivate it.
-        # See: https://github.com/awslabs/landing-zone-accelerator-on-aws/issues/230
-        - Sandbox
-        - Security
-        - Workloads
-  # https://docs.aws.amazon.com/controltower/latest/controlreference/strongly-recommended-controls.html#disallow-root-access-keys
-  - name: GrRestrictRootUserAccessKeys
-    description: Secures your AWS accounts by disallowing creation of access keys for the root user.
-    policy: ./service-control-policies/restrict-root-user-access-keys.json
+      organizationalUnits: <% denyGlobalRegionScpTargets.organizationalUnits | json %>
+  # Denies access to not allowed regions
+  - name: DenyAllRegionsExceptEnabledRegions
+    description: Prevents the use of any regions that are not enabled in the LZA configuration.
+    policy: service-control-policies/deny-all-regions-except-enabled-regions.json
+    type: customerManaged
+    deploymentTargets:
+      organizationalUnits: <% denyAllRegionsExceptEnabledRegionsScpTargets.organizationalUnits | json %>
+  # Best practices from the GovCloud Example (see: https://awslabs.github.io/landing-zone-accelerator-on-aws/v1.9.0/sample-configurations/govcloud-us/security-controls/)
+  - name: LzaGuardrails1
+    description: This protects LZA resources from being modified.
+    policy: service-control-policies/lza-guardrails-1.json
     type: customerManaged
     deploymentTargets:
       organizationalUnits:
         - Root
+  - name: LzaGuardrails2
+    description: This protects LZA resources from being modified and prevents the creation and use of roles managed by the LZA.
+    policy: service-control-policies/lza-guardrails-2.json
+    type: customerManaged
+    deploymentTargets:
+      organizationalUnits:
+        - Root
+  - name: CustomizationsGuardrails
+    description: This protects Customizations resources from being modified and prevents the creation and use of roles managed by the Customizations.
+    policy: service-control-policies/customizations-guardrails.json
+    type: customerManaged
+    deploymentTargets:
+      organizationalUnits:
+        - Root
+  - name: Quarantine
+    description: This SCP is used to prevent changes to new accounts until the Accelerator has been executed successfully. This policy will be applied upon account creation if enabled.
+    policy: service-control-policies/quarantine.json
+    type: customerManaged
+    deploymentTargets:
+      organizationalUnits: []
 taggingPolicies:
   - name: EnforceDefaultTags
     description: Enforce default tags organization wide.
