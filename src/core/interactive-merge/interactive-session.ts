@@ -11,7 +11,7 @@ import { InteractiveTerminalInput } from './interactive-terminal-input';
 import { DiffHunk, HunkApplication, OutputWriter, PromptReader } from './interactive-types';
 import { BlueprintFileDiff, ExistingFileDecision } from '../blueprint/blueprint';
 
-const BLOCK_MODE_CHOICES = new Set(['y', 'n', 'l', 's', 'a']);
+const BLOCK_MODE_CHOICES = new Set(['y', 'n', 'l', 'f', 's', 'a']);
 const LINE_MODE_CHOICES = new Set(['y', 'n', 'a']);
 
 interface HunkDecisionState {
@@ -20,6 +20,7 @@ interface HunkDecisionState {
   acceptedHunksCount: number;
   hunkApplications: HunkApplication[];
   skipFile?: boolean;
+  acceptFile?: boolean;
 }
 
 interface ResolveHunkDecisionInput extends HunkDecisionState {
@@ -46,6 +47,10 @@ export class InteractiveDiffSession {
     const state = await this.collectBlockModeSelections(hunks, fileDiff.relativePath);
     if (state.skipFile) {
       return 'skip';
+    }
+
+    if (state.acceptFile) {
+      return 'apply';
     }
 
     return this.resolveHunkDecision({
@@ -100,7 +105,7 @@ export class InteractiveDiffSession {
       this.printHunk(hunk, index, hunks.length);
 
       const answer = await this.terminalInput.readChoice(
-        `[BLOCK MODE] [${filePath}] Apply this hunk? [y/N/l=line-mode for this hunk/s=skip file/a=abort]: `,
+        `[BLOCK MODE] [${filePath}] Apply this hunk? [y/N/l=line-mode for this hunk/f=accept file/s=skip file/a=abort]: `,
         BLOCK_MODE_CHOICES,
         'n',
       );
@@ -111,6 +116,17 @@ export class InteractiveDiffSession {
 
       if (answer === 's') {
         state.skipFile = true;
+        break;
+      }
+
+      if (answer === 'f') {
+        state.acceptFile = true;
+        state.changed = true;
+        // Accept current hunk and all remaining hunks
+        this.applyAcceptedBlockHunk(state, hunk);
+        for (let i = index + 1; i < hunks.length; i++) {
+          this.applyAcceptedBlockHunk(state, hunks[i]);
+        }
         break;
       }
 

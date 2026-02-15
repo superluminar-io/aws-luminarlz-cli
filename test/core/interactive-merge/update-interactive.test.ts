@@ -86,6 +86,21 @@ describe('Setup update interactive diff selector', () => {
       expect(decision).toBe('skip');
     });
 
+    it('should accept entire file when answer is f', async () => {
+      const selector = createSelector(['f'], { autoApply: false, dryRun: false, lineMode: false });
+      const decision = await selector(makeFileDiff('before\n', 'after\n'));
+      expect(decision).toBe('apply');
+    });
+
+    it('should accept all hunks when answer is f with multiple hunks', async () => {
+      const selector = createSelector(['f'], { autoApply: false, dryRun: false, lineMode: false });
+      const currentContent = 'first\nl2\nl3\nl4\nl5\nl6\nl7\nl8\nl9\nsecond\n';
+      const renderedContent = 'FIRST\nl2\nl3\nl4\nl5\nl6\nl7\nl8\nl9\nSECOND\n';
+
+      const decision = await selector(makeFileDiff(currentContent, renderedContent));
+      expect(decision).toBe('apply');
+    });
+
     it('should return updatedContent for mixed multi-hunk decisions', async () => {
       const selector = createSelector(['y', 'n'], { autoApply: false, dryRun: false, lineMode: false });
       const currentContent = 'first\nl2\nl3\nl4\nl5\nl6\nl7\nl8\nl9\nsecond\n';
@@ -270,6 +285,19 @@ describe('Setup update interactive diff selector', () => {
 
       const decision = await decisionPromise;
       expect(decision).toBe('skip');
+      expect(setRawModeMock).toHaveBeenCalledWith(true);
+      expect(setRawModeMock).toHaveBeenCalledWith(false);
+    });
+
+    it('should accept file with f key in block mode', async () => {
+      const selector = createSelector([], { autoApply: false, dryRun: false, lineMode: false });
+      const decisionPromise = selector(makeFileDiff('before\n', 'after\n'));
+
+      await new Promise((resolve) => setImmediate(resolve));
+      process.stdin.emit('data', Buffer.from('f'));
+
+      const decision = await decisionPromise;
+      expect(decision).toBe('apply');
       expect(setRawModeMock).toHaveBeenCalledWith(true);
       expect(setRawModeMock).toHaveBeenCalledWith(false);
     });

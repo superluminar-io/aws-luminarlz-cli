@@ -25,7 +25,7 @@ For the full local development workflow (`projen compile` + `file:` dependency i
 
 - interactive hunk mode (default): safest for regular updates.
   - in this mode, you can switch a single hunk to line mode when prompted.
-  - prompt keys: `y` apply hunk, `n` skip hunk, `l` switch current hunk to line mode, `s` skip current file (jump to next file), `a` abort the entire update session.
+  - prompt keys: `y` apply hunk, `n` skip hunk, `l` switch current hunk to line mode, `f` accept entire file (apply all remaining hunks), `s` skip entire file (jump to next file), `a` abort the entire update session.
 - line mode (`--line-mode`): use when a hunk is large and you want finer control.
 - dry-run (`--dry-run`): preview impact before changing files.
 - non-interactive apply (`--yes`): use only in controlled automation or after prior dry-run.
