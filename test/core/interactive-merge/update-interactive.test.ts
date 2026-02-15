@@ -71,6 +71,21 @@ describe('Setup update interactive diff selector', () => {
       await expect(selector(makeFileDiff('before\n', 'after\n'))).rejects.toBeInstanceOf(UserAbortError);
     });
 
+    it('should skip file when answer is s', async () => {
+      const selector = createSelector(['s'], { autoApply: false, dryRun: false, lineMode: false });
+      const decision = await selector(makeFileDiff('before\n', 'after\n'));
+      expect(decision).toBe('skip');
+    });
+
+    it('should skip file on first hunk when answer is s with multiple hunks', async () => {
+      const selector = createSelector(['s'], { autoApply: false, dryRun: false, lineMode: false });
+      const currentContent = 'first\nl2\nl3\nl4\nl5\nl6\nl7\nl8\nl9\nsecond\n';
+      const renderedContent = 'FIRST\nl2\nl3\nl4\nl5\nl6\nl7\nl8\nl9\nSECOND\n';
+
+      const decision = await selector(makeFileDiff(currentContent, renderedContent));
+      expect(decision).toBe('skip');
+    });
+
     it('should return updatedContent for mixed multi-hunk decisions', async () => {
       const selector = createSelector(['y', 'n'], { autoApply: false, dryRun: false, lineMode: false });
       const currentContent = 'first\nl2\nl3\nl4\nl5\nl6\nl7\nl8\nl9\nsecond\n';
@@ -244,6 +259,19 @@ describe('Setup update interactive diff selector', () => {
 
       await expect(decisionPromise).rejects.toBeInstanceOf(UserAbortError);
       expect(setRawModeMock.mock.calls).toEqual([[true], [false]]);
+    });
+
+    it('should skip file with s key in block mode', async () => {
+      const selector = createSelector([], { autoApply: false, dryRun: false, lineMode: false });
+      const decisionPromise = selector(makeFileDiff('before\n', 'after\n'));
+
+      await new Promise((resolve) => setImmediate(resolve));
+      process.stdin.emit('data', Buffer.from('s'));
+
+      const decision = await decisionPromise;
+      expect(decision).toBe('skip');
+      expect(setRawModeMock).toHaveBeenCalledWith(true);
+      expect(setRawModeMock).toHaveBeenCalledWith(false);
     });
   });
 

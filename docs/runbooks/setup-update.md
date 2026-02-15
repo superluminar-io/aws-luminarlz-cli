@@ -25,7 +25,7 @@ For the full local development workflow (`projen compile` + `file:` dependency i
 
 - interactive hunk mode (default): safest for regular updates.
   - in this mode, you can switch a single hunk to line mode when prompted.
-  - prompt keys: `y` apply hunk, `n` skip hunk, `l` switch current hunk to line mode, `a` abort the entire update session.
+  - prompt keys: `y` apply hunk, `n` skip hunk, `l` switch current hunk to line mode, `s` skip current file (jump to next file), `a` abort the entire update session.
 - line mode (`--line-mode`): use when a hunk is large and you want finer control.
 - dry-run (`--dry-run`): preview impact before changing files.
 - non-interactive apply (`--yes`): use only in controlled automation or after prior dry-run.
@@ -41,19 +41,19 @@ git status
 2. Preview changes first:
 
 ```bash
-npm run cli -- setup update --dry-run
+yarn run cli setup update --dry-run
 ```
 
 3. Apply interactively:
 
 ```bash
-npm run cli -- setup update
+yarn run cli setup update
 ```
 
 4. If needed for detailed review:
 
 ```bash
-npm run cli -- setup update --line-mode
+yarn run cli setup update --line-mode
 ```
 
 5. Validate project after changes:
@@ -66,7 +66,7 @@ yarn eslint
 6. For config-related blueprint changes, run a real command path in your project repository, for example:
 
 ```bash
-npm run cli -- deploy
+yarn run cli deploy
 ```
 
 If your branch/version includes `doctor`, you can run it as an additional preflight check.

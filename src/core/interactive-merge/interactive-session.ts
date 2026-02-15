@@ -11,7 +11,7 @@ import { InteractiveTerminalInput } from './interactive-terminal-input';
 import { DiffHunk, HunkApplication, OutputWriter, PromptReader } from './interactive-types';
 import { BlueprintFileDiff, ExistingFileDecision } from '../blueprint/blueprint';
 
-const BLOCK_MODE_CHOICES = new Set(['y', 'n', 'l', 'a']);
+const BLOCK_MODE_CHOICES = new Set(['y', 'n', 'l', 's', 'a']);
 const LINE_MODE_CHOICES = new Set(['y', 'n', 'a']);
 
 interface HunkDecisionState {
@@ -19,6 +19,7 @@ interface HunkDecisionState {
   usedLineMode: boolean;
   acceptedHunksCount: number;
   hunkApplications: HunkApplication[];
+  skipFile?: boolean;
 }
 
 interface ResolveHunkDecisionInput extends HunkDecisionState {
@@ -43,6 +44,10 @@ export class InteractiveDiffSession {
     if (!hunks) return 'skip';
 
     const state = await this.collectBlockModeSelections(hunks, fileDiff.relativePath);
+    if (state.skipFile) {
+      return 'skip';
+    }
+
     return this.resolveHunkDecision({
       ...state,
       totalHunks: hunks.length,
@@ -90,9 +95,12 @@ export class InteractiveDiffSession {
       hunkApplications: [],
     };
 
-    await this.walkHunks(hunks, async (hunk) => {
+    for (const [index, hunk] of hunks.entries()) {
+      this.writeLine('');
+      this.printHunk(hunk, index, hunks.length);
+
       const answer = await this.terminalInput.readChoice(
-        `[BLOCK MODE] [${filePath}] Apply this hunk? [y/N/l=line-mode for this hunk/a=abort]: `,
+        `[BLOCK MODE] [${filePath}] Apply this hunk? [y/N/l=line-mode for this hunk/s=skip file/a=abort]: `,
         BLOCK_MODE_CHOICES,
         'n',
       );
@@ -101,18 +109,23 @@ export class InteractiveDiffSession {
         throw new UserAbortError();
       }
 
+      if (answer === 's') {
+        state.skipFile = true;
+        break;
+      }
+
       if (answer === 'l') {
         await this.applyLineModeForBlockHunk(state, hunk, filePath);
-        return;
+        continue;
       }
 
       if (answer === 'y') {
         this.applyAcceptedBlockHunk(state, hunk);
-        return;
+        continue;
       }
 
       state.hunkApplications.push({ hunk, lines: materializeOriginalHunkLines(hunk) });
-    });
+    }
 
     return state;
   }
