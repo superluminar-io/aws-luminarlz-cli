@@ -11,6 +11,7 @@ import { LzaInstallerVersionCheck } from './commands/lza-installer-version-check
 import { LzaInstallerVersionUpdate } from './commands/lza-installer-version-update';
 import { LzaStageDeploy } from './commands/lza-stage-deploy';
 import { LzaStageSynth } from './commands/lza-stage-synth';
+import { SetupUpdate } from './commands/setup-update';
 import { Synth } from './commands/synth';
 
 const [, , ...args] = process.argv;
@@ -31,4 +32,5 @@ cli.register(LzaStageSynth);
 cli.register(Synth);
 cli.register(Deploy);
 cli.register(Init);
+cli.register(SetupUpdate);
 void cli.runExit(args);

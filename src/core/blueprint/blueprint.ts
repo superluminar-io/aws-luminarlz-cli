@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import * as organizations from '@aws-sdk/client-organizations';
 import * as ssoAdmin from '@aws-sdk/client-sso-admin';
@@ -14,6 +15,64 @@ const buildBlueprintPath = (blueprintName: string) => {
 export const blueprintExists = (blueprintName: string) => {
   return fs.existsSync(buildBlueprintPath(blueprintName));
 };
+
+interface BlueprintTemplateContext {
+  managementAccountId: string;
+  installerVersion: string;
+  organizationId: string;
+  rootOuId: string;
+  identityStoreId: string;
+  accountsRootEmail: string;
+  region: string;
+}
+
+interface RenderedBlueprintFile {
+  relativePath: string;
+  targetPath: string;
+  content: string;
+}
+
+export interface BlueprintRenderResult {
+  managementAccountId: string;
+  organizationId: string;
+  rootOuId: string;
+  accountsRootEmail: string;
+  installerVersion: string;
+  region: string;
+}
+
+export interface BlueprintFileDiff {
+  relativePath: string;
+  targetPath: string;
+  currentContent: string;
+  renderedContent: string;
+}
+
+export type ExistingFileDecision =
+  | 'apply'
+  | 'skip'
+  | { updatedContent: string };
+
+export interface UpdateBlueprintOptions {
+  accountsRootEmail: string;
+  region: string;
+  dryRun?: boolean;
+  onExistingFileDiff?: (fileDiff: BlueprintFileDiff) => Promise<ExistingFileDecision>;
+}
+
+export interface UpdateBlueprintResult extends BlueprintRenderResult {
+  createdCount: number;
+  updatedCount: number;
+  skippedCount: number;
+  unchangedCount: number;
+}
+
+interface UpdateCounters {
+  createdCount: number;
+  updatedCount: number;
+  skippedCount: number;
+  unchangedCount: number;
+}
 
 const getAwsAccountId = async (region: string) => {
   const client = new sts.STSClient({ region });
@@ -57,22 +116,42 @@ const getIdentityStoreId = async (region: string) => {
   return Instances[0].IdentityStoreId;
 };
 
-export const renderBlueprint = async (blueprintName: string, { forceOverwrite, accountsRootEmail, region }: {
-  forceOverwrite: boolean;
-  accountsRootEmail: string;
-  region: string;
-}) => {
+const loadBlueprintTemplateContext = async (accountsRootEmail: string, region: string): Promise<BlueprintTemplateContext> => {
   const managementAccountId = await getAwsAccountId(region);
   const installerVersion = await getVersion(region);
   const organizationId = await getOrganizationId(region);
   const rootOuId = await getRootOuId(region);
   const identityStoreId = await getIdentityStoreId(region);
+  return {
+    managementAccountId,
+    installerVersion,
+    organizationId,
+    rootOuId,
+    identityStoreId,
+    accountsRootEmail,
+    region,
+  };
+};
 
+const listBlueprintFiles = async (blueprintRoot: string): Promise<string[]> => {
+  return (await fs.promises.readdir(blueprintRoot, {
+    recursive: true,
+  })).filter((filePath) => !filePath.includes('node_modules')
+    && !filePath.includes('package-lock.json')
+    && !filePath.includes('yarn.lock')
+    && !filePath.includes('pnpm-lock.yaml'))
+    .filter((filePath) => fs.lstatSync(path.join(blueprintRoot, filePath)).isFile());
+};
+
+const renderBlueprintFiles = async (
+  blueprintName: string,
+  templateContext: BlueprintTemplateContext,
+): Promise<RenderedBlueprintFile[]> => {
   const projectRoot = resolveProjectPath();
   const blueprintRoot = buildBlueprintPath(blueprintName);
   const liquid = new Liquid({
     root: blueprintRoot,
-    // fail on undefined variables
+    // fail on missing variables
     strictVariables: true,
     strictFilters: true,
     // use custom delimiters to avoid conflicts with other templating engines
@@ -81,51 +160,152 @@ export const renderBlueprint = async (blueprintName: string, { forceOverwrite, a
     outputDelimiterLeft: '<<',
     outputDelimiterRight: '>>',
   });
-  // when testing locally, there might be node dependencies we just ignore them.
-  const filePathes = (await fs.promises.readdir(blueprintRoot, {
-    recursive: true,
-  })).filter((fp) => !fp.includes('node_modules')
-    && !fp.includes('package-lock.json')
-    && !fp.includes('yarn.lock')
-    && !fp.includes('pnpm-lock.yaml'));
-  // Copy and render all blueprint files to the project root
-  for (const filePath of filePathes) {
-    const source = path.join(blueprintRoot, filePath);
-    const target = path.join(projectRoot, filePath);
-    // If is a directory, ensure to create it in the project root
-    if (fs.lstatSync(source).isDirectory()) {
-      // Create the directory in the output path if it doesn't exist
-      if (!fs.existsSync(target)) {
-        fs.mkdirSync(target);
-      }
-    } else {
-      // render the file
-      const output = liquid.renderFileSync(
-        filePath,
-        {
-          AWS_ACCELERATOR_VERSION: installerVersion,
-          AWS_MANAGEMENT_ACCOUNT_ID: managementAccountId,
-          AWS_ORGANIZATION_ID: organizationId,
-          AWS_ROOT_OU_ID: rootOuId,
-          AWS_ACCOUNTS_ROOT_EMAIL: accountsRootEmail,
-          AWS_HOME_REGION: region,
-          AWS_IDENTITY_STORE_ID: identityStoreId,
-        },
-      );
-      // if a target file already exists, skip it until force overwrite is enabled
-      if (!forceOverwrite && fs.existsSync(target)) {
-        console.log(`Skipping ${target} because it already exists.`);
-        continue;
-      }
-      fs.writeFileSync(target, output);
-    }
-  }
+  const filePaths = await listBlueprintFiles(blueprintRoot);
+  return filePaths.map((filePath) => {
+    const output = liquid.renderFileSync(
+      filePath,
+      {
+        AWS_ACCELERATOR_VERSION: templateContext.installerVersion,
+        AWS_MANAGEMENT_ACCOUNT_ID: templateContext.managementAccountId,
+        AWS_ORGANIZATION_ID: templateContext.organizationId,
+        AWS_ROOT_OU_ID: templateContext.rootOuId,
+        AWS_ACCOUNTS_ROOT_EMAIL: templateContext.accountsRootEmail,
+        AWS_HOME_REGION: templateContext.region,
+        AWS_IDENTITY_STORE_ID: templateContext.identityStoreId,
+      },
+    );
+    return {
+      relativePath: filePath,
+      targetPath: path.join(projectRoot, filePath),
+      content: output,
+    };
+  });
+};
+
+const toRenderResult = (templateContext: BlueprintTemplateContext): BlueprintRenderResult => {
   return {
-    managementAccountId,
-    organizationId,
-    rootOuId,
-    accountsRootEmail: accountsRootEmail,
-    installerVersion,
-    region,
+    managementAccountId: templateContext.managementAccountId,
+    organizationId: templateContext.organizationId,
+    rootOuId: templateContext.rootOuId,
+    accountsRootEmail: templateContext.accountsRootEmail,
+    installerVersion: templateContext.installerVersion,
+    region: templateContext.region,
   };
+};
+
+const writeRenderedFile = async (targetPath: string, content: string) => {
+  await mkdir(path.dirname(targetPath), { recursive: true });
+  fs.writeFileSync(targetPath, content);
+};
+
+export const renderBlueprint = async (blueprintName: string, { forceOverwrite, accountsRootEmail, region }: {
+  forceOverwrite: boolean;
+  accountsRootEmail: string;
+  region: string;
+}) => {
+  const templateContext = await loadBlueprintTemplateContext(accountsRootEmail, region);
+  const renderedFiles = await renderBlueprintFiles(blueprintName, templateContext);
+
+  for (const renderedFile of renderedFiles) {
+    if (!forceOverwrite && fs.existsSync(renderedFile.targetPath)) {
+      console.log(`Skipping ${renderedFile.targetPath} because it already exists.`);
+      continue;
+    }
+    await writeRenderedFile(renderedFile.targetPath, renderedFile.content);
+  }
+  return toRenderResult(templateContext);
+};
+
+export const updateBlueprint = async (blueprintName: string, options: UpdateBlueprintOptions): Promise<UpdateBlueprintResult> => {
+  const templateContext = await loadBlueprintTemplateContext(options.accountsRootEmail, options.region);
+  const renderedFiles = await renderBlueprintFiles(blueprintName, templateContext);
+  const dryRun = options.dryRun ?? false;
+
+  const counters = initializeUpdateCounters();
+  for (const renderedFile of renderedFiles) {
+    await processRenderedFileUpdate(renderedFile, options, dryRun, counters);
+  }
+
+  return {
+    ...toRenderResult(templateContext),
+    ...counters,
+  };
+};
+
+const initializeUpdateCounters = (): UpdateCounters => ({
+  createdCount: 0,
+  updatedCount: 0,
+  skippedCount: 0,
+  unchangedCount: 0,
+});
+
+const processRenderedFileUpdate = async (
+  renderedFile: RenderedBlueprintFile,
+  options: UpdateBlueprintOptions,
+  dryRun: boolean,
+  counters: UpdateCounters,
+): Promise<void> => {
+  if (!fs.existsSync(renderedFile.targetPath)) {
+    counters.createdCount += 1;
+    if (!dryRun) {
+      await writeRenderedFile(renderedFile.targetPath, renderedFile.content);
+    }
+    return;
+  }
+
+  const currentContent = fs.readFileSync(renderedFile.targetPath, 'utf8');
+  if (currentContent === renderedFile.content) {
+    counters.unchangedCount += 1;
+    return;
+  }
+
+  const decision = await resolveExistingFileDecision(renderedFile, currentContent, options.onExistingFileDiff);
+  await applyExistingFileDecision(decision, renderedFile, currentContent, dryRun, counters);
+};
+
+const resolveExistingFileDecision = async (
+  renderedFile: RenderedBlueprintFile,
+  currentContent: string,
+  onExistingFileDiff?: (fileDiff: BlueprintFileDiff) => Promise<ExistingFileDecision>,
+): Promise<ExistingFileDecision> => {
+  if (!onExistingFileDiff) {
+    return 'skip';
+  }
+  return onExistingFileDiff({
+    relativePath: renderedFile.relativePath,
+    targetPath: renderedFile.targetPath,
+    currentContent,
+    renderedContent: renderedFile.content,
+  });
+};
+
+const applyExistingFileDecision = async (
+  decision: ExistingFileDecision,
+  renderedFile: RenderedBlueprintFile,
+  currentContent: string,
+  dryRun: boolean,
+  counters: UpdateCounters,
+): Promise<void> => {
+  if (decision === 'skip') {
+    counters.skippedCount += 1;
+    return;
+  }
+
+  if (decision === 'apply') {
+    counters.updatedCount += 1;
+    if (!dryRun) {
+      await writeRenderedFile(renderedFile.targetPath, renderedFile.content);
+    }
+    return;
+  }
+
+  if (decision.updatedContent === currentContent) {
+    counters.skippedCount += 1;
+    return;
+  }
+
+  counters.updatedCount += 1;
+  if (!dryRun) {
+    await writeRenderedFile(renderedFile.targetPath, decision.updatedContent);
+  }
 };
