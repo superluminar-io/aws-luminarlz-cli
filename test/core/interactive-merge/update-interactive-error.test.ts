@@ -89,4 +89,30 @@ describe('Setup update interactive diff selector error handling', () => {
 
     await expect(selector(makeFileDiff('before\n', 'after\n'))).rejects.toThrow('git diff failed for config.ts: fatal: bad revision');
   });
+
+  it('should skip changed file when diff output has no parseable hunks', async () => {
+    jest.doMock('node:child_process', () => ({
+      spawnSync: jest.fn(() => ({
+        stdout: 'diff --git a/current b/rendered\nBinary files a/current and b/rendered differ\n',
+        stderr: '',
+        status: 1,
+      })),
+    }));
+
+    const module = await import('../../../src/core/interactive-merge');
+
+    const rl: PromptReader = {
+      question: jest.fn(async () => 'y'),
+    };
+
+    const selector = module.createInteractiveDiffSelector({
+      rl,
+      autoApply: false,
+      dryRun: false,
+      lineMode: false,
+    });
+
+    await expect(selector(makeFileDiff('before\n', 'after\n'))).resolves.toBe('skip');
+    expect(rl.question).not.toHaveBeenCalled();
+  });
 });

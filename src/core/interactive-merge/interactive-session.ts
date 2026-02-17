@@ -300,6 +300,11 @@ export class InteractiveDiffSession {
 
     const hunks = parseFileDiffHunks(fileDiff);
     if (hunks.length === 0) {
+      if (fileDiff.currentContent !== fileDiff.renderedContent) {
+        this.writeLine(`[FINDING] No parseable patch hunks found for changed file: ${fileDiff.relativePath}`);
+        this.writeLine('[FINDING] This file is skipped so update can continue with remaining files.');
+        return null;
+      }
       this.writeLine('No patch hunks found.');
       return null;
     }
