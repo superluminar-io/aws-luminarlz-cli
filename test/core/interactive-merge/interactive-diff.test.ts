@@ -65,4 +65,51 @@ describe('interactive-diff', () => {
     ]);
     expect(hunks[0].lines.every((line) => !line.includes('\r'))).toBe(true);
   });
+
+  it('should preserve existing content when applying a hunk with oldStart=0', () => {
+    const currentContent = 'line-1\nline-2\n';
+    const hunkApplications: HunkApplication[] = [
+      {
+        hunk: {
+          oldStart: 0,
+          oldCount: 0,
+          header: '@@ -0,0 +1 @@',
+          lines: [],
+        },
+        lines: ['inserted-line'],
+      },
+    ];
+
+    const rebuiltContent = rebuildContentFromHunks(currentContent, hunkApplications);
+
+    expect(rebuiltContent).toBe('inserted-line\nline-1\nline-2\n');
+  });
+
+  it('should rebuild content correctly when oldStart=0 hunk is followed by another hunk', () => {
+    const currentContent = 'line-1\nline-2\nline-3\n';
+    const hunkApplications: HunkApplication[] = [
+      {
+        hunk: {
+          oldStart: 0,
+          oldCount: 0,
+          header: '@@ -0,0 +1 @@',
+          lines: [],
+        },
+        lines: ['inserted-line'],
+      },
+      {
+        hunk: {
+          oldStart: 2,
+          oldCount: 1,
+          header: '@@ -2 +2 @@',
+          lines: [],
+        },
+        lines: ['LINE-2'],
+      },
+    ];
+
+    const rebuiltContent = rebuildContentFromHunks(currentContent, hunkApplications);
+
+    expect(rebuiltContent).toBe('inserted-line\nline-1\nLINE-2\nline-3\n');
+  });
 });

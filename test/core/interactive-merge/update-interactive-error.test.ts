@@ -38,4 +38,55 @@ describe('Setup update interactive diff selector error handling', () => {
 
     await expect(selector(makeFileDiff('before\n', 'after\n'))).rejects.toThrow('Unable to parse diff hunk header');
   });
+
+  it('should throw when git diff process fails to start', async () => {
+    jest.doMock('node:child_process', () => ({
+      spawnSync: jest.fn(() => ({
+        stdout: '',
+        stderr: 'git: command not found',
+        status: 127,
+        error: new Error('spawn git ENOENT'),
+      })),
+    }));
+
+    const module = await import('../../../src/core/interactive-merge');
+
+    const rl: PromptReader = {
+      question: jest.fn(async () => 'y'),
+    };
+
+    const selector = module.createInteractiveDiffSelector({
+      rl,
+      autoApply: false,
+      dryRun: false,
+      lineMode: false,
+    });
+
+    await expect(selector(makeFileDiff('before\n', 'after\n'))).rejects.toThrow('Failed to run git diff for config.ts: spawn git ENOENT');
+  });
+
+  it('should throw when git diff exits with an error status', async () => {
+    jest.doMock('node:child_process', () => ({
+      spawnSync: jest.fn(() => ({
+        stdout: '',
+        stderr: 'fatal: bad revision',
+        status: 2,
+      })),
+    }));
+
+    const module = await import('../../../src/core/interactive-merge');
+
+    const rl: PromptReader = {
+      question: jest.fn(async () => 'y'),
+    };
+
+    const selector = module.createInteractiveDiffSelector({
+      rl,
+      autoApply: false,
+      dryRun: false,
+      lineMode: false,
+    });
+
+    await expect(selector(makeFileDiff('before\n', 'after\n'))).rejects.toThrow('git diff failed for config.ts: fatal: bad revision');
+  });
 });

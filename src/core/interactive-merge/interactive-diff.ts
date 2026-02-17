@@ -87,6 +87,16 @@ const renderGitStyleDiff = (fileDiff: BlueprintFileDiff): string => {
 
   fs.rmSync(tempDir, { recursive: true, force: true });
 
+  if (diffResult.error) {
+    throw new Error(`Failed to run git diff for ${fileDiff.relativePath}: ${diffResult.error.message}`);
+  }
+
+  if (typeof diffResult.status === 'number' && diffResult.status > 1) {
+    const stderr = (diffResult.stderr || '').toString().trim();
+    const stderrSuffix = stderr ? `: ${stderr}` : '';
+    throw new Error(`git diff failed for ${fileDiff.relativePath}${stderrSuffix}`);
+  }
+
   const rawDiff = diffResult.stdout || '';
   if (!rawDiff) {
     return `No textual diff for ${fileDiff.relativePath}`;
@@ -156,7 +166,7 @@ export const rebuildContentFromHunks = (
     }
 
     resultLines.push(...lines);
-    lineCursor = hunk.oldStart + hunk.oldCount;
+    lineCursor = Math.max(1, hunk.oldStart + hunk.oldCount);
   }
 
   if (lineCursor <= originalLines.length) {
