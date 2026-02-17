@@ -240,6 +240,34 @@ describe('Setup update interactive diff selector', () => {
       expect(setRawModeMock).toHaveBeenCalledWith(false);
     });
 
+    it('should restore to raw mode when stdin was already raw in block mode', async () => {
+      stdinWithRaw.isRaw = true;
+      const selector = createSelector([], { autoApply: false, dryRun: false, lineMode: false });
+      const decisionPromise = selector(makeFileDiff('before\n', 'after\n'));
+
+      await new Promise((resolve) => setImmediate(resolve));
+      process.stdin.emit('data', Buffer.from('y'));
+
+      const decision = await decisionPromise;
+      expect(decision).toBe('apply');
+      expect(setRawModeMock.mock.calls).toEqual([[true], [true]]);
+      expect(pauseSpy).not.toHaveBeenCalled();
+    });
+
+    it('should restore to raw mode when stdin was already raw in dry-run any-key flow', async () => {
+      stdinWithRaw.isRaw = true;
+      const selector = createSelector([], { autoApply: false, dryRun: true, lineMode: false });
+      const decisionPromise = selector(makeFileDiff('before\n', 'after\n'));
+
+      await new Promise((resolve) => setImmediate(resolve));
+      process.stdin.emit('data', Buffer.from('x'));
+
+      const decision = await decisionPromise;
+      expect(decision).toBe('skip');
+      expect(setRawModeMock.mock.calls).toEqual([[true], [true]]);
+      expect(pauseSpy).not.toHaveBeenCalled();
+    });
+
     it('should ignore invalid keys and continue waiting for a valid key', async () => {
       const selector = createSelector([], { autoApply: false, dryRun: false, lineMode: false });
       const decisionPromise = selector(makeFileDiff('before\n', 'after\n'));
