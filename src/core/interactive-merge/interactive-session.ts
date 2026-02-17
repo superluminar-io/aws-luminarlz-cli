@@ -28,6 +28,13 @@ interface ResolveHunkDecisionInput extends HunkDecisionState {
   currentContent: string;
 }
 
+type BlockModeHunkHandler = (state: HunkDecisionState, context: {
+  hunk: DiffHunk;
+  index: number;
+  hunks: DiffHunk[];
+  filePath: string;
+}) => Promise<boolean>;
+
 const isAbortSelection = (value: string): boolean => value === 'a';
 
 export class InteractiveDiffSession {
@@ -110,40 +117,89 @@ export class InteractiveDiffSession {
         'n',
       );
 
-      if (isAbortSelection(answer)) {
-        throw new UserAbortError();
-      }
-
-      if (answer === 's') {
-        state.skipFile = true;
+      const shouldStop = await this.handleBlockModeAnswer(answer, state, {
+        hunk,
+        index,
+        hunks,
+        filePath,
+      });
+      if (shouldStop) {
         break;
       }
-
-      if (answer === 'f') {
-        state.acceptFile = true;
-        state.changed = true;
-        // Accept current hunk and all remaining hunks
-        this.applyAcceptedBlockHunk(state, hunk);
-        for (let i = index + 1; i < hunks.length; i++) {
-          this.applyAcceptedBlockHunk(state, hunks[i]);
-        }
-        break;
-      }
-
-      if (answer === 'l') {
-        await this.applyLineModeForBlockHunk(state, hunk, filePath);
-        continue;
-      }
-
-      if (answer === 'y') {
-        this.applyAcceptedBlockHunk(state, hunk);
-        continue;
-      }
-
-      state.hunkApplications.push({ hunk, lines: materializeOriginalHunkLines(hunk) });
     }
 
     return state;
+  }
+
+  private async handleBlockModeAnswer(
+    answer: string,
+    state: HunkDecisionState,
+    context: {
+      hunk: DiffHunk;
+      index: number;
+      hunks: DiffHunk[];
+      filePath: string;
+    },
+  ): Promise<boolean> {
+    if (isAbortSelection(answer)) {
+      throw new UserAbortError();
+    }
+
+    const handler = this.selectBlockModeHandler(answer);
+    return handler(state, context);
+  }
+
+  private selectBlockModeHandler(answer: string): BlockModeHunkHandler {
+    const handlers: Record<string, BlockModeHunkHandler> = {
+      s: async (state) => this.handleSkipFile(state),
+      f: async (state, context) => this.handleAcceptFile(state, context.hunk, context.index, context.hunks),
+      l: async (state, context) => this.handleLineModeSelection(state, context.hunk, context.filePath),
+      y: async (state, context) => this.handleAcceptHunk(state, context.hunk),
+    };
+
+    return handlers[answer] ?? this.handleRejectHunk.bind(this);
+  }
+
+  private async handleSkipFile(state: HunkDecisionState): Promise<boolean> {
+    state.skipFile = true;
+    return true;
+  }
+
+  private async handleAcceptFile(
+    state: HunkDecisionState,
+    currentHunk: DiffHunk,
+    currentIndex: number,
+    hunks: DiffHunk[],
+  ): Promise<boolean> {
+    state.acceptFile = true;
+    state.changed = true;
+    this.applyAcceptedBlockHunk(state, currentHunk);
+    for (let i = currentIndex + 1; i < hunks.length; i++) {
+      this.applyAcceptedBlockHunk(state, hunks[i]);
+    }
+    return true;
+  }
+
+  private async handleLineModeSelection(
+    state: HunkDecisionState,
+    hunk: DiffHunk,
+    filePath: string,
+  ): Promise<boolean> {
+    await this.applyLineModeForBlockHunk(state, hunk, filePath);
+    return false;
+  }
+
+  private async handleAcceptHunk(state: HunkDecisionState, hunk: DiffHunk): Promise<boolean> {
+    this.applyAcceptedBlockHunk(state, hunk);
+    return false;
+  }
+
+  private async handleRejectHunk(
+    state: HunkDecisionState,
+    context: { hunk: DiffHunk },
+  ): Promise<boolean> {
+    state.hunkApplications.push({ hunk: context.hunk, lines: materializeOriginalHunkLines(context.hunk) });
+    return false;
   }
 
   private async collectLineModeSelections(
@@ -256,15 +312,22 @@ export class InteractiveDiffSession {
       return 'skip';
     }
 
-    if (!input.usedLineMode && input.acceptedHunksCount === input.totalHunks) {
+    if (this.shouldApplyCompleteFile(input)) {
       return 'apply';
     }
 
+    return this.resolvePartialDecision(input);
+  }
+
+  private shouldApplyCompleteFile(input: ResolveHunkDecisionInput): boolean {
+    return !input.usedLineMode && input.acceptedHunksCount === input.totalHunks;
+  }
+
+  private resolvePartialDecision(input: ResolveHunkDecisionInput): ExistingFileDecision {
     const updatedContent = rebuildContentFromHunks(input.currentContent, input.hunkApplications);
     if (updatedContent === input.currentContent) {
       return 'skip';
     }
-
     return { updatedContent };
   }
 

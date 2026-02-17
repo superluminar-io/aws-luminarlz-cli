@@ -19,22 +19,28 @@ const colorize = (text: string, color: keyof typeof terminalColors): string => {
   return `${terminalColors[color]}${text}${terminalColors.reset}`;
 };
 
+const countMatches = (value: string, pattern: RegExp): number => {
+  return (value.match(pattern) || []).length;
+};
+
+const getTrailingWhitespaceCounts = (trailing: string): Array<[string, number]> => {
+  return [
+    ['spaces', countMatches(trailing, / /g)],
+    ['tabs', countMatches(trailing, /\t/g)],
+    ['cr', countMatches(trailing, /\r/g)],
+    ['nbsp', countMatches(trailing, /\u00A0/g)],
+  ];
+};
+
 const getTrailingWhitespaceInfo = (line: string): string => {
   const trailing = line.match(/([ \t\r\u00A0]+)$/u)?.[1];
   if (!trailing) {
     return '';
   }
 
-  const spaces = (trailing.match(/ /g) || []).length;
-  const tabs = (trailing.match(/\t/g) || []).length;
-  const carriageReturns = (trailing.match(/\r/g) || []).length;
-  const nbsp = (trailing.match(/\u00A0/g) || []).length;
-
-  const parts: string[] = [];
-  if (spaces > 0) parts.push(`spaces=${spaces}`);
-  if (tabs > 0) parts.push(`tabs=${tabs}`);
-  if (carriageReturns > 0) parts.push(`cr=${carriageReturns}`);
-  if (nbsp > 0) parts.push(`nbsp=${nbsp}`);
+  const parts = getTrailingWhitespaceCounts(trailing)
+    .filter(([, count]) => count > 0)
+    .map(([name, count]) => `${name}=${count}`);
 
   return parts.length > 0 ? colorize(`  [trailing whitespace: ${parts.join(', ')}]`, 'gray') : '';
 };

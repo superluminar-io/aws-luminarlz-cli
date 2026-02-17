@@ -35,33 +35,11 @@ export class InteractiveTerminalInput {
     filePath?: string,
     isDryRun = false,
   ): Promise<string> {
-    const dryRunLabel = isDryRun ? '[DRY RUN]' : '';
-    const fileLabel = filePath ? ` [${filePath}]` : '';
-
     if (!this.isInteractiveTerminal()) {
-      const answer = (await this.rl.question(`[${modeLabel.toUpperCase()} MODE]${dryRunLabel}${fileLabel} Press Enter to continue, type l to preview this block in line mode, or a to abort: `))
-        .trim()
-        .toLowerCase();
-      if (isAbortSelection(answer)) {
-        throw new UserAbortError();
-      }
-      return answer;
+      return this.readLineAnyKey(modeLabel, filePath, isDryRun);
     }
 
-    this.writeLine(`[${modeLabel.toUpperCase()} MODE]${dryRunLabel}${fileLabel} Press any key to continue (press l for line mode on this block, a to abort)...`);
-
-    return new Promise<string>((resolve, reject) => {
-      const stdinState = this.enterRawMode();
-      process.stdin.once('data', (data: Buffer) => {
-        const key = data.toString('utf8').toLowerCase();
-        this.restoreRawMode(stdinState);
-        if (key === '\u0003' || isAbortSelection(key)) {
-          reject(new UserAbortError());
-          return;
-        }
-        resolve(key);
-      });
-    });
+    return this.readRawAnyKey(modeLabel, filePath, isDryRun);
   }
 
   private isInteractiveTerminal(): boolean {
@@ -86,6 +64,38 @@ export class InteractiveTerminalInput {
 
       this.writeLine(`Invalid choice "${answer}". Allowed: ${Array.from(allowedChoices).join(', ')}`);
     }
+  }
+
+  private buildModePrefix(modeLabel: string, filePath?: string, isDryRun = false): string {
+    const dryRunLabel = isDryRun ? '[DRY RUN]' : '';
+    const fileLabel = filePath ? ` [${filePath}]` : '';
+    return `[${modeLabel.toUpperCase()} MODE]${dryRunLabel}${fileLabel}`;
+  }
+
+  private async readLineAnyKey(modeLabel: string, filePath?: string, isDryRun = false): Promise<string> {
+    const prompt = `${this.buildModePrefix(modeLabel, filePath, isDryRun)} Press Enter to continue, type l to preview this block in line mode, or a to abort: `;
+    const answer = (await this.rl.question(prompt)).trim().toLowerCase();
+    if (isAbortSelection(answer)) {
+      throw new UserAbortError();
+    }
+    return answer;
+  }
+
+  private readRawAnyKey(modeLabel: string, filePath?: string, isDryRun = false): Promise<string> {
+    this.writeLine(`${this.buildModePrefix(modeLabel, filePath, isDryRun)} Press any key to continue (press l for line mode on this block, a to abort)...`);
+
+    return new Promise<string>((resolve, reject) => {
+      const stdinState = this.enterRawMode();
+      process.stdin.once('data', (data: Buffer) => {
+        const key = data.toString('utf8').toLowerCase();
+        this.restoreRawMode(stdinState);
+        if (this.isAbortKey(key)) {
+          reject(new UserAbortError());
+          return;
+        }
+        resolve(key);
+      });
+    });
   }
 
   private async readSingleKeyChoice(
@@ -134,20 +144,32 @@ export class InteractiveTerminalInput {
   ): ChoiceInputOutcome {
     const input = data.toString('utf8').toLowerCase();
 
-    if (input === '\u0003') {
+    if (this.isAbortKey(input)) {
       return { type: 'abort' };
     }
 
-    if (input === '\r' || input === '\n') {
+    if (this.isDefaultSelectionKey(input)) {
       return { type: 'default' };
     }
 
+    return this.resolveChoiceInputOutcome(input, allowedChoices);
+  }
+
+  private resolveChoiceInputOutcome(input: string, allowedChoices: Set<string>): ChoiceInputOutcome {
     const key = input[0];
     if (!key || !allowedChoices.has(key)) {
       return { type: 'ignore' };
     }
 
     return { type: 'choice', value: key };
+  }
+
+  private isAbortKey(input: string): boolean {
+    return input === '\u0003' || isAbortSelection(input);
+  }
+
+  private isDefaultSelectionKey(input: string): boolean {
+    return input === '\r' || input === '\n';
   }
 
   private enterRawMode(): InteractiveInputState {

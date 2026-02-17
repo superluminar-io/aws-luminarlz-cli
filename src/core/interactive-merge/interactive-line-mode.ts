@@ -92,17 +92,61 @@ export class InteractiveLineModeProcessor {
     if (removedLines.length === addedLines.length) {
       return this.processPairwiseReplacement(removedLines, addedLines);
     }
-    return this.processBlockReplacement(removedLines, addedLines);
+    return this.processMixedReplacement(removedLines, addedLines);
   }
 
   private async processPairwiseReplacement(
     removedLines: string[],
     addedLines: string[],
   ): Promise<LineModeResult> {
+    return this.processPairedReplacementRange(removedLines, addedLines, 0, removedLines.length);
+  }
+
+  private async processMixedReplacement(
+    removedLines: string[],
+    addedLines: string[],
+  ): Promise<LineModeResult> {
+    const pairCount = Math.min(removedLines.length, addedLines.length);
+    const pairedResult = await this.processPairedReplacementRange(removedLines, addedLines, 0, pairCount);
+    const removalResult = await this.processOptionalRemainingRemovals(removedLines, pairCount);
+    const additionResult = await this.processOptionalRemainingAdditions(addedLines, pairCount);
+
+    return {
+      lines: [...pairedResult.lines, ...removalResult.lines, ...additionResult.lines],
+      changed: pairedResult.changed || removalResult.changed || additionResult.changed,
+    };
+  }
+
+  private async processOptionalRemainingRemovals(
+    removedLines: string[],
+    pairCount: number,
+  ): Promise<LineModeResult> {
+    if (pairCount < removedLines.length) {
+      return this.processRemainingRemovals(removedLines, pairCount);
+    }
+    return { lines: [], changed: false };
+  }
+
+  private async processOptionalRemainingAdditions(
+    addedLines: string[],
+    pairCount: number,
+  ): Promise<LineModeResult> {
+    if (pairCount < addedLines.length) {
+      return this.processRemainingAdditions(addedLines, pairCount);
+    }
+    return { lines: [], changed: false };
+  }
+
+  private async processPairedReplacementRange(
+    removedLines: string[],
+    addedLines: string[],
+    startIndex: number,
+    endExclusive: number,
+  ): Promise<LineModeResult> {
     const lines: string[] = [];
     let changed = false;
 
-    for (let index = 0; index < removedLines.length; index += 1) {
+    for (let index = startIndex; index < endExclusive; index += 1) {
       const removedLine = removedLines[index];
       const addedLine = addedLines[index];
       this.context.writeLine(colorizeDiffLine(removedLine));
@@ -123,22 +167,44 @@ export class InteractiveLineModeProcessor {
     return { lines, changed };
   }
 
-  private async processBlockReplacement(
+  private async processRemainingRemovals(
     removedLines: string[],
-    addedLines: string[],
+    startIndex: number,
   ): Promise<LineModeResult> {
-    removedLines.forEach((line) => this.context.writeLine(colorizeDiffLine(line)));
-    addedLines.forEach((line) => this.context.writeLine(colorizeDiffLine(line)));
+    const lines: string[] = [];
+    let changed = false;
 
-    const answer = await this.context.askLineChoice(
-      `[LINE MODE] [${this.context.filePath}] Apply this block change? [y/N/a=abort]: `,
-    );
+    for (let index = startIndex; index < removedLines.length; index += 1) {
+      const removedLine = removedLines[index];
+      this.context.writeLine(colorizeDiffLine(removedLine));
+      const answer = await this.context.askLineChoice(
+        `[LINE MODE] [${this.context.filePath}] Remove this line? [y/N/a=abort]: `,
+      );
 
-    if (answer === 'y') {
-      return { lines: addedLines.map((line) => line.slice(1)), changed: true };
+      if (answer === 'y') {
+        changed = true;
+      } else {
+        lines.push(removedLine.slice(1));
+      }
     }
 
-    return { lines: removedLines.map((line) => line.slice(1)), changed: false };
+    return { lines, changed };
+  }
+
+  private async processRemainingAdditions(
+    addedLines: string[],
+    startIndex: number,
+  ): Promise<LineModeResult> {
+    const lines: string[] = [];
+    let changed = false;
+
+    for (let index = startIndex; index < addedLines.length; index += 1) {
+      const addition = await this.processAddedLine(addedLines[index]);
+      lines.push(...addition.lines);
+      changed = changed || addition.changed;
+    }
+
+    return { lines, changed };
   }
 
   private async processDeletionGroup(removedLines: string[]): Promise<LineModeResult> {

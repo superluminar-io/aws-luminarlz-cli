@@ -24,6 +24,36 @@ const parseHunkHeader = (line: string): { oldStart: number; oldCount: number } =
 const isPatchBodyLine = (line: string): boolean =>
   line.startsWith(' ') || line.startsWith('-') || line.startsWith('+');
 
+const createDiffHunk = (line: string): DiffHunk => {
+  const parsedHeader = parseHunkHeader(line);
+  return {
+    oldStart: parsedHeader.oldStart,
+    oldCount: parsedHeader.oldCount,
+    header: line,
+    lines: [],
+  };
+};
+
+const pushHunkIfPresent = (hunks: DiffHunk[], hunk: DiffHunk | null): void => {
+  if (hunk) {
+    hunks.push(hunk);
+  }
+};
+
+const handleDiffBodyLine = (line: string, currentHunk: DiffHunk | null): void => {
+  if (!currentHunk) {
+    return;
+  }
+
+  if (line.startsWith(NO_NEWLINE_MARKER)) {
+    return;
+  }
+
+  if (isPatchBodyLine(line)) {
+    currentHunk.lines.push(line);
+  }
+};
+
 const parseDiffHunks = (diffText: string): DiffHunk[] => {
   const lines = splitNormalizedLines(diffText);
   const hunks: DiffHunk[] = [];
@@ -32,35 +62,14 @@ const parseDiffHunks = (diffText: string): DiffHunk[] => {
 
   for (const line of lines) {
     if (isHunkHeader(line)) {
-      const parsedHeader = parseHunkHeader(line);
-      if (currentHunk) {
-        hunks.push(currentHunk);
-      }
-      currentHunk = {
-        oldStart: parsedHeader.oldStart,
-        oldCount: parsedHeader.oldCount,
-        header: line,
-        lines: [],
-      };
+      pushHunkIfPresent(hunks, currentHunk);
+      currentHunk = createDiffHunk(line);
       continue;
     }
-
-    if (!currentHunk) {
-      continue;
-    }
-
-    if (line.startsWith(NO_NEWLINE_MARKER)) {
-      continue;
-    }
-
-    if (isPatchBodyLine(line)) {
-      currentHunk.lines.push(line);
-    }
+    handleDiffBodyLine(line, currentHunk);
   }
 
-  if (currentHunk) {
-    hunks.push(currentHunk);
-  }
+  pushHunkIfPresent(hunks, currentHunk);
 
   return hunks;
 };

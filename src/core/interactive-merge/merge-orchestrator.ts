@@ -53,28 +53,63 @@ const promptRequiredValue = async (
   return value;
 };
 
-const resolveSetupUpdateInputs = async (
-  rl: readline.Interface,
-  options: Pick<SetupUpdateOptions, 'accountsRootEmail' | 'region'>,
-): Promise<SetupUpdateInputs> => {
+const assertDefaultBlueprintExists = (): void => {
   if (!blueprintExists(DEFAULT_BLUEPRINT)) {
     throw new Error(`Blueprint ${DEFAULT_BLUEPRINT} does not exist. Please check the available blueprints at ${AWS_LUMINARLZ_BLUEPRINTS_GITHUB_URL}`);
   }
+};
 
-  const defaults = readProjectConfigDefaults();
-  const accountsRootEmail = options.accountsRootEmail ?? defaults.accountsRootEmail ?? await promptRequiredValue(
+const resolveProvidedOrDefault = (provided?: string, fallback?: string): string | undefined => {
+  return provided ?? fallback;
+};
+
+const resolveAccountsRootEmail = async (
+  rl: readline.Interface,
+  provided?: string,
+  fallback?: string,
+): Promise<string> => {
+  const resolved = resolveProvidedOrDefault(provided, fallback);
+  if (resolved) {
+    return resolved;
+  }
+  return promptRequiredValue(
     rl,
     'Please provide the email address used for the AWS accounts root emails: ',
     (value) => value.length >= 4 && value.includes('@'),
     (value) => `Invalid email address: ${value}`,
   );
+};
 
-  const region = options.region ?? defaults.region ?? await promptRequiredValue(
+const resolveRegion = async (
+  rl: readline.Interface,
+  provided?: string,
+  fallback?: string,
+): Promise<string> => {
+  const resolved = resolveProvidedOrDefault(provided, fallback);
+  if (resolved) {
+    return resolved;
+  }
+  return promptRequiredValue(
     rl,
     'Please provide the region the Landing Zone Accelerator on AWS has been installed in (the home region): ',
     (value) => value.length > 0,
     (value) => `Invalid region: ${value}`,
   );
+};
+
+const resolveSetupUpdateInputs = async (
+  rl: readline.Interface,
+  options: Pick<SetupUpdateOptions, 'accountsRootEmail' | 'region'>,
+): Promise<SetupUpdateInputs> => {
+  assertDefaultBlueprintExists();
+
+  const defaults = readProjectConfigDefaults();
+  const accountsRootEmail = await resolveAccountsRootEmail(
+    rl,
+    options.accountsRootEmail,
+    defaults.accountsRootEmail,
+  );
+  const region = await resolveRegion(rl, options.region, defaults.region);
 
   return {
     accountsRootEmail,

@@ -111,6 +111,25 @@ describe('Setup update interactive diff selector', () => {
       expect(typeof decision).toBe('object');
       expect(decision).toEqual({ updatedContent: 'FIRST\nl2\nl3\nl4\nl5\nl6\nl7\nl8\nl9\nsecond\n' });
     });
+
+    it('should use pairwise and remaining line prompts when switching to line mode for unequal replacements', async () => {
+      const { rl, question } = createRlMock(['l', 'y', 'y', 'y']);
+      const selector = createInteractiveDiffSelector({
+        rl,
+        autoApply: false,
+        dryRun: false,
+        lineMode: false,
+      });
+
+      const currentContent = 'awsAdministrator: old\n';
+      const renderedContent = 'awsAdministrator: new\nawsDeveloper: new\nawsBillingReviewer: new\n';
+
+      const decision = await selector(makeFileDiff(currentContent, renderedContent));
+      expect(decision).toEqual({ updatedContent: renderedContent });
+      expect(question).not.toHaveBeenCalledWith(expect.stringContaining('Apply this block change?'));
+      expect(question).toHaveBeenCalledWith(expect.stringContaining('Apply this line change?'));
+      expect(question).toHaveBeenCalledWith(expect.stringContaining('Add this line?'));
+    });
   });
 
   describe('when running in line mode', () => {
@@ -120,8 +139,8 @@ describe('Setup update interactive diff selector', () => {
       expect(decision).toEqual({ updatedContent: 'value: new\n' });
     });
 
-    it('should apply replacement block when removed and added line counts differ', async () => {
-      const selector = createSelector(['y'], { autoApply: false, dryRun: false, lineMode: true });
+    it('should apply mixed replacement when removed and added line counts differ', async () => {
+      const selector = createSelector(['y', 'y'], { autoApply: false, dryRun: false, lineMode: true });
       const currentContent = 'one\ntwo\nthree\n';
       const renderedContent = 'updated\nthree\n';
 
