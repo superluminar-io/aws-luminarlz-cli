@@ -68,6 +68,7 @@ Have a look at the [foundational blueprint README](blueprints/foundational/READM
 This includes `setup update`, which updates existing project files from the selected blueprint with interactive diffs.
 For a practical step-by-step workflow, see the [Setup Update Runbook](docs/runbooks/setup-update.md).
 For local CLI feature development against a real setup repository, see the [Local CLI Development Runbook](docs/runbooks/local-cli-development-with-real-setup.md).
+For command ordering and workflow guidance across `init`, `synth`, `deploy`, and `lza ...`, see the [CLI Command Playbook](docs/runbooks/cli-command-playbook.md).
 
 #### LZA Core CLI
 
