@@ -88,8 +88,8 @@ function getGitDiff(fileDiff: BlueprintFileDiff) {
     });
 
     const stdout = (diffResult.stdout ?? '')
-      .replaceAll(currentPath, `a/${fileDiff.relativePath}`)
-      .replaceAll(renderedPath, `b/${fileDiff.relativePath}`);
+      .replaceAll(currentPath, `/${fileDiff.relativePath}`)
+      .replaceAll(renderedPath, `/${fileDiff.relativePath}`);
 
     return {
       ...diffResult,
