@@ -46,10 +46,10 @@ describe('interactive merge orchestration', () => {
       unchangedCount: 4,
     });
 
-    const rl = makeRl();
+    const IReadLine = makeRl();
     const output = { write: jest.fn() };
 
-    const result = await runSetupUpdate(rl as readline.Interface, output, {
+    const result = await runSetupUpdate(IReadLine as readline.Interface, output, {
       accountsRootEmail: 'root@example.com',
       region: 'eu-central-1',
       autoApply: false,
@@ -57,9 +57,9 @@ describe('interactive merge orchestration', () => {
       lineMode: false,
     });
 
-    expect((rl.question as jest.Mock)).not.toHaveBeenCalled();
+    expect((IReadLine.question as jest.Mock)).not.toHaveBeenCalled();
     expect(createInteractiveDiffSelectorMock).toHaveBeenCalledWith({
-      rl,
+      IReadLine,
       autoApply: false,
       dryRun: true,
       lineMode: false,

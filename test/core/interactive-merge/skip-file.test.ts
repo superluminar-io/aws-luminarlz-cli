@@ -26,7 +26,7 @@ describe('Skip and accept file functionality', () => {
   it('should return skip when user presses s in block mode', async () => {
     const rl = createRl(['s']);
     const selector = createInteractiveDiffSelector({
-      rl,
+      IReadLine: rl,
       autoApply: false,
       dryRun: false,
       lineMode: false,
@@ -39,7 +39,7 @@ describe('Skip and accept file functionality', () => {
   it('should return skip on first hunk even with multiple hunks', async () => {
     const rl = createRl(['s']);
     const selector = createInteractiveDiffSelector({
-      rl,
+      IReadLine: rl,
       autoApply: false,
       dryRun: false,
       lineMode: false,
@@ -55,7 +55,7 @@ describe('Skip and accept file functionality', () => {
   it('should return skip when pressing s after accepting first hunk', async () => {
     const rl = createRl(['y', 's']);
     const selector = createInteractiveDiffSelector({
-      rl,
+      IReadLine: rl,
       autoApply: false,
       dryRun: false,
       lineMode: false,
@@ -71,7 +71,7 @@ describe('Skip and accept file functionality', () => {
   it('should include s option in prompt text', async () => {
     const rl = createRl(['s']);
     const selector = createInteractiveDiffSelector({
-      rl,
+      IReadLine: rl,
       autoApply: false,
       dryRun: false,
       lineMode: false,
@@ -87,7 +87,7 @@ describe('Skip and accept file functionality', () => {
   it('should return apply when user presses f to accept entire file', async () => {
     const rl = createRl(['f']);
     const selector = createInteractiveDiffSelector({
-      rl,
+      IReadLine: rl,
       autoApply: false,
       dryRun: false,
       lineMode: false,
@@ -100,7 +100,7 @@ describe('Skip and accept file functionality', () => {
   it('should accept all remaining hunks when f is pressed on first hunk', async () => {
     const rl = createRl(['f']);
     const selector = createInteractiveDiffSelector({
-      rl,
+      IReadLine: rl,
       autoApply: false,
       dryRun: false,
       lineMode: false,
@@ -116,7 +116,7 @@ describe('Skip and accept file functionality', () => {
   it('should accept first hunk and all remaining hunks when f is pressed on second hunk', async () => {
     const rl = createRl(['y', 'f']);
     const selector = createInteractiveDiffSelector({
-      rl,
+      IReadLine: rl,
       autoApply: false,
       dryRun: false,
       lineMode: false,
@@ -132,7 +132,7 @@ describe('Skip and accept file functionality', () => {
   it('should include f option in prompt text', async () => {
     const rl = createRl(['f']);
     const selector = createInteractiveDiffSelector({
-      rl,
+      IReadLine: rl,
       autoApply: false,
       dryRun: false,
       lineMode: false,

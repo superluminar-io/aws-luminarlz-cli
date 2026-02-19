@@ -1,33 +1,34 @@
 import { UserAbortError } from './interactive-errors';
+import { BlockChoice, LineChoice } from './interactive-session';
 import { OutputWriter, PromptReader } from './interactive-types';
 
 interface InteractiveInputState {
   isRaw: boolean;
 }
 
-type ChoiceInputOutcome =
+type ChoiceInputOutcome<T extends LineChoice | BlockChoice> =
   | { type: 'abort' }
   | { type: 'default' }
-  | { type: 'choice'; value: string }
+  | { type: 'choice'; value: T }
   | { type: 'ignore' };
 
 const isAbortSelection = (value: string): boolean => value === 'a';
 
 export class InteractiveTerminalInput {
   constructor(
-    private readonly rl: PromptReader,
+    private readonly readLine: PromptReader,
     private readonly stdout: OutputWriter,
   ) {}
 
-  async readChoice(
+  async readChoice<T extends LineChoice | BlockChoice>(
     prompt: string,
-    allowedChoices: Set<string>,
-    defaultChoice: string,
-  ): Promise<string> {
+    allowedChoices: Set<T>,
+    defaultChoice: T,
+  ): Promise<T> {
     if (!this.isInteractiveTerminal()) {
-      return this.readLineChoice(prompt, allowedChoices, defaultChoice);
+      return this.readLineChoice<T>(prompt, allowedChoices, defaultChoice);
     }
-    return this.readSingleKeyChoice(prompt, allowedChoices, defaultChoice);
+    return this.readSingleKeyChoice<T>(prompt, allowedChoices, defaultChoice);
   }
 
   async waitForAnyKey(
@@ -46,18 +47,18 @@ export class InteractiveTerminalInput {
     return process.stdin.isTTY && typeof process.stdin.setRawMode === 'function';
   }
 
-  private async readLineChoice(
+  private async readLineChoice<T extends LineChoice | BlockChoice>(
     prompt: string,
-    allowedChoices: Set<string>,
-    defaultChoice: string,
-  ): Promise<string> {
+    allowedChoices: Set<T>,
+    defaultChoice: T,
+  ): Promise<T> {
     while (true) {
-      const answer = (await this.rl.question(prompt)).trim().toLowerCase();
+      const answer = (await this.readLine.question(prompt)).trim().toLowerCase();
       if (answer.length === 0) {
         return defaultChoice;
       }
 
-      const choice = answer[0];
+      const choice = answer[0] as T;
       if (allowedChoices.has(choice)) {
         return choice;
       }
@@ -74,7 +75,7 @@ export class InteractiveTerminalInput {
 
   private async readLineAnyKey(modeLabel: string, filePath?: string, isDryRun = false): Promise<string> {
     const prompt = `${this.buildModePrefix(modeLabel, filePath, isDryRun)} Press Enter to continue, type l to preview this block in line mode, or a to abort: `;
-    const answer = (await this.rl.question(prompt)).trim().toLowerCase();
+    const answer = (await this.readLine.question(prompt)).trim().toLowerCase();
     if (isAbortSelection(answer)) {
       throw new UserAbortError();
     }
@@ -98,18 +99,18 @@ export class InteractiveTerminalInput {
     });
   }
 
-  private async readSingleKeyChoice(
+  private async readSingleKeyChoice<T extends LineChoice | BlockChoice>(
     prompt: string,
-    allowedChoices: Set<string>,
-    defaultChoice: string,
-  ): Promise<string> {
+    allowedChoices: Set<T>,
+    defaultChoice: T,
+  ): Promise<T> {
     this.write(prompt);
 
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<T>((resolve, reject) => {
       const stdinState = this.enterRawMode();
 
       const onData = (data: Buffer) => {
-        const outcome = this.parseChoiceInput(data, allowedChoices);
+        const outcome = this.parseChoiceInput<T>(data, allowedChoices);
         if (outcome.type === 'ignore') {
           return;
         }
@@ -120,12 +121,12 @@ export class InteractiveTerminalInput {
           return;
         }
         if (outcome.type === 'default') {
-          this.write('\n');
+          this.writeNewLine();
           resolve(defaultChoice);
           return;
         }
 
-        this.write('\n');
+        this.writeNewLine();
         resolve(outcome.value);
       };
 
@@ -138,10 +139,10 @@ export class InteractiveTerminalInput {
     });
   }
 
-  private parseChoiceInput(
+  private parseChoiceInput<T extends LineChoice | BlockChoice>(
     data: Buffer,
-    allowedChoices: Set<string>,
-  ): ChoiceInputOutcome {
+    allowedChoices: Set<T>,
+  ): ChoiceInputOutcome<T> {
     const input = data.toString('utf8').toLowerCase();
 
     if (this.isAbortKey(input)) {
@@ -152,11 +153,11 @@ export class InteractiveTerminalInput {
       return { type: 'default' };
     }
 
-    return this.resolveChoiceInputOutcome(input, allowedChoices);
+    return this.resolveChoiceInputOutcome<T>(input, allowedChoices);
   }
 
-  private resolveChoiceInputOutcome(input: string, allowedChoices: Set<string>): ChoiceInputOutcome {
-    const key = input[0];
+  private resolveChoiceInputOutcome<T extends LineChoice | BlockChoice>(input: string, allowedChoices: Set<T>): ChoiceInputOutcome<T> {
+    const key = input[0] as T;
     if (!key || !allowedChoices.has(key)) {
       return { type: 'ignore' };
     }
@@ -191,6 +192,11 @@ export class InteractiveTerminalInput {
   }
 
   private writeLine(text: string): void {
-    this.stdout.write(`${text}\n`);
+    this.stdout.write(`${text}`);
+    this.writeNewLine();
+  }
+
+  private writeNewLine(): void {
+    this.stdout.write('\n');
   }
 }

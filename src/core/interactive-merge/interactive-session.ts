@@ -1,6 +1,6 @@
 import {
-  materializeAppliedHunkLines,
-  materializeOriginalHunkLines,
+  extractAppliedHunkLines,
+  extractOriginalHunkLines,
   parseFileDiffHunks,
   rebuildContentFromHunks,
 } from './interactive-diff';
@@ -11,8 +11,13 @@ import { InteractiveTerminalInput } from './interactive-terminal-input';
 import { DiffHunk, HunkApplication, OutputWriter, PromptReader } from './interactive-types';
 import { BlueprintFileDiff, ExistingFileDecision } from '../blueprint/blueprint';
 
-const BLOCK_MODE_CHOICES = new Set(['y', 'n', 'l', 'f', 's', 'a']);
-const LINE_MODE_CHOICES = new Set(['y', 'n', 'a']);
+export const blockChoiceValues = ['y', 'n', 'l', 'f', 's', 'a'] as const;
+export type BlockChoice = typeof blockChoiceValues[number];
+export const lineChoiceValues = ['y', 'n', 'a'] as const;
+export type LineChoice = typeof lineChoiceValues[number];
+
+const BLOCK_MODE_CHOICES = new Set<BlockChoice>(blockChoiceValues);
+const LINE_MODE_CHOICES = new Set<LineChoice>(lineChoiceValues);
 
 interface HunkDecisionState {
   changed: boolean;
@@ -108,10 +113,10 @@ export class InteractiveDiffSession {
     };
 
     for (const [index, hunk] of hunks.entries()) {
-      this.writeLine('');
+      this.writeNewLine();
       this.printHunk(hunk, index, hunks.length);
 
-      const answer = await this.terminalInput.readChoice(
+      const answer = await this.terminalInput.readChoice<BlockChoice>(
         `[BLOCK MODE] [${filePath}] Apply this hunk? [y/N/l=line-mode for this hunk/f=accept file/s=skip file/a=abort]: `,
         BLOCK_MODE_CHOICES,
         'n',
@@ -198,7 +203,7 @@ export class InteractiveDiffSession {
     state: HunkDecisionState,
     context: { hunk: DiffHunk },
   ): Promise<boolean> {
-    state.hunkApplications.push({ hunk: context.hunk, lines: materializeOriginalHunkLines(context.hunk) });
+    state.hunkApplications.push({ hunk: context.hunk, lines: extractOriginalHunkLines(context.hunk) });
     return false;
   }
 
@@ -225,7 +230,7 @@ export class InteractiveDiffSession {
     visitor: (hunk: DiffHunk, index: number, total: number) => Promise<void>,
   ): Promise<void> {
     for (const [index, hunk] of hunks.entries()) {
-      this.writeLine('');
+      this.writeNewLine();
       this.printHunk(hunk, index, hunks.length);
       await visitor(hunk, index, hunks.length);
     }
@@ -247,17 +252,17 @@ export class InteractiveDiffSession {
   private applyAcceptedBlockHunk(state: HunkDecisionState, hunk: DiffHunk): void {
     state.acceptedHunksCount += 1;
     state.changed = true;
-    state.hunkApplications.push({ hunk, lines: materializeAppliedHunkLines(hunk) });
+    state.hunkApplications.push({ hunk, lines: extractAppliedHunkLines(hunk) });
   }
 
   private async previewHunkInLineMode(hunk: DiffHunk, filePath: string): Promise<void> {
     const changedLines = hunk.lines.filter((line) => line.startsWith('+') || line.startsWith('-'));
 
-    this.writeLine('');
+    this.writeNewLine();
     this.writeLine(colorizeInfo('[LINE MODE][DRY RUN] Temporary preview for current hunk.'));
 
     for (const [lineIndex, line] of changedLines.entries()) {
-      this.writeLine('');
+      this.writeNewLine();
       this.writeLine(colorizeMuted(`(${lineIndex + 1}/${changedLines.length})`));
       this.writeLine(colorizeDiffLine(line));
       await this.terminalInput.waitForAnyKey('line', filePath, true);
@@ -279,8 +284,8 @@ export class InteractiveDiffSession {
     return processor.processHunk(hunk);
   }
 
-  private async askLineChoice(prompt: string): Promise<string> {
-    const answer = await this.terminalInput.readChoice(prompt, LINE_MODE_CHOICES, 'n');
+  private async askLineChoice(prompt: string): Promise<LineChoice> {
+    const answer = await this.terminalInput.readChoice<LineChoice>(prompt, LINE_MODE_CHOICES, 'n');
     if (isAbortSelection(answer)) {
       throw new UserAbortError();
     }
@@ -295,7 +300,7 @@ export class InteractiveDiffSession {
   }
 
   private prepareHunks(fileDiff: BlueprintFileDiff, heading: string): DiffHunk[] | null {
-    this.writeLine('');
+    this.writeNewLine();
     this.writeLine(heading);
 
     const hunks = parseFileDiffHunks(fileDiff);
@@ -337,6 +342,11 @@ export class InteractiveDiffSession {
   }
 
   private writeLine(text: string): void {
-    this.stdout.write(`${text}\n`);
+    this.stdout.write(`${text}`);
+    this.writeNewLine();
+  }
+
+  private writeNewLine() {
+    this.stdout.write('\n');
   }
 }

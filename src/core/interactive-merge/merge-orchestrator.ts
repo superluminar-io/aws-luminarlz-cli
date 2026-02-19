@@ -41,12 +41,12 @@ const readProjectConfigDefaults = (): ProjectConfigDefaults => {
 };
 
 const promptRequiredValue = async (
-  rl: readline.Interface,
+  IReadLine: readline.Interface,
   prompt: string,
   validate: (value: string) => boolean,
   errorMessage: (value: string) => string,
 ): Promise<string> => {
-  const value = await rl.question(prompt);
+  const value = await IReadLine.question(prompt);
   if (!validate(value)) {
     throw new Error(errorMessage(value));
   }
@@ -64,7 +64,7 @@ const resolveProvidedOrDefault = (provided?: string, fallback?: string): string 
 };
 
 const resolveAccountsRootEmail = async (
-  rl: readline.Interface,
+  IReadLine: readline.Interface,
   provided?: string,
   fallback?: string,
 ): Promise<string> => {
@@ -73,7 +73,7 @@ const resolveAccountsRootEmail = async (
     return resolved;
   }
   return promptRequiredValue(
-    rl,
+    IReadLine,
     'Please provide the email address used for the AWS accounts root emails: ',
     (value) => value.length >= 4 && value.includes('@'),
     (value) => `Invalid email address: ${value}`,
@@ -81,7 +81,7 @@ const resolveAccountsRootEmail = async (
 };
 
 const resolveRegion = async (
-  rl: readline.Interface,
+  IReadLine: readline.Interface,
   provided?: string,
   fallback?: string,
 ): Promise<string> => {
@@ -90,7 +90,7 @@ const resolveRegion = async (
     return resolved;
   }
   return promptRequiredValue(
-    rl,
+    IReadLine,
     'Please provide the region the Landing Zone Accelerator on AWS has been installed in (the home region): ',
     (value) => value.length > 0,
     (value) => `Invalid region: ${value}`,
@@ -98,18 +98,18 @@ const resolveRegion = async (
 };
 
 const resolveSetupUpdateInputs = async (
-  rl: readline.Interface,
+  IReadLine: readline.Interface,
   options: Pick<SetupUpdateOptions, 'accountsRootEmail' | 'region'>,
 ): Promise<SetupUpdateInputs> => {
   assertDefaultBlueprintExists();
 
   const defaults = readProjectConfigDefaults();
   const accountsRootEmail = await resolveAccountsRootEmail(
-    rl,
+    IReadLine,
     options.accountsRootEmail,
     defaults.accountsRootEmail,
   );
-  const region = await resolveRegion(rl, options.region, defaults.region);
+  const region = await resolveRegion(IReadLine, options.region, defaults.region);
 
   return {
     accountsRootEmail,
@@ -133,17 +133,17 @@ export const writeSetupUpdateSummary = (
 };
 
 export const runSetupUpdate = async (
-  rl: readline.Interface,
+  IReadLine: readline.Interface,
   output: SetupUpdateOutput,
   options: SetupUpdateOptions,
 ): Promise<UpdateBlueprintResult> => {
-  const inputs = await resolveSetupUpdateInputs(rl, {
+  const inputs = await resolveSetupUpdateInputs(IReadLine, {
     accountsRootEmail: options.accountsRootEmail,
     region: options.region,
   });
 
   const onExistingFileDiff = createInteractiveDiffSelector({
-    rl,
+    IReadLine: IReadLine,
     autoApply: options.autoApply,
     dryRun: options.dryRun,
     lineMode: options.lineMode,

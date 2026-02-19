@@ -36,13 +36,13 @@ export class SetupUpdate extends Command {
   });
 
   async execute() {
-    const rl = readline.createInterface({
+    const IReadline = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
     });
 
     try {
-      const summary = await runSetupUpdate(rl, this.context.stdout, {
+      const summary = await runSetupUpdate(IReadline, this.context.stdout, {
         accountsRootEmail: this.accountsRootEmail,
         region: this.region,
         autoApply: Boolean(this.yes),
@@ -58,7 +58,7 @@ export class SetupUpdate extends Command {
       }
       throw error;
     } finally {
-      rl.close();
+      IReadline.close();
     }
   }
 }

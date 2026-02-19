@@ -30,7 +30,7 @@ describe('Setup update interactive diff selector error handling', () => {
     };
 
     const selector = module.createInteractiveDiffSelector({
-      rl,
+      IReadLine: rl,
       autoApply: false,
       dryRun: false,
       lineMode: false,
@@ -56,7 +56,7 @@ describe('Setup update interactive diff selector error handling', () => {
     };
 
     const selector = module.createInteractiveDiffSelector({
-      rl,
+      IReadLine: rl,
       autoApply: false,
       dryRun: false,
       lineMode: false,
@@ -81,7 +81,7 @@ describe('Setup update interactive diff selector error handling', () => {
     };
 
     const selector = module.createInteractiveDiffSelector({
-      rl,
+      IReadLine: rl,
       autoApply: false,
       dryRun: false,
       lineMode: false,
@@ -106,7 +106,7 @@ describe('Setup update interactive diff selector error handling', () => {
     };
 
     const selector = module.createInteractiveDiffSelector({
-      rl,
+      IReadLine: rl,
       autoApply: false,
       dryRun: false,
       lineMode: false,

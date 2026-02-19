@@ -1,4 +1,5 @@
 import { colorizeDiffLine } from './interactive-output';
+import { BlockChoice, LineChoice } from './interactive-session';
 import { DiffHunk } from './interactive-types';
 
 export interface LineModeResult {
@@ -6,12 +7,12 @@ export interface LineModeResult {
   changed: boolean;
 }
 
-type AskLineChoice = (prompt: string) => Promise<string>;
+type AskLineChoice<T extends LineChoice | BlockChoice> = (prompt: string) => Promise<T>;
 type WriteLine = (text: string) => void;
 
 interface LineModeContext {
   filePath: string;
-  askLineChoice: AskLineChoice;
+  askLineChoice: AskLineChoice<LineChoice | BlockChoice>;
   writeLine: WriteLine;
 }
 
@@ -19,7 +20,7 @@ interface HunkStepResult extends LineModeResult {
   nextIndex: number;
 }
 
-type DiffLineKind = 'context' | 'remove' | 'add' | 'other';
+type DiffLineType = 'context' | 'remove' | 'add' | 'other';
 
 export class InteractiveLineModeProcessor {
   constructor(private readonly context: LineModeContext) {}
@@ -44,17 +45,18 @@ export class InteractiveLineModeProcessor {
     index: number,
   ): Promise<HunkStepResult> {
     const line = hunkLines[index];
-    const kind = this.getDiffLineKind(line);
+    const diffLineType = this.detectDiffLineType(line);
 
-    if (kind === 'context') {
+    const isUnchangedContextPart = diffLineType === 'context';
+    if (isUnchangedContextPart) {
       return { lines: [line.slice(1)], changed: false, nextIndex: index + 1 };
     }
 
-    if (kind === 'remove') {
+    if (diffLineType === 'remove') {
       return this.processRemovalGroup(hunkLines, index);
     }
 
-    if (kind === 'add') {
+    if (diffLineType === 'add') {
       const addResult = await this.processAddedLine(line);
       return { ...addResult, nextIndex: index + 1 };
     }
@@ -62,7 +64,7 @@ export class InteractiveLineModeProcessor {
     return { lines: [], changed: false, nextIndex: index + 1 };
   }
 
-  private getDiffLineKind(line: string): DiffLineKind {
+  private detectDiffLineType(line: string): DiffLineType {
     if (line.startsWith(' ')) return 'context';
     if (line.startsWith('-')) return 'remove';
     if (line.startsWith('+')) return 'add';
@@ -73,8 +75,8 @@ export class InteractiveLineModeProcessor {
     hunkLines: string[],
     startIndex: number,
   ): Promise<HunkStepResult> {
-    const removed = this.collectConsecutive(hunkLines, startIndex, '-');
-    const added = this.collectConsecutive(hunkLines, removed.nextIndex, '+');
+    const removed = this.groupLinesByDiffPrefix(hunkLines, startIndex, '-');
+    const added = this.groupLinesByDiffPrefix(hunkLines, removed.nextIndex, '+');
 
     if (added.lines.length > 0) {
       const replacement = await this.processReplacementGroup(removed.lines, added.lines);
@@ -90,24 +92,24 @@ export class InteractiveLineModeProcessor {
     addedLines: string[],
   ): Promise<LineModeResult> {
     if (removedLines.length === addedLines.length) {
-      return this.processPairwiseReplacement(removedLines, addedLines);
+      return this.processDirectReplacement(removedLines, addedLines);
     }
-    return this.processMixedReplacement(removedLines, addedLines);
+    return this.processPartialReplacement(removedLines, addedLines);
   }
 
-  private async processPairwiseReplacement(
+  private async processDirectReplacement(
     removedLines: string[],
     addedLines: string[],
   ): Promise<LineModeResult> {
-    return this.processPairedReplacementRange(removedLines, addedLines, 0, removedLines.length);
+    return this.processDirectReplacementRange(removedLines, addedLines, 0, removedLines.length);
   }
 
-  private async processMixedReplacement(
+  private async processPartialReplacement(
     removedLines: string[],
     addedLines: string[],
   ): Promise<LineModeResult> {
     const pairCount = Math.min(removedLines.length, addedLines.length);
-    const pairedResult = await this.processPairedReplacementRange(removedLines, addedLines, 0, pairCount);
+    const pairedResult = await this.processDirectReplacementRange(removedLines, addedLines, 0, pairCount);
     const removalResult = await this.processOptionalRemainingRemovals(removedLines, pairCount);
     const additionResult = await this.processOptionalRemainingAdditions(addedLines, pairCount);
 
@@ -137,7 +139,7 @@ export class InteractiveLineModeProcessor {
     return { lines: [], changed: false };
   }
 
-  private async processPairedReplacementRange(
+  private async processDirectReplacementRange(
     removedLines: string[],
     addedLines: string[],
     startIndex: number,
@@ -241,7 +243,7 @@ export class InteractiveLineModeProcessor {
     return { lines: [], changed: false };
   }
 
-  private collectConsecutive(
+  private groupLinesByDiffPrefix(
     lines: string[],
     startIndex: number,
     prefix: '-' | '+',

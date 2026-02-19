@@ -13,6 +13,18 @@ const project = new typescript.TypeScriptProject({
   authorOrganization: true,
   authorUrl: 'https://superluminar.io',
   authorName: 'superluminar GmbH',
+  tsconfig: {
+    compilerOptions: {
+      lib: ['esnext'],
+      target: 'ESNEXT',
+    },
+  },
+  tsconfigDev: {
+    compilerOptions: {
+      lib: ['esnext'],
+      target: 'ESNEXT',
+    },
+  },
   releaseToNpm: true,
   npmTrustedPublishing: true,
   release: true,

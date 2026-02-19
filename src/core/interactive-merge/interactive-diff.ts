@@ -74,18 +74,34 @@ const parseDiffHunks = (diffText: string): DiffHunk[] => {
   return hunks;
 };
 
-const renderGitStyleDiff = (fileDiff: BlueprintFileDiff): string => {
+function getGitDiff(fileDiff: BlueprintFileDiff) {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'aws-luminarlz-diff-'));
   const currentPath = path.join(tempDir, 'current');
   const renderedPath = path.join(tempDir, 'rendered');
-  fs.writeFileSync(currentPath, fileDiff.currentContent);
-  fs.writeFileSync(renderedPath, fileDiff.renderedContent);
 
-  const diffResult = spawnSync('git', ['--no-pager', 'diff', '--no-index', '--', currentPath, renderedPath], {
-    encoding: 'utf8',
-  });
+  try {
+    fs.writeFileSync(currentPath, fileDiff.currentContent);
+    fs.writeFileSync(renderedPath, fileDiff.renderedContent);
 
-  fs.rmSync(tempDir, { recursive: true, force: true });
+    const diffResult = spawnSync('git', ['--no-pager', 'diff', '--no-index', '--', currentPath, renderedPath], {
+      encoding: 'utf8',
+    });
+
+    const stdout = (diffResult.stdout ?? '')
+      .replaceAll(currentPath, `a/${fileDiff.relativePath}`)
+      .replaceAll(renderedPath, `b/${fileDiff.relativePath}`);
+
+    return {
+      ...diffResult,
+      stdout,
+    };
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
+const renderGitStyleDiff = (fileDiff: BlueprintFileDiff): string => {
+  const diffResult = getGitDiff(fileDiff);
 
   if (diffResult.error) {
     throw new Error(`Failed to run git diff for ${fileDiff.relativePath}: ${diffResult.error.message}`);
@@ -102,12 +118,7 @@ const renderGitStyleDiff = (fileDiff: BlueprintFileDiff): string => {
     return `No textual diff for ${fileDiff.relativePath}`;
   }
 
-  return rawDiff
-    .split(/\r\n|\n|\r/)
-    .map((line) => line
-      .split(currentPath).join(`a/${fileDiff.relativePath}`)
-      .split(renderedPath).join(`b/${fileDiff.relativePath}`))
-    .join('\n');
+  return rawDiff;
 };
 
 const detectLineDelimiter = (content: string): string => {
@@ -132,24 +143,29 @@ export const parseFileDiffHunks = (fileDiff: BlueprintFileDiff): DiffHunk[] => {
   return parseDiffHunks(renderGitStyleDiff(fileDiff));
 };
 
-export const materializeAppliedHunkLines = (hunk: DiffHunk): string[] => {
+const CONTEXT_LINE_PREFIX = ' ';
+const ADDED_LINE_PREFIX = '+';
+const REMOVED_LINE_PREFIX = '-';
+
+const extractHunkLinesByPrefixes = (hunk: DiffHunk, allowedPrefixes: ReadonlySet<string>): string[] => {
   const result: string[] = [];
   for (const line of hunk.lines) {
-    if (line.startsWith(' ') || line.startsWith('+')) {
+    if (allowedPrefixes.has(line[0])) {
       result.push(line.slice(1));
     }
   }
   return result;
 };
 
-export const materializeOriginalHunkLines = (hunk: DiffHunk): string[] => {
-  const result: string[] = [];
-  for (const line of hunk.lines) {
-    if (line.startsWith(' ') || line.startsWith('-')) {
-      result.push(line.slice(1));
-    }
-  }
-  return result;
+const APPLIED_LINE_PREFIXES = new Set([CONTEXT_LINE_PREFIX, ADDED_LINE_PREFIX]);
+const ORIGINAL_LINE_PREFIXES = new Set([CONTEXT_LINE_PREFIX, REMOVED_LINE_PREFIX]);
+
+export const extractAppliedHunkLines = (hunk: DiffHunk): string[] => {
+  return extractHunkLinesByPrefixes(hunk, APPLIED_LINE_PREFIXES);
+};
+
+export const extractOriginalHunkLines = (hunk: DiffHunk): string[] => {
+  return extractHunkLinesByPrefixes(hunk, ORIGINAL_LINE_PREFIXES);
 };
 
 export const rebuildContentFromHunks = (
@@ -159,19 +175,17 @@ export const rebuildContentFromHunks = (
   const originalLines = splitNormalizedLines(currentContent);
   const resultLines: string[] = [];
   let lineCursor = 1;
+  const lineIndexFromCursor = (cursor: number): number => Math.max(0, cursor - 1);
+  const lineIndexFromHunkStart = (oldStart: number): number => Math.max(0, oldStart - 1);
 
   for (const { hunk, lines } of hunkApplications) {
-    if (hunk.oldStart > lineCursor) {
-      resultLines.push(...originalLines.slice(lineCursor - 1, hunk.oldStart - 1));
-    }
-
+    const unchangedLines = originalLines.slice(lineIndexFromCursor(lineCursor), lineIndexFromHunkStart(hunk.oldStart));
+    resultLines.push(...unchangedLines);
     resultLines.push(...lines);
     lineCursor = Math.max(1, hunk.oldStart + hunk.oldCount);
   }
 
-  if (lineCursor <= originalLines.length) {
-    resultLines.push(...originalLines.slice(lineCursor - 1));
-  }
+  resultLines.push(...originalLines.slice(lineIndexFromCursor(lineCursor)));
 
   return joinWithOriginalDelimiter(currentContent, resultLines);
 };
