@@ -30,7 +30,6 @@ describe('LZA Installer Version - check command', () => {
   const organizationsMock = mockClient(OrganizationsClient);
   const ssoAdminMock = mockClient(SSOAdminClient);
   const cloudTrailMock = mockClient(CloudTrailClient);
-  const LZA_PREFIX_PARAMETER_NAME = '/accelerator/lza-prefix';
   const FINALIZE_VERSION_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${TEST_REGION}/version`;
 
   beforeEach(() => {
@@ -82,15 +81,6 @@ describe('LZA Installer Version - check command', () => {
   it('should succeed after init when installed version matches configured version', async () => {
     // Arrange SSM mock to return the configured version
     ssmMock.on(GetParameterCommand, {
-      Name: LZA_PREFIX_PARAMETER_NAME,
-    }).resolves({
-      Parameter: {
-        Name: LZA_PREFIX_PARAMETER_NAME,
-        Value: 'AWSAccelerator',
-        Type: 'String',
-      },
-    });
-    ssmMock.on(GetParameterCommand, {
       Name: FINALIZE_VERSION_PARAMETER_NAME,
     }).resolves({
       Parameter: {
@@ -137,15 +127,6 @@ describe('LZA Installer Version - check command', () => {
   });
 
   it('should fail after init when installed version does not match configured version', async () => {
-    ssmMock.on(GetParameterCommand, {
-      Name: LZA_PREFIX_PARAMETER_NAME,
-    }).resolves({
-      Parameter: {
-        Name: LZA_PREFIX_PARAMETER_NAME,
-        Value: 'AWSAccelerator',
-        Type: 'String',
-      },
-    });
     ssmMock.on(GetParameterCommand, {
       Name: FINALIZE_VERSION_PARAMETER_NAME,
     }).resolves({
