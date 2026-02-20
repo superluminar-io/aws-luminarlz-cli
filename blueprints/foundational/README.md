@@ -11,7 +11,6 @@ to manage and deploy the LZA config.
 * [templates](templates) contains the liquid templates and other files that are used to generate the LZA config.
 * [customizations](customizations) contains a CDK app used to generate the CloudFormation templates that are defined in the [customizations-config](templates/customizations-config.yaml.liquid).
 * [config.ts](config.ts) defines how the templates are generated and all project relevant configurations.
-  * `cloudTrailLogGroupName` is resolved during `init` when initial rollout prerequisites are ready.
 * [docs](docs) contains:
   * [Architecture Decision Records (ADRs)](docs/adrs) that document project-specific decisions.
   * [Runbooks](docs/runbooks) that help you with Landing Zone tasks.
