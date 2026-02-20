@@ -46,7 +46,6 @@ export const ENABLED_REGIONS = [GLOBAL_REGION, HOME_REGION];
 
 /**
  * The CloudTrail log group that Control Tower creates in the home region.
- * This value is resolved during `init` when initial rollout prerequisites are available.
  */
 export const CLOUDTRAIL_LOG_GROUP_NAME = '<<AWS_CLOUDTRAIL_LOG_GROUP_NAME>>';
 
