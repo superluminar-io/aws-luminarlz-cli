@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { CloudTrailClient, DescribeTrailsCommand } from '@aws-sdk/client-cloudtrail';
 import { OrganizationsClient, DescribeOrganizationCommand, ListRootsCommand } from '@aws-sdk/client-organizations';
-import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
+import { SSMClient, GetParameterCommand, ParameterNotFound } from '@aws-sdk/client-ssm';
 import { SSOAdminClient, ListInstancesCommand } from '@aws-sdk/client-sso-admin';
 import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
 import { mockClient } from 'aws-sdk-client-mock';
@@ -27,29 +27,11 @@ describe('Init Command', () => {
   const ssoMock = mockClient(SSOAdminClient);
   const ssmMock = mockClient(SSMClient);
   const cloudTrailMock = mockClient(CloudTrailClient);
-  const LZA_PREFIX_PARAMETER_NAME = '/accelerator/lza-prefix';
   const FINALIZE_VERSION_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${TEST_REGION}/version`;
   const EU_HOME_REGION = 'eu-central-1';
-  const EU_FINALIZE_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${EU_HOME_REGION}/version`;
   const US_GOV_HOME_REGION = 'us-gov-east-1';
-  const US_GOV_FINALIZE_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-us-gov-west-1/version`;
   const CN_HOME_REGION = 'cn-north-1';
-  const CN_FINALIZE_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-cn-northwest-1/version`;
-  const US_GOV_HOME_FINALIZE_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${US_GOV_HOME_REGION}/version`;
-  const CN_HOME_FINALIZE_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${CN_HOME_REGION}/version`;
   const FINALIZE_PARAMETER_VALUE = TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2;
-
-  const mockLzaPrefixParameter = () => {
-    ssmMock.on(GetParameterCommand, {
-      Name: LZA_PREFIX_PARAMETER_NAME,
-    }).resolves({
-      Parameter: {
-        Name: LZA_PREFIX_PARAMETER_NAME,
-        Value: 'AWSAccelerator',
-        Type: 'String',
-      },
-    });
-  };
 
   const mockInstallerVersionParameter = () => {
     ssmMock.on(GetParameterCommand, {
@@ -78,12 +60,15 @@ describe('Init Command', () => {
   const mockFinalizeNotFound = (parameterName: string) => {
     ssmMock.on(GetParameterCommand, {
       Name: parameterName,
-    }).rejects(new Error('ParameterNotFound'));
+    }).rejects(new ParameterNotFound({
+      $metadata: {},
+      message: 'Parameter not found.',
+    }));
   };
 
   const resetSsmInitBase = () => {
     ssmMock.reset();
-    mockLzaPrefixParameter();
+    mockFinalizeVersionParameter(FINALIZE_VERSION_PARAMETER_NAME, FINALIZE_PARAMETER_VALUE);
     mockInstallerVersionParameter();
   };
 
@@ -143,9 +128,7 @@ describe('Init Command', () => {
       ],
     });
 
-    mockLzaPrefixParameter();
-    mockFinalizeVersionParameter(FINALIZE_VERSION_PARAMETER_NAME, FINALIZE_PARAMETER_VALUE);
-    mockInstallerVersionParameter();
+    resetSsmInitBase();
     cloudTrailMock.on(DescribeTrailsCommand).resolves({
       trailList: [
         {
@@ -178,30 +161,32 @@ describe('Init Command', () => {
   });
 
   it('should fail when finalize marker parameter is missing', async () => {
+    resetSsmInitBase();
     mockFinalizeNotFound(FINALIZE_VERSION_PARAMETER_NAME);
     await expect(runInit(TEST_REGION)).rejects.toThrow();
+    expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 1);
+    expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
+      Name: FINALIZE_VERSION_PARAMETER_NAME,
+    });
 
     expect(fs.existsSync(path.join(temp.directory, 'config.ts'))).toBe(false);
   });
 
-  it('should initialize when finalize marker exists only in global region for a non-global home region', async () => {
+  it('should initialize when global finalize marker exists for a non-global home region', async () => {
     resetSsmInitBase();
-    mockFinalizeNotFound(EU_FINALIZE_PARAMETER_NAME);
-    mockFinalizeVersionParameter(FINALIZE_VERSION_PARAMETER_NAME, FINALIZE_PARAMETER_VALUE);
     await runInit(EU_HOME_REGION);
+    expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
+      Name: FINALIZE_VERSION_PARAMETER_NAME,
+    });
 
     expect(fs.existsSync(path.join(temp.directory, 'config.ts'))).toBe(true);
   });
 
-  it('should fail with both checked finalize parameter paths when marker is missing in home and global region', async () => {
+  it('should fail when global finalize marker is missing for a non-global home region', async () => {
     resetSsmInitBase();
-    mockFinalizeNotFound(EU_FINALIZE_PARAMETER_NAME);
     mockFinalizeNotFound(FINALIZE_VERSION_PARAMETER_NAME);
     await expect(runInit(EU_HOME_REGION)).rejects.toThrow();
-    expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 3);
-    expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
-      Name: EU_FINALIZE_PARAMETER_NAME,
-    });
+    expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 1);
     expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
       Name: FINALIZE_VERSION_PARAMETER_NAME,
     });
@@ -211,26 +196,28 @@ describe('Init Command', () => {
     resetSsmInitBase();
     mockFinalizeVersionParameter(FINALIZE_VERSION_PARAMETER_NAME, '');
     await expect(runInit(TEST_REGION)).rejects.toThrow();
-    expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 2);
+    expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 1);
     expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
       Name: FINALIZE_VERSION_PARAMETER_NAME,
     });
   });
 
-  it('should initialize when us-gov home region uses us-gov-west-1 finalize marker fallback', async () => {
+  it('should initialize when us-gov home region relies on the global finalize marker', async () => {
     resetSsmInitBase();
-    mockFinalizeNotFound(US_GOV_HOME_FINALIZE_PARAMETER_NAME);
-    mockFinalizeVersionParameter(US_GOV_FINALIZE_PARAMETER_NAME, FINALIZE_PARAMETER_VALUE);
     await runInit(US_GOV_HOME_REGION);
+    expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
+      Name: FINALIZE_VERSION_PARAMETER_NAME,
+    });
 
     expect(fs.existsSync(path.join(temp.directory, 'config.ts'))).toBe(true);
   });
 
-  it('should initialize when cn home region uses cn-northwest-1 finalize marker fallback', async () => {
+  it('should initialize when cn home region relies on the global finalize marker', async () => {
     resetSsmInitBase();
-    mockFinalizeNotFound(CN_HOME_FINALIZE_PARAMETER_NAME);
-    mockFinalizeVersionParameter(CN_FINALIZE_PARAMETER_NAME, FINALIZE_PARAMETER_VALUE);
     await runInit(CN_HOME_REGION);
+    expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
+      Name: FINALIZE_VERSION_PARAMETER_NAME,
+    });
 
     expect(fs.existsSync(path.join(temp.directory, 'config.ts'))).toBe(true);
   });
