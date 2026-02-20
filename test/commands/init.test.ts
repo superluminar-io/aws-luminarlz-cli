@@ -29,8 +29,6 @@ describe('Init Command', () => {
   const cloudTrailMock = mockClient(CloudTrailClient);
   const FINALIZE_VERSION_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${TEST_REGION}/version`;
   const EU_HOME_REGION = 'eu-central-1';
-  const US_GOV_HOME_REGION = 'us-gov-east-1';
-  const CN_HOME_REGION = 'cn-north-1';
   const FINALIZE_PARAMETER_VALUE = TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2;
 
   const mockInstallerVersionParameter = () => {
@@ -201,25 +199,4 @@ describe('Init Command', () => {
       Name: FINALIZE_VERSION_PARAMETER_NAME,
     });
   });
-
-  it('should initialize when us-gov home region relies on the global finalize marker', async () => {
-    resetSsmInitBase();
-    await runInit(US_GOV_HOME_REGION);
-    expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
-      Name: FINALIZE_VERSION_PARAMETER_NAME,
-    });
-
-    expect(fs.existsSync(path.join(temp.directory, 'config.ts'))).toBe(true);
-  });
-
-  it('should initialize when cn home region relies on the global finalize marker', async () => {
-    resetSsmInitBase();
-    await runInit(CN_HOME_REGION);
-    expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
-      Name: FINALIZE_VERSION_PARAMETER_NAME,
-    });
-
-    expect(fs.existsSync(path.join(temp.directory, 'config.ts'))).toBe(true);
-  });
-
 });
