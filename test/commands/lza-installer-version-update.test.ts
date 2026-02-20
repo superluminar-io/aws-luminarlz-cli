@@ -39,7 +39,6 @@ describe('LZA Installer Version - update command', () => {
   const organizationsMock = mockClient(OrganizationsClient);
   const ssoAdminMock = mockClient(SSOAdminClient);
   const cloudTrailMock = mockClient(CloudTrailClient);
-  const LZA_PREFIX_PARAMETER_NAME = '/accelerator/lza-prefix';
   const FINALIZE_VERSION_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${TEST_REGION}/version`;
 
   beforeEach(() => {
@@ -92,15 +91,6 @@ describe('LZA Installer Version - update command', () => {
   it('should be a no-op when installed version is already up to date', async () => {
     // Installed version equals configured version (1.12.2)
     ssmMock.on(GetParameterCommand, {
-      Name: LZA_PREFIX_PARAMETER_NAME,
-    }).resolves({
-      Parameter: {
-        Name: LZA_PREFIX_PARAMETER_NAME,
-        Value: 'AWSAccelerator',
-        Type: 'String',
-      },
-    });
-    ssmMock.on(GetParameterCommand, {
       Name: FINALIZE_VERSION_PARAMETER_NAME,
     }).resolves({
       Parameter: {
@@ -135,15 +125,6 @@ describe('LZA Installer Version - update command', () => {
 
   it('should trigger a CloudFormation update when configured version is newer than installed', async () => {
     // Init sees 1.12.2, then update sees 1.12.1 (older)
-    ssmMock.on(GetParameterCommand, {
-      Name: LZA_PREFIX_PARAMETER_NAME,
-    }).resolves({
-      Parameter: {
-        Name: LZA_PREFIX_PARAMETER_NAME,
-        Value: 'AWSAccelerator',
-        Type: 'String',
-      },
-    });
     ssmMock.on(GetParameterCommand, {
       Name: FINALIZE_VERSION_PARAMETER_NAME,
     }).resolves({
@@ -218,15 +199,6 @@ describe('LZA Installer Version - update command', () => {
 
   it('should fail when configured version is smaller than installed version', async () => {
     // Init sees 1.12.2, then update sees newer 1.12.3
-    ssmMock.on(GetParameterCommand, {
-      Name: LZA_PREFIX_PARAMETER_NAME,
-    }).resolves({
-      Parameter: {
-        Name: LZA_PREFIX_PARAMETER_NAME,
-        Value: 'AWSAccelerator',
-        Type: 'String',
-      },
-    });
     ssmMock.on(GetParameterCommand, {
       Name: FINALIZE_VERSION_PARAMETER_NAME,
     }).resolves({

@@ -25,7 +25,6 @@ describe('Synth command', () => {
   const organizationsMock = mockClient(OrganizationsClient);
   const ssoAdminMock = mockClient(SSOAdminClient);
   const cloudTrailMock = mockClient(CloudTrailClient);
-  const LZA_PREFIX_PARAMETER_NAME = '/accelerator/lza-prefix';
   const FINALIZE_VERSION_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${TEST_REGION}/version`;
 
   beforeEach(() => {
@@ -38,15 +37,6 @@ describe('Synth command', () => {
     cloudTrailMock.reset();
     jest.clearAllMocks();
 
-    ssmMock.on(GetParameterCommand, {
-      Name: LZA_PREFIX_PARAMETER_NAME,
-    }).resolves({
-      Parameter: {
-        Name: LZA_PREFIX_PARAMETER_NAME,
-        Value: 'AWSAccelerator',
-        Type: 'String',
-      },
-    });
     ssmMock.on(GetParameterCommand, {
       Name: FINALIZE_VERSION_PARAMETER_NAME,
     }).resolves({
