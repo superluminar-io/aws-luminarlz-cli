@@ -1,3 +1,4 @@
+import { CloudTrailClient, DescribeTrailsCommand } from '@aws-sdk/client-cloudtrail';
 import { DescribeOrganizationCommand, ListRootsCommand, OrganizationsClient } from '@aws-sdk/client-organizations';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { ListInstancesCommand, SSOAdminClient } from '@aws-sdk/client-sso-admin';
@@ -23,6 +24,8 @@ describe('Synth command', () => {
   const stsMock = mockClient(STSClient);
   const organizationsMock = mockClient(OrganizationsClient);
   const ssoAdminMock = mockClient(SSOAdminClient);
+  const cloudTrailMock = mockClient(CloudTrailClient);
+  const FINALIZE_VERSION_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${TEST_REGION}/version`;
 
   beforeEach(() => {
     temp = useTempDir();
@@ -31,9 +34,21 @@ describe('Synth command', () => {
     stsMock.reset();
     organizationsMock.reset();
     ssoAdminMock.reset();
+    cloudTrailMock.reset();
     jest.clearAllMocks();
 
-    ssmMock.on(GetParameterCommand).resolves({
+    ssmMock.on(GetParameterCommand, {
+      Name: FINALIZE_VERSION_PARAMETER_NAME,
+    }).resolves({
+      Parameter: {
+        Name: FINALIZE_VERSION_PARAMETER_NAME,
+        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
+        Type: 'String',
+      },
+    });
+    ssmMock.on(GetParameterCommand, {
+      Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+    }).resolves({
       Parameter: {
         Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
         Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
@@ -70,6 +85,15 @@ describe('Synth command', () => {
         {
           InstanceArn: 'arn:aws:sso:::instance/ssoins-example',
           IdentityStoreId: 'd-example123',
+        },
+      ],
+    });
+
+    cloudTrailMock.on(DescribeTrailsCommand).resolves({
+      trailList: [
+        {
+          IsOrganizationTrail: true,
+          CloudWatchLogsLogGroupArn: `arn:aws:logs:${TEST_REGION}:${TEST_ACCOUNT_ID}:log-group:aws-controltower/CloudTrailLogs-xyz`,
         },
       ],
     });

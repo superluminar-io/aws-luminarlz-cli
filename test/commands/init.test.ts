@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { CloudTrailClient, DescribeTrailsCommand } from '@aws-sdk/client-cloudtrail';
 import { OrganizationsClient, DescribeOrganizationCommand, ListRootsCommand } from '@aws-sdk/client-organizations';
-import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
+import { SSMClient, GetParameterCommand, ParameterNotFound } from '@aws-sdk/client-ssm';
 import { SSOAdminClient, ListInstancesCommand } from '@aws-sdk/client-sso-admin';
 import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
 import { mockClient } from 'aws-sdk-client-mock';
@@ -25,6 +26,58 @@ describe('Init Command', () => {
   const orgMock = mockClient(OrganizationsClient);
   const ssoMock = mockClient(SSOAdminClient);
   const ssmMock = mockClient(SSMClient);
+  const cloudTrailMock = mockClient(CloudTrailClient);
+  const FINALIZE_VERSION_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${TEST_REGION}/version`;
+  const EU_HOME_REGION = 'eu-central-1';
+  const FINALIZE_PARAMETER_VALUE = TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2;
+
+  const mockInstallerVersionParameter = () => {
+    ssmMock.on(GetParameterCommand, {
+      Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+    }).resolves({
+      Parameter: {
+        Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
+        Type: 'String',
+      },
+    });
+  };
+
+  const mockFinalizeVersionParameter = (parameterName: string, value: string) => {
+    ssmMock.on(GetParameterCommand, {
+      Name: parameterName,
+    }).resolves({
+      Parameter: {
+        Name: parameterName,
+        Value: value,
+        Type: 'String',
+      },
+    });
+  };
+
+  const mockFinalizeNotFound = (parameterName: string) => {
+    ssmMock.on(GetParameterCommand, {
+      Name: parameterName,
+    }).rejects(new ParameterNotFound({
+      $metadata: {},
+      message: 'Parameter not found.',
+    }));
+  };
+
+  const resetSsmInitBase = () => {
+    ssmMock.reset();
+    mockFinalizeVersionParameter(FINALIZE_VERSION_PARAMETER_NAME, FINALIZE_PARAMETER_VALUE);
+    mockInstallerVersionParameter();
+  };
+
+  const runInit = (region: string) => {
+    const cli = createCliFor(Init);
+    return runCli(cli, [
+      'init',
+      '--region', region,
+      '--accounts-root-email', TEST_EMAIL,
+    ], temp);
+  };
 
   beforeEach(() => {
     temp = useTempDir();
@@ -34,6 +87,7 @@ describe('Init Command', () => {
     orgMock.reset();
     ssoMock.reset();
     ssmMock.reset();
+    cloudTrailMock.reset();
 
     stsMock.on(GetCallerIdentityCommand).resolves({
       Account: TEST_ACCOUNT_ID,
@@ -72,12 +126,14 @@ describe('Init Command', () => {
       ],
     });
 
-    ssmMock.on(GetParameterCommand).resolves({
-      Parameter: {
-        Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
-        Type: 'String',
-      },
+    resetSsmInitBase();
+    cloudTrailMock.on(DescribeTrailsCommand).resolves({
+      trailList: [
+        {
+          IsOrganizationTrail: true,
+          CloudWatchLogsLogGroupArn: `arn:aws:logs:${TEST_REGION}:${TEST_ACCOUNT_ID}:log-group:aws-controltower/CloudTrailLogs-xyz`,
+        },
+      ],
     });
   });
 
@@ -100,5 +156,53 @@ describe('Init Command', () => {
     const configPath = path.join(temp.directory, 'config.ts');
     const configContent = fs.readFileSync(configPath, 'utf8');
     expect(configContent).toMatchSnapshot();
+  });
+
+  it('should fail when finalize marker parameter is missing', async () => {
+    resetSsmInitBase();
+    mockFinalizeNotFound(FINALIZE_VERSION_PARAMETER_NAME);
+
+    await expect(runInit(TEST_REGION)).rejects.toThrow();
+
+    expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 1);
+    expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
+      Name: FINALIZE_VERSION_PARAMETER_NAME,
+    });
+    expect(fs.existsSync(path.join(temp.directory, 'config.ts'))).toBe(false);
+  });
+
+  it('should initialize when global finalize marker exists for a non-global home region', async () => {
+    resetSsmInitBase();
+
+    await runInit(EU_HOME_REGION);
+
+    expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
+      Name: FINALIZE_VERSION_PARAMETER_NAME,
+    });
+    expect(fs.existsSync(path.join(temp.directory, 'config.ts'))).toBe(true);
+  });
+
+  it('should fail when global finalize marker is missing for a non-global home region', async () => {
+    resetSsmInitBase();
+    mockFinalizeNotFound(FINALIZE_VERSION_PARAMETER_NAME);
+
+    await expect(runInit(EU_HOME_REGION)).rejects.toThrow();
+
+    expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 1);
+    expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
+      Name: FINALIZE_VERSION_PARAMETER_NAME,
+    });
+  });
+
+  it('should fail when finalize marker exists but has an empty value', async () => {
+    resetSsmInitBase();
+    mockFinalizeVersionParameter(FINALIZE_VERSION_PARAMETER_NAME, '');
+
+    await expect(runInit(TEST_REGION)).rejects.toThrow();
+
+    expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 1);
+    expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
+      Name: FINALIZE_VERSION_PARAMETER_NAME,
+    });
   });
 });

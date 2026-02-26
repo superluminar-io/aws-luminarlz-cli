@@ -3,6 +3,7 @@ import {
   DescribeStacksCommand,
   UpdateStackCommand,
 } from '@aws-sdk/client-cloudformation';
+import { CloudTrailClient, DescribeTrailsCommand } from '@aws-sdk/client-cloudtrail';
 import { DescribeOrganizationCommand, ListRootsCommand, OrganizationsClient } from '@aws-sdk/client-organizations';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { ListInstancesCommand, SSOAdminClient } from '@aws-sdk/client-sso-admin';
@@ -37,6 +38,23 @@ describe('LZA Installer Version - update command', () => {
   const stsMock = mockClient(STSClient);
   const organizationsMock = mockClient(OrganizationsClient);
   const ssoAdminMock = mockClient(SSOAdminClient);
+  const cloudTrailMock = mockClient(CloudTrailClient);
+  const FINALIZE_VERSION_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${TEST_REGION}/version`;
+  const mockVersionParameter = (name: string, value: string): void => {
+    ssmMock.on(GetParameterCommand, { Name: name }).resolves({
+      Parameter: {
+        Name: name,
+        Value: value,
+        Type: 'String',
+      },
+    });
+  };
+  const mockFinalizeVersionForInit = (): void => {
+    mockVersionParameter(FINALIZE_VERSION_PARAMETER_NAME, TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2);
+  };
+  const mockInstalledVersion = (value: string): void => {
+    mockVersionParameter(AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME, value);
+  };
 
   beforeEach(() => {
     temp = useTempDir();
@@ -46,6 +64,7 @@ describe('LZA Installer Version - update command', () => {
     stsMock.reset();
     organizationsMock.reset();
     ssoAdminMock.reset();
+    cloudTrailMock.reset();
     jest.clearAllMocks();
 
     stsMock.on(GetCallerIdentityCommand).resolves({
@@ -70,6 +89,15 @@ describe('LZA Installer Version - update command', () => {
         { InstanceArn: 'arn:aws:sso:::instance/ssoins-example', IdentityStoreId: 'd-example123' },
       ],
     });
+    cloudTrailMock.on(DescribeTrailsCommand).resolves({
+      trailList: [
+        {
+          IsOrganizationTrail: true,
+          CloudWatchLogsLogGroupArn: `arn:aws:logs:${TEST_REGION}:${TEST_ACCOUNT_ID}:log-group:aws-controltower/CloudTrailLogs-xyz`,
+        },
+      ],
+    });
+    mockFinalizeVersionForInit();
   });
 
   afterEach(() => {
@@ -78,13 +106,7 @@ describe('LZA Installer Version - update command', () => {
 
   it('should be a no-op when installed version is already up to date', async () => {
     // Installed version equals configured version (1.12.2)
-    ssmMock.on(GetParameterCommand).resolves({
-      Parameter: {
-        Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
-        Type: 'String',
-      },
-    });
+    mockInstalledVersion(TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2);
     const cli = createCliFor(Init, LzaInstallerVersionUpdate);
 
     await runCli(cli, [
@@ -102,7 +124,9 @@ describe('LZA Installer Version - update command', () => {
 
   it('should trigger a CloudFormation update when configured version is newer than installed', async () => {
     // Init sees 1.12.2, then update sees 1.12.1 (older)
-    ssmMock.on(GetParameterCommand)
+    ssmMock.on(GetParameterCommand, {
+      Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+    })
       .resolvesOnce({
         Parameter: {
           Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
@@ -118,22 +142,30 @@ describe('LZA Installer Version - update command', () => {
         },
       });
     // Mock UpdateStack to succeed
-    cfnMock.on(UpdateStackCommand).resolves({ StackId: `arn:aws:cloudformation:us-east-1:${TEST_ACCOUNT_ID}:stack/AWSAccelerator-InstallerStack/1` } as any);
+    cfnMock.on(UpdateStackCommand).resolves({
+      StackId: `arn:aws:cloudformation:us-east-1:${TEST_ACCOUNT_ID}:stack/AWSAccelerator-InstallerStack/1`,
+    });
     // First DescribeStacks call (reading existing parameters)
     cfnMock.on(DescribeStacksCommand).resolvesOnce({
       Stacks: [
         {
           StackName: AWS_ACCELERATOR_INSTALLER_STACK_NAME,
+          StackStatus: 'CREATE_COMPLETE',
+          CreationTime: new Date('2026-01-01T00:00:00.000Z'),
           Parameters: [
             { ParameterKey: 'RepositoryBranchName', ParameterValue: 'release/v1.12.1' },
             { ParameterKey: 'Foo', ParameterValue: 'Bar' },
           ],
-        } as any,
+        },
       ],
     });
     // Default waiter polling responses: always UPDATE_COMPLETE so waiter returns quickly
     cfnMock.on(DescribeStacksCommand).resolves({
-      Stacks: [{ StackName: AWS_ACCELERATOR_INSTALLER_STACK_NAME, StackStatus: 'UPDATE_COMPLETE' } as any],
+      Stacks: [{
+        StackName: AWS_ACCELERATOR_INSTALLER_STACK_NAME,
+        StackStatus: 'UPDATE_COMPLETE',
+        CreationTime: new Date('2026-01-01T00:00:00.000Z'),
+      }],
     });
 
     const cli = createCliFor(Init, LzaInstallerVersionUpdate);
@@ -157,7 +189,9 @@ describe('LZA Installer Version - update command', () => {
 
   it('should fail when configured version is smaller than installed version', async () => {
     // Init sees 1.12.2, then update sees newer 1.12.3
-    ssmMock.on(GetParameterCommand)
+    ssmMock.on(GetParameterCommand, {
+      Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+    })
       .resolvesOnce({
         Parameter: {
           Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
