@@ -40,6 +40,21 @@ describe('LZA Installer Version - update command', () => {
   const ssoAdminMock = mockClient(SSOAdminClient);
   const cloudTrailMock = mockClient(CloudTrailClient);
   const FINALIZE_VERSION_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${TEST_REGION}/version`;
+  const mockVersionParameter = (name: string, value: string): void => {
+    ssmMock.on(GetParameterCommand, { Name: name }).resolves({
+      Parameter: {
+        Name: name,
+        Value: value,
+        Type: 'String',
+      },
+    });
+  };
+  const mockFinalizeVersionForInit = (): void => {
+    mockVersionParameter(FINALIZE_VERSION_PARAMETER_NAME, TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2);
+  };
+  const mockInstalledVersion = (value: string): void => {
+    mockVersionParameter(AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME, value);
+  };
 
   beforeEach(() => {
     temp = useTempDir();
@@ -82,6 +97,7 @@ describe('LZA Installer Version - update command', () => {
         },
       ],
     });
+    mockFinalizeVersionForInit();
   });
 
   afterEach(() => {
@@ -90,24 +106,7 @@ describe('LZA Installer Version - update command', () => {
 
   it('should be a no-op when installed version is already up to date', async () => {
     // Installed version equals configured version (1.12.2)
-    ssmMock.on(GetParameterCommand, {
-      Name: FINALIZE_VERSION_PARAMETER_NAME,
-    }).resolves({
-      Parameter: {
-        Name: FINALIZE_VERSION_PARAMETER_NAME,
-        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
-        Type: 'String',
-      },
-    });
-    ssmMock.on(GetParameterCommand, {
-      Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-    }).resolves({
-      Parameter: {
-        Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
-        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
-        Type: 'String',
-      },
-    });
+    mockInstalledVersion(TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2);
     const cli = createCliFor(Init, LzaInstallerVersionUpdate);
 
     await runCli(cli, [
@@ -125,15 +124,6 @@ describe('LZA Installer Version - update command', () => {
 
   it('should trigger a CloudFormation update when configured version is newer than installed', async () => {
     // Init sees 1.12.2, then update sees 1.12.1 (older)
-    ssmMock.on(GetParameterCommand, {
-      Name: FINALIZE_VERSION_PARAMETER_NAME,
-    }).resolves({
-      Parameter: {
-        Name: FINALIZE_VERSION_PARAMETER_NAME,
-        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
-        Type: 'String',
-      },
-    });
     ssmMock.on(GetParameterCommand, {
       Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
     })
@@ -199,15 +189,6 @@ describe('LZA Installer Version - update command', () => {
 
   it('should fail when configured version is smaller than installed version', async () => {
     // Init sees 1.12.2, then update sees newer 1.12.3
-    ssmMock.on(GetParameterCommand, {
-      Name: FINALIZE_VERSION_PARAMETER_NAME,
-    }).resolves({
-      Parameter: {
-        Name: FINALIZE_VERSION_PARAMETER_NAME,
-        Value: TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
-        Type: 'String',
-      },
-    });
     ssmMock.on(GetParameterCommand, {
       Name: AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
     })
