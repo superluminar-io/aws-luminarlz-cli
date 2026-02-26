@@ -1,6 +1,7 @@
 import * as readline from 'node:readline/promises';
 import { Command, Option } from 'clipanion';
-import { blueprintExists, renderBlueprint } from '../core/blueprint/blueprint';
+import { blueprintExists, initializeBlueprintFiles } from '../core/blueprint/blueprint';
+import { OutputWriter } from '../core/blueprint/blueprint-report';
 
 const AWS_LUMINARLZ_BLUEPRINTS_GITHUB_URL = 'https://github.com/superluminar-io/aws-luminarlz-cli/tree/main/blueprints';
 
@@ -30,40 +31,37 @@ export class Init extends Command {
 
   async execute() {
     const blueprint = this.blueprint || 'foundational';
-    if (!blueprintExists(blueprint)) {
+    if (blueprint !== 'foundational') {
+      throw new Error(`Blueprint ${blueprint} is not supported. Please use foundational.`);
+    }
+    if (!blueprintExists()) {
       throw new Error(`Blueprint ${blueprint} does not exist. Please check the available blueprints at ${AWS_LUMINARLZ_BLUEPRINTS_GITHUB_URL}`);
     }
-    const rl = readline.createInterface({
+    const readlineInterface = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
     });
     try {
       if (!this.accountsRootEmail) {
-        this.accountsRootEmail = await rl.question('Please provide the email address used for the AWS accounts root emails: ');
+        this.accountsRootEmail = await readlineInterface.question('Please provide the email address used for the AWS accounts root emails: ');
         if (this.accountsRootEmail.length < 4 || !this.accountsRootEmail.includes('@')) {
           throw new Error(`Invalid email address: ${this.accountsRootEmail}`);
         }
       }
       if (!this.region) {
-        this.region = await rl.question('Please provide the region the Landing Zone Accelerator on AWS has been installed in (the home region): ');
+        this.region = await readlineInterface.question('Please provide the region the Landing Zone Accelerator on AWS has been installed in (the home region): ');
         if (this.region === '') {
           throw new Error(`Invalid region: ${this.region}`);
         }
       }
-      const { managementAccountId, organizationId, rootOuId, accountsRootEmail, installerVersion, region } = await renderBlueprint(blueprint, {
+      const summary = await initializeBlueprintFiles({
         forceOverwrite: this.force || false,
         accountsRootEmail: this.accountsRootEmail,
         region: this.region,
       });
-      console.log(`AWS management account ID: ${managementAccountId}`);
-      console.log(`AWS Organizations organization ID: ${organizationId}`);
-      console.log(`AWS Organizations root Organizational Unit (OU) ID: ${rootOuId}`);
-      console.log(`AWS accounts root email address: ${accountsRootEmail}`);
-      console.log(`Landing Zone Accelerator on AWS version: ${installerVersion}`);
-      console.log(`AWS home region: ${region}`);
+      summary.writeOutput(this.context.stdout as OutputWriter);
     } finally {
-      rl.close();
+      readlineInterface.close();
     }
-    console.log('Done. ✅');
   }
 }

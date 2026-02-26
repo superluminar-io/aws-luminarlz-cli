@@ -40,6 +40,32 @@ npm i
 
 ## Development
 
+### Update blueprint files
+
+Use this command to sync your existing project with newer blueprint defaults.
+It creates missing files and shows diffs for existing files before applying changes.
+For a practical end-to-end workflow, see the [Blueprint Update Runbook](../../docs/runbooks/blueprint-update.md).
+For local CLI feature development against this repository, see the [Local CLI Development Runbook](../../docs/runbooks/local-cli-development-with-real-setup.md).
+
+```bash
+npm run cli -- blueprint update
+```
+
+Useful options:
+
+* Preview only (no file changes):
+```bash
+npm run cli -- blueprint update --dry-run
+```
+* Review changes line-by-line:
+```bash
+npm run cli -- blueprint update --line-mode
+```
+* Apply all existing-file changes without prompts:
+```bash
+npm run cli -- blueprint update --yes
+```
+
 ### Manual synth of the LZA config
 
 ```bash
