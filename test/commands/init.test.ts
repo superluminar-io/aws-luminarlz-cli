@@ -161,29 +161,33 @@ describe('Init Command', () => {
   it('should fail when finalize marker parameter is missing', async () => {
     resetSsmInitBase();
     mockFinalizeNotFound(FINALIZE_VERSION_PARAMETER_NAME);
+
     await expect(runInit(TEST_REGION)).rejects.toThrow();
+
     expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 1);
     expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
       Name: FINALIZE_VERSION_PARAMETER_NAME,
     });
-
     expect(fs.existsSync(path.join(temp.directory, 'config.ts'))).toBe(false);
   });
 
   it('should initialize when global finalize marker exists for a non-global home region', async () => {
     resetSsmInitBase();
+
     await runInit(EU_HOME_REGION);
+
     expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
       Name: FINALIZE_VERSION_PARAMETER_NAME,
     });
-
     expect(fs.existsSync(path.join(temp.directory, 'config.ts'))).toBe(true);
   });
 
   it('should fail when global finalize marker is missing for a non-global home region', async () => {
     resetSsmInitBase();
     mockFinalizeNotFound(FINALIZE_VERSION_PARAMETER_NAME);
+
     await expect(runInit(EU_HOME_REGION)).rejects.toThrow();
+
     expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 1);
     expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
       Name: FINALIZE_VERSION_PARAMETER_NAME,
@@ -193,7 +197,9 @@ describe('Init Command', () => {
   it('should fail when finalize marker exists but has an empty value', async () => {
     resetSsmInitBase();
     mockFinalizeVersionParameter(FINALIZE_VERSION_PARAMETER_NAME, '');
+
     await expect(runInit(TEST_REGION)).rejects.toThrow();
+
     expect(ssmMock).toHaveReceivedCommandTimes(GetParameterCommand, 1);
     expect(ssmMock).toHaveReceivedCommandWith(GetParameterCommand, {
       Name: FINALIZE_VERSION_PARAMETER_NAME,
