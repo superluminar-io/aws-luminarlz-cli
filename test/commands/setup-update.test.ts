@@ -8,7 +8,8 @@ import { mockClient } from 'aws-sdk-client-mock';
 import { Init } from '../../src/commands/init';
 import { SetupUpdate } from '../../src/commands/setup-update';
 import { AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME } from '../../src/config';
-import { updateBlueprint } from '../../src/core/blueprint/blueprint';
+import { synchronizeBlueprintFiles } from '../../src/core/blueprint/blueprint';
+import { BlueprintReport, OutputWriter } from '../../src/core/blueprint/blueprint-report';
 import {
   TEST_ACCOUNT_ID,
   TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
@@ -100,6 +101,26 @@ const readPackageJson = (): { packagePath: string; content: string } => {
   return { packagePath, content };
 };
 
+const collectUpdateOutput = (result: BlueprintReport): string => {
+  let text = '';
+  const writer: OutputWriter = {
+    write: (chunk: string) => {
+      text += chunk;
+      return true;
+    },
+  };
+  result.writeOutput(writer);
+  return text;
+};
+
+const readSummaryCount = (output: string, label: 'Created files' | 'Updated files' | 'Skipped files' | 'Unchanged files'): number => {
+  const match = output.match(new RegExp(`${label}: (\\d+)`));
+  if (!match) {
+    throw new Error(`Missing summary line for ${label}`);
+  }
+  return Number(match[1]);
+};
+
 describe('Setup files update command', () => {
   beforeEach(() => {
     temp = useTempDir();
@@ -178,7 +199,7 @@ describe('Setup files update command', () => {
     });
   });
 
-  describe('when applying existing-file decisions through updateBlueprint', () => {
+  describe('when applying existing-file decisions through synchronizeBlueprintFiles', () => {
     it('should apply a partial content decision for a changed file', async () => {
       const initCli = createCliFor(Init);
       await runCli(initCli, [
@@ -190,7 +211,7 @@ describe('Setup files update command', () => {
       const { configPath, content: baselineConfig } = readConfig();
       fs.writeFileSync(configPath, `${baselineConfig}\n// local-change`);
 
-      const result = await updateBlueprint('foundational', {
+      const result = await synchronizeBlueprintFiles({
         accountsRootEmail: TEST_EMAIL,
         region: TEST_REGION,
         onExistingFileDiff: async (fileDiff) => {
@@ -202,7 +223,8 @@ describe('Setup files update command', () => {
       });
 
       const { content: actualConfig } = readConfig();
-      expect(result.updatedCount).toBe(1);
+      const output = collectUpdateOutput(result);
+      expect(readSummaryCount(output, 'Updated files')).toBe(1);
       expect(actualConfig.includes('// local-change')).toBe(true);
       expect(actualConfig.endsWith('// keep-partial')).toBe(true);
     });
@@ -219,14 +241,15 @@ describe('Setup files update command', () => {
       const localConfig = `${baselineConfig}\n// local-change`;
       fs.writeFileSync(configPath, localConfig);
 
-      const result = await updateBlueprint('foundational', {
+      const result = await synchronizeBlueprintFiles({
         accountsRootEmail: TEST_EMAIL,
         region: TEST_REGION,
       });
 
       const { content: actualConfig } = readConfig();
-      expect(result.updatedCount).toBe(0);
-      expect(result.skippedCount).toBeGreaterThanOrEqual(1);
+      const output = collectUpdateOutput(result);
+      expect(readSummaryCount(output, 'Updated files')).toBe(0);
+      expect(readSummaryCount(output, 'Skipped files')).toBeGreaterThanOrEqual(1);
       expect(actualConfig).toBe(localConfig);
     });
 
@@ -242,7 +265,7 @@ describe('Setup files update command', () => {
       const localConfig = `${baselineConfig}\n// local-change`;
       fs.writeFileSync(configPath, localConfig);
 
-      const result = await updateBlueprint('foundational', {
+      const result = await synchronizeBlueprintFiles({
         accountsRootEmail: TEST_EMAIL,
         region: TEST_REGION,
         onExistingFileDiff: async (fileDiff) => {
@@ -254,8 +277,9 @@ describe('Setup files update command', () => {
       });
 
       const { content: actualConfig } = readConfig();
-      expect(result.updatedCount).toBe(0);
-      expect(result.skippedCount).toBeGreaterThanOrEqual(1);
+      const output = collectUpdateOutput(result);
+      expect(readSummaryCount(output, 'Updated files')).toBe(0);
+      expect(readSummaryCount(output, 'Skipped files')).toBeGreaterThanOrEqual(1);
       expect(actualConfig).toBe(localConfig);
     });
 
@@ -271,7 +295,7 @@ describe('Setup files update command', () => {
       const localConfig = `${baselineConfig}\n// local-change`;
       fs.writeFileSync(configPath, localConfig);
 
-      const result = await updateBlueprint('foundational', {
+      const result = await synchronizeBlueprintFiles({
         accountsRootEmail: TEST_EMAIL,
         region: TEST_REGION,
         dryRun: true,
@@ -279,7 +303,8 @@ describe('Setup files update command', () => {
       });
 
       const { content: actualConfig } = readConfig();
-      expect(result.updatedCount).toBeGreaterThanOrEqual(1);
+      const output = collectUpdateOutput(result);
+      expect(readSummaryCount(output, 'Updated files')).toBeGreaterThanOrEqual(1);
       expect(actualConfig).toBe(localConfig);
     });
 
@@ -295,14 +320,15 @@ describe('Setup files update command', () => {
       const localConfig = `${baselineConfig}\n// local-change`;
       fs.writeFileSync(configPath, localConfig);
 
-      const result = await updateBlueprint('foundational', {
+      const result = await synchronizeBlueprintFiles({
         accountsRootEmail: TEST_EMAIL,
         region: TEST_REGION,
         onExistingFileDiff: async () => 'apply',
       });
 
       const { content: actualConfig } = readConfig();
-      expect(result.updatedCount).toBeGreaterThanOrEqual(1);
+      const output = collectUpdateOutput(result);
+      expect(readSummaryCount(output, 'Updated files')).toBeGreaterThanOrEqual(1);
       expect(actualConfig).toBe(baselineConfig);
     });
 
@@ -317,7 +343,7 @@ describe('Setup files update command', () => {
       const { configPath, content: baselineConfig } = readConfig();
       fs.writeFileSync(configPath, `${baselineConfig}\n// local-change`);
 
-      const result = await updateBlueprint('foundational', {
+      const result = await synchronizeBlueprintFiles({
         accountsRootEmail: TEST_EMAIL,
         region: TEST_REGION,
         onExistingFileDiff: async (fileDiff) => {
@@ -329,7 +355,8 @@ describe('Setup files update command', () => {
       });
 
       const { content: actualConfig } = readConfig();
-      expect(result.updatedCount).toBe(1);
+      const output = collectUpdateOutput(result);
+      expect(readSummaryCount(output, 'Updated files')).toBe(1);
       expect(actualConfig.endsWith('// updated-by-handler')).toBe(true);
     });
 
@@ -345,15 +372,16 @@ describe('Setup files update command', () => {
       const localConfig = `${baselineConfig}\n// local-change`;
       fs.writeFileSync(configPath, localConfig);
 
-      const result = await updateBlueprint('foundational', {
+      const result = await synchronizeBlueprintFiles({
         accountsRootEmail: TEST_EMAIL,
         region: TEST_REGION,
         onExistingFileDiff: async () => 'skip',
       });
 
       const { content: actualConfig } = readConfig();
-      expect(result.updatedCount).toBe(0);
-      expect(result.skippedCount).toBeGreaterThanOrEqual(1);
+      const output = collectUpdateOutput(result);
+      expect(readSummaryCount(output, 'Updated files')).toBe(0);
+      expect(readSummaryCount(output, 'Skipped files')).toBeGreaterThanOrEqual(1);
       expect(actualConfig).toBe(localConfig);
     });
 
@@ -368,13 +396,14 @@ describe('Setup files update command', () => {
       const { packagePath, content: baselinePackageJson } = readPackageJson();
       fs.unlinkSync(packagePath);
 
-      const result = await updateBlueprint('foundational', {
+      const result = await synchronizeBlueprintFiles({
         accountsRootEmail: TEST_EMAIL,
         region: TEST_REGION,
       });
 
       const { content: actualPackageJson } = readPackageJson();
-      expect(result.createdCount).toBeGreaterThanOrEqual(1);
+      const output = collectUpdateOutput(result);
+      expect(readSummaryCount(output, 'Created files')).toBeGreaterThanOrEqual(1);
       expect(actualPackageJson).toBe(baselinePackageJson);
     });
 
@@ -386,14 +415,15 @@ describe('Setup files update command', () => {
         '--accounts-root-email', TEST_EMAIL,
       ], temp);
 
-      const result = await updateBlueprint('foundational', {
+      const result = await synchronizeBlueprintFiles({
         accountsRootEmail: TEST_EMAIL,
         region: TEST_REGION,
       });
 
-      expect(result.updatedCount).toBe(0);
-      expect(result.skippedCount).toBe(0);
-      expect(result.unchangedCount).toBeGreaterThan(0);
+      const output = collectUpdateOutput(result);
+      expect(readSummaryCount(output, 'Updated files')).toBe(0);
+      expect(readSummaryCount(output, 'Skipped files')).toBe(0);
+      expect(readSummaryCount(output, 'Unchanged files')).toBeGreaterThan(0);
     });
 
     it('should return mixed counters when created updated skipped and unchanged files are all present', async () => {
@@ -414,7 +444,7 @@ describe('Setup files update command', () => {
       const baselineReadme = fs.readFileSync(readmePath, 'utf8');
       fs.writeFileSync(readmePath, `${baselineReadme}\nlocal readme change`);
 
-      const result = await updateBlueprint('foundational', {
+      const result = await synchronizeBlueprintFiles({
         accountsRootEmail: TEST_EMAIL,
         region: TEST_REGION,
         onExistingFileDiff: async (fileDiff) => {
@@ -428,10 +458,11 @@ describe('Setup files update command', () => {
         },
       });
 
-      expect(result.createdCount).toBeGreaterThan(0);
-      expect(result.updatedCount).toBeGreaterThan(0);
-      expect(result.skippedCount).toBeGreaterThan(0);
-      expect(result.unchangedCount).toBeGreaterThan(0);
+      const output = collectUpdateOutput(result);
+      expect(readSummaryCount(output, 'Created files')).toBeGreaterThan(0);
+      expect(readSummaryCount(output, 'Updated files')).toBeGreaterThan(0);
+      expect(readSummaryCount(output, 'Skipped files')).toBeGreaterThan(0);
+      expect(readSummaryCount(output, 'Unchanged files')).toBeGreaterThan(0);
     });
   });
 

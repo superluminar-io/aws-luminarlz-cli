@@ -26,7 +26,7 @@ const createSelector = (
 ) => {
   const rl = createRl(answers);
   return createInteractiveDiffSelector({
-    IReadLine: rl,
+    readlineInterface: rl,
     autoApply: options.autoApply,
     dryRun: options.dryRun,
     lineMode: options.lineMode,
@@ -115,7 +115,7 @@ describe('Setup update interactive diff selector', () => {
     it('should use pairwise and remaining line prompts when switching to line mode for unequal replacements', async () => {
       const { rl, question } = createRlMock(['l', 'y', 'y', 'y']);
       const selector = createInteractiveDiffSelector({
-        IReadLine: rl,
+        readlineInterface: rl,
         autoApply: false,
         dryRun: false,
         lineMode: false,
@@ -181,7 +181,7 @@ describe('Setup update interactive diff selector', () => {
     it('should prompt with dry-run block mode label in non-interactive terminal mode', async () => {
       const { rl, question } = createRlMock(['']);
       const selector = createInteractiveDiffSelector({
-        IReadLine: rl,
+        readlineInterface: rl,
         autoApply: false,
         dryRun: true,
         lineMode: false,

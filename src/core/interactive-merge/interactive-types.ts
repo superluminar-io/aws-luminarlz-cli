@@ -1,4 +1,5 @@
 import * as readline from 'node:readline/promises';
+import type { BaseContext } from 'clipanion';
 import { BlueprintFileDiff, ExistingFileDecision } from '../blueprint/blueprint';
 
 export interface DiffHunk {
@@ -9,7 +10,7 @@ export interface DiffHunk {
 }
 
 export type ExistingFileSelector = (fileDiff: BlueprintFileDiff) => Promise<ExistingFileDecision>;
-export type OutputWriter = { write: (text: string) => void };
+export type OutputWriter = Pick<BaseContext['stdout'], 'write'>;
 export type PromptReader = Pick<readline.Interface, 'question'>;
 
 export interface HunkApplication {

@@ -6,7 +6,7 @@ import { BlueprintFileDiff } from '../blueprint/blueprint';
 export { UserAbortError };
 
 export interface InteractiveDiffSelectorOptions {
-  IReadLine: PromptReader;
+  readlineInterface: PromptReader;
   autoApply: boolean;
   dryRun: boolean;
   lineMode: boolean;
@@ -45,6 +45,6 @@ const selectModeHandler = (
 };
 
 export const createInteractiveDiffSelector = (options: InteractiveDiffSelectorOptions): ExistingFileSelector => {
-  const session = new InteractiveDiffSession(options.IReadLine, options.stdout ?? process.stdout);
+  const session = new InteractiveDiffSession(options.readlineInterface, options.stdout ?? process.stdout);
   return selectModeHandler(options, session);
 };
