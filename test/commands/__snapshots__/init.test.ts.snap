@@ -309,6 +309,7 @@ export const config: Config = {
   homeRegion: HOME_REGION,
   enabledRegions: ENABLED_REGIONS,
   awsAcceleratorVersion: AWS_ACCELERATOR_VERSION,
+  cloudTrailLogGroupName: CLOUDTRAIL_LOG_GROUP_NAME,
 };
 "
 `;
