@@ -305,6 +305,6 @@ export const config: Config = {
   managementAccountId: MANAGEMENT_ACCOUNT_ID,
   homeRegion: HOME_REGION,
   enabledRegions: ENABLED_REGIONS,
-  cloudTrailLogGroupName: CLOUDTRAIL_LOG_GROUP_NAME,
   awsAcceleratorVersion: AWS_ACCELERATOR_VERSION,
+  cloudTrailLogGroupName: CLOUDTRAIL_LOG_GROUP_NAME,
 };
