@@ -9,6 +9,7 @@ import { mockClient } from 'aws-sdk-client-mock';
 import { Init } from '../../src/commands/init';
 import {
   AWS_ACCELERATOR_INSTALLER_STACK_VERSION_SSM_PARAMETER_NAME,
+  GLOBAL_REGION,
 } from '../../src/config';
 import {
   TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2,
@@ -27,7 +28,7 @@ describe('Init Command', () => {
   const ssoMock = mockClient(SSOAdminClient);
   const ssmMock = mockClient(SSMClient);
   const cloudTrailMock = mockClient(CloudTrailClient);
-  const FINALIZE_VERSION_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${TEST_REGION}/version`;
+  const FINALIZE_VERSION_PARAMETER_NAME = `/accelerator/AWSAccelerator-FinalizeStack-${TEST_ACCOUNT_ID}-${GLOBAL_REGION}/version`;
   const EU_HOME_REGION = 'eu-central-1';
   const FINALIZE_PARAMETER_VALUE = TEST_AWS_ACCELERATOR_STACK_VERSION_1_12_2;
 
