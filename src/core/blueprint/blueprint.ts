@@ -4,7 +4,7 @@ import * as organizations from '@aws-sdk/client-organizations';
 import * as ssoAdmin from '@aws-sdk/client-sso-admin';
 import * as sts from '@aws-sdk/client-sts';
 import { Liquid } from 'liquidjs';
-import { isControlTowerRolloutComplete } from './init-prechecks';
+import { isLzaRolloutComplete } from './init-prechecks';
 import { resolveControlTowerCloudTrailLogGroupName } from '../accelerator/config/cloudtrail';
 import { getVersion } from '../accelerator/installer/installer';
 import { resolveProjectPath } from '../util/path';
@@ -65,7 +65,7 @@ export const renderBlueprint = async (blueprintName: string, { forceOverwrite, a
   region: string;
 }) => {
   const managementAccountId = await getAwsAccountId(region);
-  if (!await isControlTowerRolloutComplete(managementAccountId)) {
+  if (!await isLzaRolloutComplete(managementAccountId)) {
     throw new Error(
       'Control Tower/LZA initial rollout is not complete yet. Finish rollout before running init.',
     );

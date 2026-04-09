@@ -1,5 +1,4 @@
-import { CloudTrailClient, DescribeTrailsCommand } from '@aws-sdk/client-cloudtrail';
-import { Trail } from '@aws-sdk/client-cloudtrail/dist-types/models/models_0';
+import { CloudTrailClient, DescribeTrailsCommand, Trail } from '@aws-sdk/client-cloudtrail';
 
 const CONTROL_TOWER_LOG_GROUP_PREFIX = 'aws-controltower/CloudTrailLogs';
 
@@ -24,6 +23,17 @@ const findControlTowerLogGroupName = (trails: Trail[]): string | null => {
   return parseLogGroupName(organizationTrail.CloudWatchLogsLogGroupArn);
 };
 
+/**
+ * Resolves the Control Tower CloudTrail log group name from the given region.
+ *
+ * The `region` parameter should be the Control Tower home region, as that is
+ * where the organization-level CloudTrail trail is created. Passing a different
+ * region will result in an error if no matching trail is found there.
+ *
+ * @param region - The AWS region to look up the Control Tower CloudTrail trail in (should be the CT home region).
+ * @returns The CloudWatch log group name associated with the Control Tower organization trail.
+ * @throws If no matching organization trail with a Control Tower log group is found.
+ */
 export const resolveControlTowerCloudTrailLogGroupName = async (region: string): Promise<string> => {
   const cloudTrailClient = new CloudTrailClient({ region });
   const commandOutput = await cloudTrailClient.send(new DescribeTrailsCommand({
