@@ -1,6 +1,6 @@
-import { typescript, github } from 'projen';
+import { github, typescript } from 'projen';
 import { JobPermission } from 'projen/lib/github/workflows-model';
-import { NpmAccess } from 'projen/lib/javascript';
+import { NodePackageManager, NpmAccess } from 'projen/lib/javascript';
 
 const project = new typescript.TypeScriptProject({
   defaultReleaseBranch: 'main',
@@ -40,6 +40,7 @@ const project = new typescript.TypeScriptProject({
   githubOptions: {
     projenCredentials: github.GithubCredentials.fromApp(),
   },
+  packageManager: NodePackageManager.YARN_CLASSIC,
 });
 project.jest!.config.setupFilesAfterEnv = ['<rootDir>/test/jest-setup.ts'];
 project.jest!.config.testTimeout = 120_000;
@@ -75,7 +76,7 @@ wf.addJobs({
         name: 'Setup Node',
         uses: 'actions/setup-node@v6',
         with: {
-          'node-version': '22', // or matrix if you want multiple versions
+          'node-version': 'lts/*', // or matrix if you want multiple versions
           'cache': 'yarn', // change to "yarn" or "pnpm" if you use those
         },
       },
