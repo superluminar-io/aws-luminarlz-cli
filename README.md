@@ -58,7 +58,9 @@ npm install
 # You'll need the `Management` account credentials with administrator rights to be configured in your terminal.
 npm run cli -- deploy
 ```
-10. Search for open `TODO` comments in the generated files and adapt them to your needs.
+10. Make sure to start the [AWSAccelerator-Pipeline](https://console.aws.amazon.com/codesuite/codepipeline/pipelines/AWSAccelerator-Pipeline/view) manually after the initial deployment as the pipeline is not automatically started by the LZA.
+11. Wait until the blueprint is successfully deployed, from now on the pipeline should start automatically after deploying a new LZA config.
+12. Search for open `TODO` comments in the generated files and adapt them to your needs.
 
 ### Other CLI commands
 
