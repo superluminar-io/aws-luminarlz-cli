@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'node:path';
 import * as organizations from '@aws-sdk/client-organizations';
-import * as ssoAdmin from '@aws-sdk/client-sso-admin';
 import * as sts from '@aws-sdk/client-sts';
 import { Liquid } from 'liquidjs';
 import { isLzaRolloutComplete } from './init-prechecks';
@@ -47,18 +46,6 @@ const getRootOuId = async (region: string) => {
   return Roots[0].Id;
 };
 
-const getIdentityStoreId = async (region: string) => {
-  const client = new ssoAdmin.SSOAdminClient({ region });
-  const { Instances } = await client.send(new ssoAdmin.ListInstancesCommand({}));
-  if (Instances?.length !== 1) {
-    throw new Error('There should be only one identity store in the organization');
-  }
-  if (!Instances[0]?.IdentityStoreId) {
-    throw new Error('Unable to get AWS identity store ID');
-  }
-  return Instances[0].IdentityStoreId;
-};
-
 export const renderBlueprint = async (blueprintName: string, { forceOverwrite, accountsRootEmail, region }: {
   forceOverwrite: boolean;
   accountsRootEmail: string;
@@ -73,7 +60,6 @@ export const renderBlueprint = async (blueprintName: string, { forceOverwrite, a
   const installerVersion = await getVersion(region);
   const organizationId = await getOrganizationId(region);
   const rootOuId = await getRootOuId(region);
-  const identityStoreId = await getIdentityStoreId(region);
   const cloudTrailLogGroupName = await resolveControlTowerCloudTrailLogGroupName(region);
 
   const projectRoot = resolveProjectPath();
@@ -117,7 +103,6 @@ export const renderBlueprint = async (blueprintName: string, { forceOverwrite, a
           AWS_ROOT_OU_ID: rootOuId,
           AWS_ACCOUNTS_ROOT_EMAIL: accountsRootEmail,
           AWS_HOME_REGION: region,
-          AWS_IDENTITY_STORE_ID: identityStoreId,
           AWS_CLOUDTRAIL_LOG_GROUP_NAME: cloudTrailLogGroupName,
         },
       );
