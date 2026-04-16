@@ -30,6 +30,12 @@ controlTower:
     security:
       enableIdentityCenterAccess: true
   controls: []
+# AWS IAM Central Root Management
+centralRootUserManagement:
+  enable: true
+  capabilities:
+    rootCredentialsManagement: true
+    allowRootSessions: true
 logging:
   account: LogArchive
   # disable Cloudtrail here since it's already deployed and managed by Control Tower

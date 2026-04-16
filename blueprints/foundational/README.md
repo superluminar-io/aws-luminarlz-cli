@@ -26,7 +26,8 @@ which in this project are generated via the [Customizations](customizations/bin/
 
 ## AWS access
 
-Use the [SSO sign-in page](https://<<AWS_IDENTITY_STORE_ID>>.awsapps.com/start) to get access to the AWS accounts.
+[//]: # (TODO: After the blueprint deployment you can add the identity store link here, e.g.: https://<AWS_IDENTITY_STORE_ID>.awsapps.com/start)
+Use the AWS SSO sign-in page to get access to the AWS accounts.
 
 ## Prerequisites
 
