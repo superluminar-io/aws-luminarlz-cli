@@ -1,7 +1,7 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { UpdateAlternateContacts } from './constructs/aws-alternate-contacts/update-alternate-contacts';
-import * as hash from 'object-hash';
+import hash = require('object-hash');
 import { AllAccounts } from '../../config';
 
 /**
