@@ -30,7 +30,7 @@ import * as cxapi from 'aws-cdk-lib/cx-api';
  */
 export function assertBound<A>(x: A | undefined): asserts x is NonNullable<A> {
   if (x === null && x === undefined) {
-    throw new UnscopedValidationError('You must call bindStack() first');
+    throw new UnscopedValidationError('Binding Error' as any, 'You must call bindStack() first');
   }
 }
 
@@ -141,6 +141,7 @@ export class CliCredentialsStackSynthesizer
       const prop = props[key];
       if (typeof prop === 'string' && Token.isUnresolved(prop)) {
         throw new UnscopedValidationError(
+          'Validation Error' as any,
           `CliCredentialsStackSynthesizer property '${key}' cannot contain tokens; only the following placeholder strings are allowed: ` +
           [
             // eslint-disable-next-line no-template-curly-in-string
