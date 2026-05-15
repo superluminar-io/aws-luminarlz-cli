@@ -162,6 +162,17 @@ Use ESLint for code linting:
 yarn eslint
 ```
 
+### Pull request titles
+
+PR titles must follow the [Conventional Commits](https://www.conventionalcommits.org/) format and use one of the allowed types: `feat`, `fix`, or `chore`.
+
+Examples:
+```
+feat: add support for multiple blueprints
+fix: correct region validation in init command
+chore: update dependencies
+```
+
 ## Remove the AWS luminarlz CLI
 
 For whatever reason you want to remove the dependency to the AWS luminarlz CLI you can do so.
