@@ -162,9 +162,9 @@ Use ESLint for code linting:
 yarn eslint
 ```
 
-### Pull request titles
+### Commit messages and pull request titles
 
-PR titles must follow the [Conventional Commits](https://www.conventionalcommits.org/) format and use one of the allowed types: `feat`, `fix`, or `chore`.
+Commit messages and PR titles must follow the [Conventional Commits](https://www.conventionalcommits.org/) format and use one of the allowed types: `feat`, `fix`, or `chore`.
 
 Examples:
 ```
