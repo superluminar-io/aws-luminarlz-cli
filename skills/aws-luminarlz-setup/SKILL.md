@@ -1,6 +1,7 @@
 ---
 name: aws-luminarlz-setup
 description: Use when setting up a new or resuming a partial AWS multi-account landing zone using the Landing Zone Accelerator (LZA) and aws-luminarlz-cli. Requires AWS management account credentials in the environment and a git repository as the working directory.
+allowed-tools: Bash(aws sts get-caller-identity*) Bash(aws ce get-cost-and-usage *) Bash(aws ce list-cost-allocation-tags *) Bash(aws cloudformation describe-stacks *) Bash(aws cloudformation describe-stack-resources *) Bash(aws cloudformation wait *) Bash(aws cloudtrail lookup-events *) Bash(aws codepipeline get-pipeline-state *) Bash(aws controltower get-landing-zone *) Bash(aws controltower list-landing-zones *) Bash(aws iam list-users *) Bash(aws iam list-mfa-devices *) Bash(aws identitystore list-groups *) Bash(aws identitystore list-users *) Bash(aws logs describe-log-groups *) Bash(aws organizations describe-organization *) Bash(aws organizations describe-account *) Bash(aws organizations list-roots *) Bash(aws service-quotas get-service-quota *) Bash(aws servicecatalog search-provisioned-products *) Bash(aws sso-admin list-instances *) Bash(grep *) Bash(find *)
 ---
 
 # AWS LZA Landing Zone Setup
@@ -444,21 +445,33 @@ aws controltower get-landing-zone \
 
 Follow the runbook generated in the initialized project. **Test that break glass access works before proceeding to Phase 6.**
 
-Verify the break glass IAM user has MFA configured (**ask the user for the break glass username** if unsure):
+Ask the user for the break glass username if unsure, then verify both MFA and at least one successful login:
 
 ```bash
 # List IAM users to identify the break glass user
 aws iam list-users --query 'Users[*].UserName' --output text
 
-# Check MFA devices for the break glass user
+# Check MFA devices
 MFA_DEVICES=$(aws iam list-mfa-devices --user-name BREAKGLASS_USERNAME \
   --query 'MFADevices[*].SerialNumber' --output text)
 
 if [[ -z "$MFA_DEVICES" ]]; then
-  echo "ERROR: Break glass user BREAKGLASS_USERNAME has no MFA device configured."
-  echo "Set up MFA before continuing."
+  echo "ERROR: Break glass user has no MFA device configured. Set up MFA before continuing."
 else
   echo "MFA configured: $MFA_DEVICES"
+fi
+
+# Check CloudTrail for at least one successful console login by the break glass user
+LOGIN_COUNT=$(aws cloudtrail lookup-events \
+  --lookup-attributes AttributeKey=Username,AttributeValue=BREAKGLASS_USERNAME \
+  --region HOME_REGION \
+  --query "Events[?EventName=='ConsoleLogin'] | length(@)" \
+  --output text)
+
+if [[ "$LOGIN_COUNT" == "0" || -z "$LOGIN_COUNT" ]]; then
+  echo "ERROR: No console login found for break glass user. The user must log in at least once to confirm access works before you proceed."
+else
+  echo "Break glass login confirmed: $LOGIN_COUNT login(s) on record."
 fi
 ```
 
