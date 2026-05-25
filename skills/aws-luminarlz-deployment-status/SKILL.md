@@ -16,9 +16,22 @@ Check or wait on the LZA pipeline triggered by a specific config deployment.
 
 ## Step 1: Get the version ID
 
-If the user has not provided a version ID, ask:
+If the user has not provided a version ID, first check for a currently running pipeline execution:
 
-> What is the S3 version ID from your last deployment? It was printed by the deploy command as `Config uploaded. S3 version ID: <version-id>`.
+```bash
+aws codepipeline list-pipeline-executions \
+  --pipeline-name AWSAccelerator-Pipeline \
+  --region HOME_REGION \
+  --max-results 5 \
+  --query 'pipelineExecutionSummaries[?status==`InProgress`].{id:pipelineExecutionId,started:startTime}' \
+  --output table
+```
+
+If there is a running execution, offer to use it directly — ask the user to confirm. Skip Steps 2–4 and jump straight to Step 5 using that execution.
+
+If there is no running execution and no version ID was provided, ask:
+
+> What is the S3 version ID from your deployment? It was printed by the deploy command as `Config uploaded. S3 version ID: <version-id>`.
 
 ---
 
