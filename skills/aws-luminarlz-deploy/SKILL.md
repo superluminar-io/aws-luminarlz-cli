@@ -44,21 +44,11 @@ If validation fails, show the errors and stop. Do not deploy with a failing conf
 npm run cli -- deploy
 ```
 
-## Step 5: Monitor pipeline
+The command prints the S3 version ID on success:
 
-```bash
-echo "Waiting for AWSAccelerator-Pipeline to succeed..."
-while true; do
-  STATUS=$(aws codepipeline get-pipeline-state \
-    --name AWSAccelerator-Pipeline \
-    --region HOME_REGION \
-    --query 'stageStates[-1].latestExecution.status' \
-    --output text)
-  echo "  Pipeline status: $STATUS"
-  [[ "$STATUS" == "Succeeded" ]] && echo "Deployment complete." && break
-  [[ "$STATUS" == "Failed" ]] && echo "ERROR: Pipeline failed. Check CodePipeline console." && exit 1
-  sleep 60
-done
+```
+Config uploaded. S3 version ID: <version-id>
+Done. ✅
 ```
 
-Ask the user for HOME_REGION if it is not already known from `config.ts`.
+Show this version ID to the user — they can use it with the `aws-luminarlz-deployment-status` skill to check or wait on the pipeline triggered by this deployment.

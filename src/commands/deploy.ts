@@ -15,7 +15,10 @@ export class Deploy extends Command {
     await customizationsCdkSynth();
     await synthConfigOut();
     await customizationsPublishCdkAssets();
-    await publishConfigOut();
+    const versionId = await publishConfigOut();
+    if (versionId) {
+      console.log(`Config uploaded. S3 version ID: ${versionId}`);
+    }
     console.log('Done. ✅');
   }
 }
