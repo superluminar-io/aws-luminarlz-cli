@@ -24,6 +24,25 @@ These are configured in the [customizations-config](templates/customizations-con
 LZA supports deploying CloudFormation templates
 which in this project are generated via the [Customizations](customizations/bin/customizations.ts) CDK app.
 
+## Using a coding agent
+
+The [aws-luminarlz-cli](https://github.com/superluminar-io/aws-luminarlz-cli) includes a skill for [Claude Code](https://claude.ai/code) and compatible coding agents that can handle initialization, development, and deployment for you — guided and interactive instead of running commands manually.
+
+Install the skill globally using:
+
+```bash
+npx skills add superluminar-io/aws-luminarlz-cli
+```
+
+Or symlink it from the installed package so it stays in sync with the package version:
+
+```bash
+mkdir -p .claude/skills
+ln -s node_modules/@superluminar-io/aws-luminarlz-cli/skills/aws-luminarlz-setup .claude/skills/aws-luminarlz-setup
+```
+
+Once active, ask your coding agent to deploy or update the landing zone. The agent will synthesize the config, validate it, run `deploy`, and monitor the pipeline — asking you for input where decisions are needed.
+
 ## AWS access
 
 [//]: # (TODO: After the blueprint deployment you can add the identity store link here, e.g.: https://<AWS_IDENTITY_STORE_ID>.awsapps.com/start)

@@ -46,6 +46,7 @@ describe('Deploy command', () => {
     organizationsMock.reset();
     ssoAdminMock.reset();
     s3Mock.reset();
+    s3Mock.on(PutObjectCommand).resolves({});
     cloudTrailMock.reset();
 
     jest.clearAllMocks();
