@@ -1,5 +1,5 @@
 ---
-name: aws-lza-landing-zone-setup
+name: aws-luminarlz-setup
 description: Use when setting up a new or resuming a partial AWS multi-account landing zone using the Landing Zone Accelerator (LZA) and aws-luminarlz-cli. Requires AWS management account credentials in the environment and a git repository as the working directory.
 ---
 

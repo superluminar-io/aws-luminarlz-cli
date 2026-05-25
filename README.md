@@ -25,6 +25,38 @@ to make deployment and development with the [Landing Zone Accelerator on AWS (LZ
 
 ![AWS luminarlz CLI Architecture diagram](docs/architecture-diagram.png)
 
+## Using a coding agent
+
+A skill for [Claude Code](https://claude.ai/code) and compatible coding agents is bundled with this package as an alternative to running the CLI manually.
+The agent guides you through the full setup process — or picks up a partial one — handling initialization, configuration, deployment, and hardening step by step.
+It uses the CLI under the hood and asks you for input where needed instead of requiring you to run commands yourself.
+
+### Install the skill
+
+Install the skill globally using:
+
+```bash
+npx skills add superluminar-io/aws-luminarlz-cli
+```
+
+Or symlink it into your project so it stays in sync with the installed package version:
+
+```bash
+mkdir -p .claude/skills
+ln -s node_modules/@superluminar-io/aws-luminarlz-cli/skills/aws-luminarlz-setup .claude/skills/aws-luminarlz-setup
+```
+
+### What the agent handles
+
+Once the skill is active, ask your coding agent to set up or continue an AWS landing zone. The agent will:
+
+- **Detect** where the setup is and resume from the right step
+- **Initialize** the landing zone using `luminarlz init` and walk you through `config.ts` interview-style
+- **Deploy** the LZA config, trigger and monitor the pipeline
+- **Configure** IAM Identity Center groups, Control Tower region deny, and break glass access
+- **Review and update** Architecture Decision Records (ADRs) based on the decisions made
+- **Harden** the account with billing controls and IAM cleanup
+
 ## Usage
 
 ### Initialize a new AWS landing zone
@@ -61,20 +93,6 @@ npm run cli -- deploy
 10. Make sure to start the [AWSAccelerator-Pipeline](https://console.aws.amazon.com/codesuite/codepipeline/pipelines/AWSAccelerator-Pipeline/view) manually after the initial deployment as the pipeline is not automatically started by the LZA.
 11. Wait until the blueprint is successfully deployed, from now on the pipeline should start automatically after deploying a new LZA config.
 12. Search for open `TODO` comments in the generated files and adapt them to your needs.
-
-### Claude Code skill
-
-A [Claude Code](https://claude.ai/code) skill for guided landing zone setup is bundled with this package.
-It walks Claude through the full setup process — or picks up a partial one — including planning, LZA deployment, luminarlz initialization, and hardening.
-
-To use it, symlink the skill into your project's `.claude/skills/` directory:
-
-```bash
-mkdir -p .claude/skills
-ln -s ../node_modules/@superluminar-io/aws-luminarlz-cli/skills/aws-lza-landing-zone-setup .claude/skills/aws-lza-landing-zone-setup
-```
-
-Claude will then auto-discover it. Invoke it by asking Claude to set up or continue an AWS landing zone.
 
 ### CLI reference
 
