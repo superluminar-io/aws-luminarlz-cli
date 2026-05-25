@@ -62,6 +62,20 @@ npm run cli -- deploy
 11. Wait until the blueprint is successfully deployed, from now on the pipeline should start automatically after deploying a new LZA config.
 12. Search for open `TODO` comments in the generated files and adapt them to your needs.
 
+### Claude Code skill
+
+A [Claude Code](https://claude.ai/code) skill for guided landing zone setup is bundled with this package.
+It walks Claude through the full setup process — or picks up a partial one — including planning, LZA deployment, luminarlz initialization, and hardening.
+
+To use it, symlink the skill into your project's `.claude/skills/` directory:
+
+```bash
+mkdir -p .claude/skills
+ln -s ../node_modules/@superluminar-io/aws-luminarlz-cli/skills/aws-lza-landing-zone-setup .claude/skills/aws-lza-landing-zone-setup
+```
+
+Claude will then auto-discover it. Invoke it by asking Claude to set up or continue an AWS landing zone.
+
 ### CLI reference
 
 Run any command with `--help` to see its full options, e.g.:
