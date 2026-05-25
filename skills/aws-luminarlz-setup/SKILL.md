@@ -1,7 +1,7 @@
 ---
 name: aws-luminarlz-setup
 description: Use when setting up a new or resuming a partial AWS multi-account landing zone using the Landing Zone Accelerator (LZA) and aws-luminarlz-cli. Requires AWS management account credentials in the environment and a git repository as the working directory.
-allowed-tools: Bash(aws sts get-caller-identity*) Bash(aws ce get-cost-and-usage *) Bash(aws ce list-cost-allocation-tags *) Bash(aws cloudformation describe-stacks *) Bash(aws cloudformation describe-stack-resources *) Bash(aws cloudformation wait *) Bash(aws cloudtrail lookup-events *) Bash(aws codepipeline get-pipeline-state *) Bash(aws controltower get-landing-zone *) Bash(aws controltower list-landing-zones *) Bash(aws iam list-users *) Bash(aws iam list-mfa-devices *) Bash(aws identitystore list-groups *) Bash(aws identitystore list-users *) Bash(aws logs describe-log-groups *) Bash(aws organizations describe-organization *) Bash(aws organizations describe-account *) Bash(aws organizations list-roots *) Bash(aws service-quotas get-service-quota *) Bash(aws servicecatalog search-provisioned-products *) Bash(aws sso-admin list-instances *) Bash(grep *) Bash(find *)
+allowed-tools: Bash(aws sts get-caller-identity*) Bash(aws ce get-cost-and-usage *) Bash(aws ce list-cost-allocation-tags *) Bash(aws cloudformation describe-stacks *) Bash(aws cloudformation describe-stack-resources *) Bash(aws cloudformation wait *) Bash(aws codepipeline get-pipeline-state *) Bash(aws controltower get-landing-zone *) Bash(aws controltower list-landing-zones *) Bash(aws iam generate-credential-report*) Bash(aws iam get-credential-report*) Bash(aws iam list-users *) Bash(aws iam list-mfa-devices *) Bash(aws identitystore list-groups *) Bash(aws identitystore list-users *) Bash(aws logs describe-log-groups *) Bash(aws organizations describe-organization *) Bash(aws organizations describe-account *) Bash(aws organizations list-roots *) Bash(aws service-quotas get-service-quota *) Bash(aws servicecatalog search-provisioned-products *) Bash(aws sso-admin list-instances *) Bash(grep *) Bash(find *)
 ---
 
 # AWS LZA Landing Zone Setup
@@ -461,17 +461,18 @@ else
   echo "MFA configured: $MFA_DEVICES"
 fi
 
-# Check CloudTrail for at least one successful console login by the break glass user
-LOGIN_COUNT=$(aws cloudtrail lookup-events \
-  --lookup-attributes AttributeKey=Username,AttributeValue=BREAKGLASS_USERNAME \
-  --region HOME_REGION \
-  --query "Events[?EventName=='ConsoleLogin'] | length(@)" \
-  --output text)
+# Check last console sign-in via IAM credential report
+aws iam generate-credential-report > /dev/null 2>&1
+sleep 5
 
-if [[ "$LOGIN_COUNT" == "0" || -z "$LOGIN_COUNT" ]]; then
-  echo "ERROR: No console login found for break glass user. The user must log in at least once to confirm access works before you proceed."
+LAST_SIGNIN=$(aws iam get-credential-report \
+  --query 'Content' --output text | base64 -d \
+  | awk -F, 'NR==1{for(i=1;i<=NF;i++) h[i]=$i} NR>1 && $1=="BREAKGLASS_USERNAME"{for(i=1;i<=NF;i++) if(h[i]=="password_last_used") print $i}')
+
+if [[ -z "$LAST_SIGNIN" || "$LAST_SIGNIN" == "N/A" || "$LAST_SIGNIN" == "no_information" ]]; then
+  echo "ERROR: Break glass user has never signed in. The user must log in at least once to confirm access works before you proceed."
 else
-  echo "Break glass login confirmed: $LOGIN_COUNT login(s) on record."
+  echo "Break glass last sign-in: $LAST_SIGNIN"
 fi
 ```
 
