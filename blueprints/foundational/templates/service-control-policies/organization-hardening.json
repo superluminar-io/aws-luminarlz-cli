@@ -1,0 +1,36 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PreventLeavingOrganization",
+      "Effect": "Deny",
+      "Action": ["organizations:LeaveOrganization"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "PreventExternalSharing",
+      "Effect": "Deny",
+      "Action": [
+        "ram:CreateResourceShare",
+        "ram:UpdateResourceShare"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "Bool": {
+          "ram:RequestedAllowsExternalPrincipals": "true"
+        }
+      }
+    },
+    {
+      "Sid": "RestrictRootUserAccessKeys",
+      "Effect": "Deny",
+      "Action": "iam:CreateAccessKey",
+      "Resource": ["*"],
+      "Condition": {
+        "StringLike": {
+          "aws:PrincipalArn": ["arn:aws:iam::*:root"]
+        }
+      }
+    }
+  ]
+}
