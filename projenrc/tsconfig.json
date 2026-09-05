@@ -3,21 +3,13 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "rootDir": "..",
-    "types": [
-      "node",
-      "jest",
-      "aws-sdk-client-mock-jest"
-    ],
-    "allowJs": true
+    "rootDir": ".."
   },
   "include": [
-    "**/*.ts"
+    "**/*.ts",
+    "../.projenrc.ts"
   ],
   "exclude": [
     "node_modules"
-  ],
-  "files": [
-    "test/jest.custom-matchers.d.ts"
   ]
 }
