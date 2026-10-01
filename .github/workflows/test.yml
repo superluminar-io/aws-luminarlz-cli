@@ -13,16 +13,20 @@ jobs:
       contents: read
     steps:
       - name: Checkout
+        id: checkout
         uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Setup Node
+        id: setup_node
         uses: actions/setup-node@v6
         with:
           node-version: lts/*
           cache: yarn
       - name: Install deps
+        id: install_deps
         run: yarn --frozen-lockfile
       - name: Run tests
+        id: run_tests
         run: yarn projen test
